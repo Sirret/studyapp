@@ -9,6 +9,7 @@ export default defineConfig({
 	test: {
 		environment: 'node',
 		includeTaskLocation: true,
+		allowOnly: false,
 		include: ['tests/unit/**/*.test.ts', 'tests/sim/**/*.test.ts'],
 		reporters: ['default', 'junit', 'json'],
 		outputFile: {

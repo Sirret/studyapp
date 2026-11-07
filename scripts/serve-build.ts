@@ -30,7 +30,13 @@ const CONTENT_TYPES: Record<string, string> = {
 
 /** Maps a request path to a file inside `build/`, or to the fallback for anything else. */
 function resolveFile(urlPath: string): string {
-	const file = path.join(BUILD_DIR, decodeURIComponent(urlPath));
+	let decoded: string;
+	try {
+		decoded = decodeURIComponent(urlPath);
+	} catch {
+		return FALLBACK;
+	}
+	const file = path.join(BUILD_DIR, decoded);
 	const isInside = file.startsWith(BUILD_DIR + path.sep);
 	return isInside && existsSync(file) && statSync(file).isFile() ? file : FALLBACK;
 }

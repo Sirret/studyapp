@@ -32,8 +32,18 @@ const bannedImports = (message, paths, packages = []) => ({
 
 const uiBoundary = bannedImports(
 	'UI imports services, never Dexie or repos (BUILD_PLAN §15.1).',
-	['db/schema', 'db/repos'],
+	['db/schema', 'db/repos', 'engine'],
 	['dexie']
+);
+
+const serviceBoundary = bannedImports(
+	'Services, the logger and the PWA code never import UI (BUILD_PLAN §15.1).',
+	['ui', 'exercises']
+);
+
+const dataBoundary = bannedImports(
+	'The data layer imports only config and schemas (BUILD_PLAN §15.1).',
+	['engine', 'services', 'log', 'pwa', 'ui', 'exercises']
 );
 
 /** @see BUILD_PLAN §15.1 (import direction) and CLAUDE.md rule 2 (pure engine) */
@@ -95,17 +105,14 @@ export default ts.config(
 	},
 	{ files: ['src/lib/engine/**/*.ts'], rules: engineRules },
 	{
-		files: ['src/routes/**', 'src/lib/ui/**', 'src/lib/exercises/**'],
+		files: ['src/routes/**', 'src/hooks.client.ts', 'src/lib/ui/**', 'src/lib/exercises/**'],
 		rules: uiBoundary
 	},
 	{
-		files: ['src/lib/db/**'],
-		rules: bannedImports('The data layer never imports services or UI (BUILD_PLAN §15.1).', [
-			'services',
-			'ui',
-			'exercises'
-		])
+		files: ['src/lib/services/**', 'src/lib/log/**', 'src/lib/pwa/**'],
+		rules: serviceBoundary
 	},
+	{ files: ['src/lib/db/**'], rules: dataBoundary },
 	{
 		files: ['tests/**', 'scripts/**', '*.config.ts', '*.config.js'],
 		rules: { 'max-lines': 'off', 'max-lines-per-function': 'off', complexity: 'off' }

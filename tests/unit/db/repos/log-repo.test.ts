@@ -56,3 +56,29 @@ describe('LogRepo', () => {
 		expect((await repo.list()).map((log) => log.message)).toEqual(['c', 'd', 'e']);
 	});
 });
+
+describe('createDb indexes', () => {
+	it('matches BUILD_PLAN §3.1 exactly', async () => {
+		const db = createDb('index-test');
+		await db.open();
+		const actual = Object.fromEntries(
+			db.tables.map((table) => [
+				table.name,
+				[table.schema.primKey.src, ...table.schema.indexes.map((index) => index.src)].join(', ')
+			])
+		);
+		await db.delete();
+		expect(actual).toEqual({
+			courses: 'id, status, examDate, updatedAt',
+			topics: 'id, courseId, [courseId+order], updatedAt',
+			chunks: 'id, topicId, [topicId+order], updatedAt',
+			notes: 'id, courseId, topicId, chunkId, type, updatedAt',
+			cards: 'id, noteId, courseId, status, due, updatedAt',
+			events: 'id, ts, cardId, sessionId, type, [cardId+ts]',
+			media: 'id, hash',
+			sessions: 'id, startedAt, mode',
+			kv: 'key',
+			logs: '++seq, ts, level, area'
+		});
+	});
+});

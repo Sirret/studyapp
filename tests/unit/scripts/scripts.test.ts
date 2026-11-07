@@ -3,6 +3,7 @@ import { SHELL_JS_BUDGET_KB } from '../../../src/lib/config/defaults.ts';
 import {
 	collectShellFiles,
 	evaluateBundle,
+	findShellRoots,
 	type ViteManifest
 } from '../../../scripts/lib/bundle.ts';
 import { findStubs } from '../../../scripts/lib/stubs.ts';
@@ -218,5 +219,34 @@ describe('buildSummary', () => {
 		});
 		expect(summary).toContain('1 passed · 1 failed');
 		expect(summary).toContain('pwa.spec.ts:9 opens offline: timed out');
+	});
+});
+
+describe('findShellRoots', () => {
+	const prefix = '.svelte-kit/generated/build/client-optimized';
+	const kit = 'node_modules/@sveltejs/kit/src/runtime/client';
+	const entry = { file: 'x.js' };
+	const complete: ViteManifest = {
+		[`${prefix}/app.js`]: entry,
+		[`${kit}/entry.js`]: entry,
+		[`${kit}/client-entry.js`]: entry,
+		[`${prefix}/nodes/0.js`]: entry,
+		[`${prefix}/nodes/1.js`]: entry,
+		[`${prefix}/nodes/2.js`]: entry,
+		[`${prefix}/nodes/3.js`]: entry
+	};
+	const readNode = (key: string) =>
+		key.endsWith('nodes/3.js') ? 'export * from "src/routes/+page.svelte"' : 'other';
+
+	it('finds the entries, layout, error page and whichever node is the home page', () => {
+		const { roots, missing } = findShellRoots(complete, readNode);
+		expect(missing).toEqual([]);
+		expect(roots).toContain(`${prefix}/nodes/3.js`);
+		expect(roots).not.toContain(`${prefix}/nodes/2.js`);
+		expect(roots).toHaveLength(6);
+	});
+
+	it('reports what is missing when the build layout changes', () => {
+		expect(findShellRoots({}, readNode).missing).toHaveLength(6);
 	});
 });

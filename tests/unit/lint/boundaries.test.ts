@@ -96,12 +96,44 @@ describe('lint boundaries', () => {
 		});
 	});
 
+	it.each(['src/routes/sample.ts', 'src/hooks.client.ts', 'src/lib/ui/sample.ts'])(
+		'rejects an engine import in UI code: %s',
+		async (filePath) => {
+			const code = "import { x } from '#lib/engine/sample.ts';\nexport const y = x;\n";
+			expect(await ruleIdsFor(code, filePath)).toContain('no-restricted-imports');
+		}
+	);
+
+	it.each(['src/lib/services/sample.ts', 'src/lib/log/sample.ts', 'src/lib/pwa/sample.ts'])(
+		'rejects a UI import in %s',
+		async (filePath) => {
+			const code = "import { x } from '#lib/ui/sample.ts';\nexport const y = x;\n";
+			expect(await ruleIdsFor(code, filePath)).toContain('no-restricted-imports');
+		}
+	);
+
+	it('allows a service to import the engine and a repo', async () => {
+		const code =
+			"import { x } from '#lib/engine/sample.ts';\n" +
+			"import { LogRepo } from '#lib/db/repos/log-repo.ts';\n" +
+			'export const y = [x, LogRepo];\n';
+		expect(await ruleIdsFor(code, 'src/lib/services/sample.ts')).toEqual([]);
+	});
+
 	describe('the data layer never imports upward', () => {
-		it('rejects a service import in a repo', async () => {
-			const code = "import { logger } from '#lib/services/app.ts';\nexport const x = logger;\n";
-			expect(await ruleIdsFor(code, 'src/lib/db/repos/sample.ts')).toContain(
-				'no-restricted-imports'
-			);
+		it.each(['services/app.ts', 'engine/sample.ts', 'log/logger.ts', 'pwa/register-sw.ts'])(
+			'rejects importing %s in a repo',
+			async (target) => {
+				const code = `import { x } from '#lib/${target}';\nexport const y = x;\n`;
+				expect(await ruleIdsFor(code, 'src/lib/db/repos/sample.ts')).toContain(
+					'no-restricted-imports'
+				);
+			}
+		);
+
+		it('allows a repo to import schemas', async () => {
+			const code = "import { z } from '../schemas/log-entry.ts';\nexport const y = z;\n";
+			expect(await ruleIdsFor(code, 'src/lib/db/repos/sample.ts')).toEqual([]);
 		});
 
 		it('allows Dexie in the data layer', async () => {

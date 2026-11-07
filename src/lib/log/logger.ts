@@ -24,7 +24,7 @@ function toJsonValue(data: unknown): NewLogEntry['data'] {
 	try {
 		return JSON.parse(JSON.stringify(data)) as NewLogEntry['data'];
 	} catch {
-		return { unserialisable: String(data) };
+		return { unserialisable: true };
 	}
 }
 

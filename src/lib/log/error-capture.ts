@@ -10,7 +10,11 @@ const AREA = 'app';
 
 function describe(reason: unknown): { message: string; stack?: string } {
 	if (reason instanceof Error) return { message: reason.message, stack: reason.stack };
-	return { message: String(reason) };
+	try {
+		return { message: String(reason) };
+	} catch {
+		return { message: 'unprintable value' };
+	}
 }
 
 /**

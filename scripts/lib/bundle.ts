@@ -82,3 +82,37 @@ export function evaluateBundle(chunks: BuiltChunk[], budgetKb: number): BundleRe
 		passed: shellKb <= budgetKb && forbidden.length === 0
 	};
 }
+
+const SHELL_ROOT_PATTERNS = [
+	{ name: 'app entry', pattern: /client-optimized\/app\.js$/ },
+	{ name: 'start entry', pattern: /runtime\/client\/entry\.js$/ },
+	{ name: 'client entry', pattern: /runtime\/client\/client-entry\.js$/ },
+	{ name: 'root layout', pattern: /client-optimized\/nodes\/0\.js$/ },
+	{ name: 'root error page', pattern: /client-optimized\/nodes\/1\.js$/ }
+];
+const ROUTE_NODE = /client-optimized\/nodes\/\d+\.js$/;
+const HOME_PAGE_MARKER = 'src/routes/+page.svelte';
+
+/**
+ * Finds the chunks every first visit loads: Kit's entries, the root layout, error page and home
+ * page. `missing` names any it could not find, so a change in Kit's build layout fails the check
+ * instead of measuring an empty shell. `readNode` returns the source of a manifest key.
+ *
+ * @see BUILD_PLAN §11.1 (Performance)
+ */
+export function findShellRoots(
+	manifest: ViteManifest,
+	readNode: (key: string) => string
+): { roots: string[]; missing: string[] } {
+	const keys = Object.keys(manifest);
+	const found = SHELL_ROOT_PATTERNS.map(({ name, pattern }) => ({
+		name,
+		key: keys.find((key) => pattern.test(key))
+	}));
+	const home = keys.find((key) => ROUTE_NODE.test(key) && readNode(key).includes(HOME_PAGE_MARKER));
+	found.push({ name: 'home page', key: home });
+	return {
+		roots: found.flatMap(({ key }) => key ?? []),
+		missing: found.filter(({ key }) => key === undefined).map(({ name }) => name)
+	};
+}

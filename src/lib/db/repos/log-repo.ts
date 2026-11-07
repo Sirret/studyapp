@@ -18,7 +18,7 @@ export class LogRepo {
 	async append(entry: NewLogEntry): Promise<void> {
 		const { logs } = this.db;
 		await this.db.transaction('rw', logs, async () => {
-			await logs.add(entry as LogEntry);
+			await logs.add(entry);
 			const excess = (await logs.count()) - this.ringSize;
 			if (excess > 0) await logs.orderBy('seq').limit(excess).delete();
 		});

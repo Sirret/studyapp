@@ -7,7 +7,7 @@ const isCi = Boolean(process.env.CI);
 export default defineConfig({
 	testDir: 'tests/e2e',
 	outputDir: 'test-results/playwright',
-	forbidOnly: isCi,
+	forbidOnly: true,
 	retries: 0,
 	reporter: [
 		['list'],

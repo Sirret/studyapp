@@ -10,24 +10,12 @@ import { SHELL_JS_BUDGET_KB } from '../src/lib/config/defaults.ts';
 import {
 	collectShellFiles,
 	evaluateBundle,
+	findShellRoots,
 	type BundleReport,
 	type ViteManifest
 } from './lib/bundle.ts';
 
 const CLIENT_DIR = '.svelte-kit/output/client';
-const HOME_PAGE_MARKER = 'src/routes/+page.svelte';
-
-/** The chunks every first visit loads: Kit's entries, the root layout, error page and home page. */
-function findShellRoots(manifest: ViteManifest): string[] {
-	return Object.keys(manifest).filter((key) => {
-		if (/client-optimized\/app\.js$|runtime\/client\/(client-)?entry\.js$/.test(key)) return true;
-		if (/client-optimized\/nodes\/[01]\.js$/.test(key)) return true;
-		return (
-			/client-optimized\/nodes\/\d+\.js$/.test(key) &&
-			readFileSync(key, 'utf8').includes(HOME_PAGE_MARKER)
-		);
-	});
-}
 
 function printReport(report: BundleReport): void {
 	console.log(`Shell: ${report.shellKb.toFixed(1)} KB gzipped (budget ${report.budgetKb} KB)`);
@@ -40,7 +28,10 @@ function printReport(report: BundleReport): void {
 const manifest = JSON.parse(
 	readFileSync(path.join(CLIENT_DIR, '.vite/manifest.json'), 'utf8')
 ) as ViteManifest;
-const roots = findShellRoots(manifest);
+const { roots, missing } = findShellRoots(manifest, (key) => readFileSync(key, 'utf8'));
+if (missing.length > 0) {
+	throw new Error(`Cannot identify the shell; the build layout changed: ${missing.join(', ')}`);
+}
 const chunks = collectShellFiles(manifest, roots)
 	.filter((file) => file.endsWith('.js'))
 	.map((file) => ({ file, content: readFileSync(path.join(CLIENT_DIR, file), 'utf8') }));
