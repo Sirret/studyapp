@@ -20,6 +20,9 @@ export default defineConfig(({ mode }) => ({
 				adapter: adapter({ fallback: 'index.html' })
 			},
 			{
+				// Absolute, so nested routes (e.g. /dev/ui) register /sw.js, not ./sw.js.
+				base: '/',
+				scope: '/',
 				strategies: 'generateSW',
 				registerType: 'prompt',
 				injectRegister: false,
