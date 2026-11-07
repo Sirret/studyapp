@@ -21,7 +21,8 @@ export const FsrsCardStateSchema = z.object({
 	learning_steps: z.number(),
 	reps: z.number(),
 	lapses: z.number(),
-	state: z.number(),
+	/** ts-fsrs `State`: 0 new, 1 learning, 2 review, 3 relearning. */
+	state: z.number().int().min(0).max(3),
 	last_review: z.number().optional()
 });
 export type FsrsCardState = z.infer<typeof FsrsCardStateSchema>;

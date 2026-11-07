@@ -7,12 +7,11 @@ import type { CardCaches, FsrsCardState } from '#lib/db/schemas/card.ts';
 import type { ExerciseKind, Mode, SessionId } from '#lib/db/schemas/common.ts';
 import type { ReviewEvent, StudyEvent } from '#lib/db/schemas/event.ts';
 import {
+	emptyCriterionHistory,
 	isCounting,
-	isCriterionMet,
-	requiredCorrects,
-	startCriterion,
-	stepCriterion,
-	type CriterionState
+	recordCriterion,
+	type CriterionHistory,
+	type SessionCriterion
 } from './criterion.ts';
 import { advancePathStep } from './exercise-kinds.ts';
 import { capStability, ratingFor, reviewFsrs, type FsrsConfig } from './fsrs.ts';
@@ -23,10 +22,9 @@ import type { Traced, TraceEntry } from './trace.ts';
 /** Modes whose study is massed: their corrects grant only capped, fragile stability. */
 const MASSED_MODES: ReadonlySet<Mode> = new Set(['cram', 'onenight']);
 
-interface SessionFold {
+/** The latest credited session: its mode and its criterion progress. */
+interface LastSession extends SessionCriterion {
 	mode: Mode;
-	criterion: CriterionState;
-	met: boolean;
 }
 
 /** Everything replay tracks for one card while folding its events. */
@@ -40,9 +38,10 @@ interface CardFold {
 	counted: boolean;
 	onlyOneNight: boolean;
 	lastCorrect: boolean;
-	metEver: boolean;
-	sessions: Map<SessionId, SessionFold>;
-	lastSession: SessionFold | null;
+	criteria: CriterionHistory;
+	/** Each credited session's mode, from its first counting event. */
+	modes: Map<SessionId, Mode>;
+	lastSession: LastSession | null;
 	trace: TraceEntry[];
 }
 
@@ -57,8 +56,8 @@ function emptyFold(): CardFold {
 		counted: false,
 		onlyOneNight: true,
 		lastCorrect: false,
-		metEver: false,
-		sessions: new Map(),
+		criteria: emptyCriterionHistory(),
+		modes: new Map(),
 		lastSession: null,
 		trace: []
 	};
@@ -84,7 +83,8 @@ function survivedSpacedGap(
 
 /** Applies the session's FSRS review, with the massed-mode cap and the fragile rules. */
 function applyFsrs(fold: CardFold, event: ReviewEvent, input: ReplayCardInput): void {
-	const rating = ratingFor(event.weight, event.correct) ?? 'again';
+	const rating = ratingFor(event.weight, event.correct);
+	if (rating === null) throw new Error('A none-weight answer never reaches FSRS');
 	const previous = fold.fsrs;
 	let next = reviewFsrs(previous, event.ts, rating, input.fsrs).result;
 	if (MASSED_MODES.has(event.mode) && event.correct) {
@@ -106,20 +106,11 @@ function applyFsrs(fold: CardFold, event: ReviewEvent, input: ReplayCardInput): 
 
 /** A counting event: criterion, the session's first FSRS review, study days and status facts. */
 function foldCounting(fold: CardFold, event: ReviewEvent, input: ReplayCardInput): void {
-	let session = fold.sessions.get(event.sessionId);
-	const isFsrsReview = session === undefined;
-	if (!session) {
-		session = {
-			mode: event.mode,
-			criterion: startCriterion(requiredCorrects(fold.metEver)),
-			met: false
-		};
-		fold.sessions.set(event.sessionId, session);
+	const { session, isFirstOfSession } = recordCriterion(fold.criteria, event);
+	if (isFirstOfSession) {
+		fold.modes.set(event.sessionId, event.mode);
+		applyFsrs(fold, event, input);
 	}
-	session.criterion = stepCriterion(session.criterion, event);
-	session.met ||= isCriterionMet(session.criterion);
-	fold.metEver ||= session.met;
-	if (isFsrsReview) applyFsrs(fold, event, input);
 	fold.tally = tallyDay(fold.tally, {
 		day: dayIndex(event.ts, input.tzOffsetMin),
 		correct: event.correct
@@ -127,7 +118,7 @@ function foldCounting(fold: CardFold, event: ReviewEvent, input: ReplayCardInput
 	fold.counted = true;
 	fold.onlyOneNight &&= event.mode === 'onenight';
 	fold.lastCorrect = event.correct;
-	fold.lastSession = session;
+	fold.lastSession = { ...session, mode: fold.modes.get(event.sessionId) ?? event.mode };
 }
 
 function foldReview(fold: CardFold, event: ReviewEvent, input: ReplayCardInput): void {

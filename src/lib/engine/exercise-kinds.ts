@@ -49,8 +49,8 @@ export const EXERCISES = Object.fromEntries(
 /** Steps a card skips once its accuracy reaches `MC_UNTIL_ACCURACY`. @see BUILD_PLAN §5 */
 const MC_GATED: ReadonlySet<ExerciseKind> = new Set(['mc', 'occlusionBank']);
 
-/** Worked-example kinds, which open the "new material" phase in this order. */
-const WORKED_EXAMPLE_KINDS: readonly ExerciseKind[] = ['exampleStudy', 'fadeStep'];
+/** Worked-example kinds, which open the "new material" phase in this order. @see CONCEPT §6 */
+export const WORKED_EXAMPLE_KINDS: readonly ExerciseKind[] = ['exampleStudy', 'fadeStep'];
 
 /**
  * The order kinds are grouped in inside a session phase: worked examples first, then the §3.3

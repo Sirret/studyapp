@@ -64,6 +64,8 @@ export const SECURE_AT_EXAM = 0.95;
 export const FRAGILE_CAP_DAYS = 2;
 /** A long-term correct this many study days after the previous review clears cram-fragile. */
 export const FRAGILE_SPACED_GAP_DAYS = 1;
+/** Shortest interval, in days, left after a massed-mode stability cap. */
+export const MIN_CAPPED_INTERVAL_DAYS = 1;
 
 /** Cram spacing: next session gap as a fraction of the days remaining, by exam format. */
 export const ALPHA = { recognition: 0.25, mixed: 0.35, recall: 0.42 } as const;

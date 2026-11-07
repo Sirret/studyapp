@@ -2,7 +2,7 @@ import type { CardRepo } from '#lib/db/repos/content-repos.ts';
 import type { EventRepo } from '#lib/db/repos/event-repo.ts';
 import type { SessionRepo } from '#lib/db/repos/session-repo.ts';
 import type { CardId, CourseId, ExerciseKind, Mode, SessionId } from '#lib/db/schemas/common.ts';
-import type { ReviewEvent } from '#lib/db/schemas/event.ts';
+import type { NewStudyEvent, ReviewEvent } from '#lib/db/schemas/event.ts';
 import type { Session, SessionSnapshot } from '#lib/db/schemas/session.ts';
 import { weightOf } from '#lib/engine/exercise-kinds.ts';
 import { retrievabilityAt } from '#lib/engine/fsrs.ts';
@@ -56,17 +56,20 @@ export interface SessionView {
 }
 
 /**
- * Runs a study session over the pure queue: logs every answer as a review event, replays the
- * answered card, and saves the snapshot after every answer so a closed tab resumes exactly. The
- * event is written before the snapshot, so a crash in between can repeat a question but never
- * lose an answer.
+ * Runs a study session over the pure queue: logs every answer as a review event together with
+ * the new snapshot in one transaction, then replays the answered card, so a closed tab resumes
+ * exactly and replay never sees an answer the queue missed. Answers to one session run one at a
+ * time, so a double tap can't answer the same card twice.
  *
  * @see BUILD_PLAN §6.4 and DATA_MODEL §3.7
  */
 export class SessionService {
+	/** The last pending answer per session; each new answer waits for it. */
+	private readonly pending = new Map<SessionId, Promise<unknown>>();
+
 	constructor(private readonly deps: SessionServiceDeps) {}
 
-	/** Plans and saves a new session. */
+	/** Plans and saves a new session. A plan with no cards is complete at once. */
 	async start(input: StartSessionInput): Promise<SessionView> {
 		const { result: snapshot, trace } = planSession(input);
 		const session: Session = {
@@ -81,37 +84,55 @@ export class SessionService {
 		await this.deps.sessions.save(session);
 		this.deps.logger.info('session', 'started', { mode: input.mode, cards: snapshot.queue.length });
 		this.deps.logger.debug('session', 'plan', trace);
-		return this.view(session);
+		return this.view(await this.settle(session));
 	}
 
 	/** Reloads a saved session, e.g. after the tab was closed. */
 	async resume(id: SessionId): Promise<SessionView | undefined> {
 		const session = await this.deps.sessions.get(id);
-		return session && this.view(session);
+		return session && this.view(await this.settle(session));
 	}
 
 	/** Records an answer to the current card and moves the session on. */
-	async answer(id: SessionId, input: AnswerInput): Promise<SessionView> {
+	answer(id: SessionId, input: AnswerInput): Promise<SessionView> {
+		const run = (this.pending.get(id) ?? Promise.resolve())
+			.catch(() => undefined)
+			.then(() => this.answerNow(id, input));
+		this.pending.set(id, run);
+		return run;
+	}
+
+	private async answerNow(id: SessionId, input: AnswerInput): Promise<SessionView> {
 		const session = await this.deps.sessions.get(id);
 		const item = session && currentItem(session.snapshot);
 		if (!session || !item) throw new Error(`Session ${id} has no current card`);
-		await this.logAnswer(session, item, input);
-		await this.deps.replay.rebuildCards([item.cardId]);
 		const answered = applyAnswer(session.snapshot, {
 			cardId: item.cardId,
 			correct: input.correct,
 			weight: weightOf(input.kind)
 		});
-		const snapshot = await this.withCleanup(answered.result);
-		const next = this.updated(session, snapshot);
-		await this.deps.sessions.save(next);
+		const next = this.updated(session, answered.result);
+		await this.deps.events.appendWithSession(this.reviewFields(session, item, input), next);
+		await this.deps.replay.rebuildCards([item.cardId]);
 		this.deps.logger.debug('session', 'answer', answered.trace);
-		if (next.endedAt !== undefined) this.deps.logger.info('session', 'ended', { id });
-		return this.view(next);
+		return this.view(await this.settle(next));
 	}
 
-	private async logAnswer(session: Session, item: CurrentItem, input: AnswerInput): Promise<void> {
-		await this.deps.events.append({
+	/**
+	 * Starts cleanup once the main queue has emptied and saves the result. Safe to repeat: it
+	 * does nothing once cleanup has run, so `resume` finishes it after a crash.
+	 */
+	private async settle(session: Session): Promise<Session> {
+		const { snapshot } = session;
+		if (snapshot.queue.length > 0 || snapshot.cleanup) return session;
+		const next = this.updated(session, await this.withCleanup(snapshot));
+		await this.deps.sessions.save(next);
+		if (next.endedAt !== undefined) this.deps.logger.info('session', 'ended', { id: next.id });
+		return next;
+	}
+
+	private reviewFields(session: Session, item: CurrentItem, input: AnswerInput): NewStudyEvent {
+		return {
 			type: 'review',
 			cardId: item.cardId,
 			sessionId: session.id,
@@ -124,12 +145,11 @@ export class SessionService {
 			credited: input.credited,
 			...(input.chosen === undefined ? {} : { chosen: input.chosen }),
 			...(input.chosenFromCardId === undefined ? {} : { chosenFromCardId: input.chosenFromCardId })
-		});
+		};
 	}
 
 	/** Starts cleanup once the main queue empties, weakest (lowest retrievability) first. */
 	private async withCleanup(snapshot: SessionSnapshot): Promise<SessionSnapshot> {
-		if (snapshot.queue.length > 0 || snapshot.cleanup) return snapshot;
 		const now = this.deps.clock();
 		const config = await this.deps.replayConfig();
 		const ids = Object.keys(snapshot.cards) as CardId[];

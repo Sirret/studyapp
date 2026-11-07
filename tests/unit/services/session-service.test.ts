@@ -162,7 +162,32 @@ describe('SessionService', () => {
 			cards: [],
 			confusionEvents: []
 		});
+		expect(view.session.endedAt).toBe(now);
 		await expect(service.answer(view.session.id, right)).rejects.toThrow('no current card');
+	});
+
+	it('answers one at a time, so a double tap answers the current card only once', async () => {
+		const { service, cards, events } = setup();
+		const made = await makeCards(cards, 2);
+		const plan = made.map((card) => ({
+			...toPlanCard(card, 'cloze', []),
+			required: CRITERION_LATER
+		}));
+		const view = await service.start({
+			mode: 'longterm',
+			courseIds: [],
+			plannedMinutes: 5,
+			cards: plan,
+			confusionEvents: []
+		});
+		const [first, second] = await Promise.all([
+			service.answer(view.session.id, right),
+			service.answer(view.session.id, right)
+		]);
+		expect(first.item?.cardId).not.toBe(view.item?.cardId);
+		expect(second.item).toBeNull();
+		const logged = await Promise.all(made.map((card) => events.listByCard(card.id)));
+		expect(logged.map((list) => list.length)).toEqual([1, 1]);
 	});
 });
 

@@ -25,7 +25,7 @@ export type SessionCard = z.infer<typeof SessionCardSchema>;
  */
 export const SessionSnapshotSchema = z.object({
 	queue: z.array(CardIdSchema),
-	cards: z.record(z.string(), SessionCardSchema),
+	cards: z.record(CardIdSchema, SessionCardSchema),
 	clearing: CardIdSchema.nullable(),
 	cleanup: z.boolean()
 });

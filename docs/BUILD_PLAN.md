@@ -730,6 +730,9 @@ Every default in §13 marked _tunable_ comes from the research (concept §14–1
 | `BANK_SIZE`                              | 4                                                                                                                                                 | First-letter / occlusion banks                         |
 | `FUZZY_EDITS`                            | ≤ 4 chars → 0, 5–8 → 1, ≥ 9 → 2 edits                                                                                                             | §6.10                                                  |
 | `FIRST_LETTER_LENGTH_DELTA`              | 3                                                                                                                                                 | First-letter bank length filter (§6.10)                |
+| `FSRS_MAXIMUM_INTERVAL_DAYS`             | 36500 | ts-fsrs default |
+| `EXAM_READY_DAYS`                        | 2 | §6.5 status rule |
+| `FRAGILE_SPACED_GAP_DAYS` / `MIN_CAPPED_INTERVAL_DAYS` | 1 / 1 | Fragile clears after a real ≥ 1-day gap; a capped interval is at least a day |
 | `SECURE_STABILITY_DAYS`                  | 21                                                                                                                                                | Status rule (tunable)                                  |
 | `SECURE_AT_EXAM`                         | 0.95                                                                                                                                              | Cram triage                                            |
 | `FRAGILE_CAP_DAYS`                       | 2                                                                                                                                                 | Cram-fragile cap (tunable)                             |

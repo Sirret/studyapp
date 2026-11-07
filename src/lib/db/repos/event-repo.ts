@@ -1,5 +1,6 @@
 import type { CardId, DeviceId, SessionId } from '../schemas/common.ts';
 import { StudyEventSchema, type NewStudyEvent, type StudyEvent } from '../schemas/event.ts';
+import { SessionSchema, type Session } from '../schemas/session.ts';
 import type { SnowpackDb } from '../schema.ts';
 import type { DeviceRepo } from './device-repo.ts';
 
@@ -25,17 +26,35 @@ export class EventRepo {
 	/** Appends one event, assigning its `id`, `ts`, `deviceId` and `seq`. */
 	async append(fields: NewStudyEvent): Promise<StudyEvent> {
 		const deviceId: DeviceId = await this.deps.device.getDeviceId();
-		return this.db.transaction('rw', this.db.events, this.db.kv, async () => {
-			const event = StudyEventSchema.parse({
-				...fields,
-				id: this.deps.newId(),
-				ts: this.deps.clock(),
-				deviceId,
-				seq: await this.deps.device.nextSeq()
-			});
-			await this.db.events.add(event);
+		return this.db.transaction('rw', this.db.events, this.db.kv, () => this.add(fields, deviceId));
+	}
+
+	/**
+	 * Appends an answer's event and saves its session's snapshot in one transaction, so a crash
+	 * can't keep one without the other (BUILD_PLAN §6.4: a closed tab resumes exactly).
+	 */
+	async appendWithSession(fields: NewStudyEvent, session: Session): Promise<StudyEvent> {
+		const deviceId: DeviceId = await this.deps.device.getDeviceId();
+		const parsed = SessionSchema.parse(session);
+		const { events, kv, sessions } = this.db;
+		return this.db.transaction('rw', events, kv, sessions, async () => {
+			const event = await this.add(fields, deviceId);
+			await sessions.put(parsed);
 			return event;
 		});
+	}
+
+	/** Adds one event; called only inside a transaction that covers `events` and `kv`. */
+	private async add(fields: NewStudyEvent, deviceId: DeviceId): Promise<StudyEvent> {
+		const event = StudyEventSchema.parse({
+			...fields,
+			id: this.deps.newId(),
+			ts: this.deps.clock(),
+			deviceId,
+			seq: await this.deps.device.nextSeq()
+		});
+		await this.db.events.add(event);
+		return event;
 	}
 
 	/** Returns every event. Replay imposes its own order. */

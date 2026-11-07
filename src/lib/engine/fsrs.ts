@@ -7,7 +7,11 @@ import {
 	type FSRS,
 	type Grade
 } from 'ts-fsrs';
-import { FSRS_MAXIMUM_INTERVAL_DAYS, RETENTION } from '#lib/config/defaults.ts';
+import {
+	FSRS_MAXIMUM_INTERVAL_DAYS,
+	MIN_CAPPED_INTERVAL_DAYS,
+	RETENTION
+} from '#lib/config/defaults.ts';
 import type { FsrsCardState } from '#lib/db/schemas/card.ts';
 import type { Weight } from '#lib/db/schemas/common.ts';
 import { MS_PER_DAY } from './time.ts';
@@ -37,17 +41,13 @@ const GRADE: Readonly<Record<FsrsRating, Grade>> = {
 };
 
 /**
- * One scheduler per config object. ts-fsrs 6's `fsrs()` facade is deprecated but synchronous and
+ * A scheduler for this config. ts-fsrs 6's `fsrs()` facade is deprecated but synchronous and
  * FSRS-6; this file is the only place that touches the library.
  *
  * @see Decisions log (ts-fsrs 6)
  */
-const schedulers = new WeakMap<FsrsConfig, FSRS>();
-
 function schedulerFor(config: FsrsConfig): FSRS {
-	const cached = schedulers.get(config);
-	if (cached) return cached;
-	const scheduler = fsrs(
+	return fsrs(
 		generatorParameters({
 			request_retention: config.retention,
 			maximum_interval: config.maximumIntervalDays,
@@ -56,8 +56,6 @@ function schedulerFor(config: FsrsConfig): FSRS {
 			...(config.weights ? { w: config.weights } : {})
 		})
 	);
-	schedulers.set(config, scheduler);
-	return scheduler;
 }
 
 function toCard(state: FsrsCardState): Card {
@@ -134,7 +132,10 @@ export function reviewFsrs(
  */
 export function capStability(state: FsrsCardState, bound: number): FsrsCardState {
 	if (state.stability <= bound) return state;
-	const scheduledDays = Math.min(state.scheduled_days, Math.max(1, Math.round(bound)));
+	const scheduledDays = Math.min(
+		state.scheduled_days,
+		Math.max(MIN_CAPPED_INTERVAL_DAYS, Math.round(bound))
+	);
 	const reviewedAt = state.last_review ?? state.due - state.scheduled_days * MS_PER_DAY;
 	return {
 		...state,

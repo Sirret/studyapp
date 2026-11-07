@@ -89,25 +89,57 @@ export function criterionForSession(
 	};
 }
 
+/** One session's criterion progress inside a card's history. */
+export interface SessionCriterion {
+	criterion: CriterionState;
+	/** The criterion was met at some point in this session. */
+	met: boolean;
+}
+
+/** A card's criterion progress across its sessions, folded one counting event at a time. */
+export interface CriterionHistory {
+	metEver: boolean;
+	sessions: Map<string, SessionCriterion>;
+}
+
+/** No sessions yet. */
+export function emptyCriterionHistory(): CriterionHistory {
+	return { metEver: false, sessions: new Map() };
+}
+
+/**
+ * Folds one counting answer into the card's history (mutating it) and returns its session. A
+ * session's `required` is fixed at its first counting answer from whether the card had met the
+ * criterion by then, so interleaved sessions count the same way in replay and in planning.
+ *
+ * @see BUILD_PLAN §6.3 and Decisions log (required corrects)
+ */
+export function recordCriterion(
+	history: CriterionHistory,
+	answer: CountableAnswer & { sessionId: string }
+): { session: SessionCriterion; isFirstOfSession: boolean } {
+	let session = history.sessions.get(answer.sessionId);
+	const isFirstOfSession = session === undefined;
+	if (!session) {
+		session = { criterion: startCriterion(requiredCorrects(history.metEver)), met: false };
+		history.sessions.set(answer.sessionId, session);
+	}
+	session.criterion = stepCriterion(session.criterion, answer);
+	session.met ||= isCriterionMet(session.criterion);
+	history.metEver ||= session.met;
+	return { session, isFirstOfSession };
+}
+
 /**
  * Whether a card has met its criterion in some credited session, from its answers in replay
- * order. Each session needs `requiredCorrects` of what came before it, exactly as replay counts.
+ * order, counted exactly as replay counts them (`recordCriterion`).
  *
  * @see BUILD_PLAN §6.3 and Decisions log (required corrects)
  */
 export function hasMetCriterion(
 	answers: readonly (CountableAnswer & { sessionId: string })[]
 ): boolean {
-	const bySession = new Map<string, CountableAnswer[]>();
-	for (const answer of answers) {
-		if (!isCounting(answer)) continue;
-		const list = bySession.get(answer.sessionId);
-		if (list) list.push(answer);
-		else bySession.set(answer.sessionId, [answer]);
-	}
-	let met = false;
-	for (const sessionAnswers of bySession.values()) {
-		met ||= criterionForSession(sessionAnswers, requiredCorrects(met)).result.met;
-	}
-	return met;
+	const history = emptyCriterionHistory();
+	for (const answer of answers) if (isCounting(answer)) recordCriterion(history, answer);
+	return history.metEver;
 }

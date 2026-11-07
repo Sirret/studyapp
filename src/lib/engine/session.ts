@@ -6,7 +6,7 @@ import type { NoteType } from '#lib/db/schemas/note.ts';
 import type { SessionCard, SessionPhase, SessionSnapshot } from '#lib/db/schemas/session.ts';
 import { confusionCounts } from './distractors.ts';
 import { hasMetCriterion, requiredCorrects } from './criterion.ts';
-import { currentKind, groupOf, PHASE_KIND_ORDER } from './exercise-kinds.ts';
+import { currentKind, groupOf, PHASE_KIND_ORDER, WORKED_EXAMPLE_KINDS } from './exercise-kinds.ts';
 import { compareText, sortEvents } from './replay.ts';
 import type { Traced } from './trace.ts';
 
@@ -56,8 +56,6 @@ export function toPlanCard(
 /** The order the opening phases run in; cleanup is added when the queue empties. */
 const OPENING_PHASES: readonly SessionPhase[] = ['warmup', 'new', 'recall', 'discrimination'];
 
-const WORKED_EXAMPLE_KINDS: ReadonlySet<ExerciseKind> = new Set(['exampleStudy', 'fadeStep']);
-
 /**
  * The phase a card belongs in: warm-up kinds → `warmup`; new cards, `exampleStudy` and `fadeStep`
  * → `new`; Sort & discriminate kinds → `discrimination`; everything else → `recall`.
@@ -67,7 +65,7 @@ const WORKED_EXAMPLE_KINDS: ReadonlySet<ExerciseKind> = new Set(['exampleStudy',
 export function phaseFor(kind: ExerciseKind, isNew: boolean): SessionPhase {
 	const group = groupOf(kind);
 	if (group === 'warmup') return 'warmup';
-	if (isNew || WORKED_EXAMPLE_KINDS.has(kind)) return 'new';
+	if (isNew || WORKED_EXAMPLE_KINDS.includes(kind)) return 'new';
 	return group === 'discriminate' ? 'discrimination' : 'recall';
 }
 

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { CRITERION_FIRST } from '#lib/config/defaults.ts';
 import type { SessionId } from '#lib/db/schemas/common.ts';
-import { hasMetCriterion } from '#lib/engine/criterion.ts';
+import { emptyCriterionHistory, hasMetCriterion, recordCriterion } from '#lib/engine/criterion.ts';
+import { CRITERION_LATER } from '#lib/config/defaults.ts';
 import { makeReview, uuid } from './fixtures.ts';
 
 const S1 = uuid(0x51) as SessionId;
@@ -38,5 +39,24 @@ describe('hasMetCriterion', () => {
 			makeReview({ sessionId: S1, weight: 'none' })
 		];
 		expect(hasMetCriterion(times(CRITERION_FIRST, () => ignored).flat())).toBe(false);
+	});
+});
+
+describe('recordCriterion with interleaved sessions', () => {
+	it('fixes a session required count at its first counting answer', () => {
+		const history = emptyCriterionHistory();
+		const order = [S1, S2, S1, S1];
+		const sessions = order.map((sessionId) => recordCriterion(history, correct(sessionId)).session);
+		// S2 started before S1 met the criterion, so it still needs CRITERION_FIRST.
+		expect(history.sessions.get(S2)?.criterion.required).toBe(CRITERION_FIRST);
+		expect(history.sessions.get(S1)?.met).toBe(true);
+		expect(history.metEver).toBe(true);
+		expect(sessions[1]?.met).toBe(false);
+	});
+
+	it('gives a session started after the criterion was met CRITERION_LATER', () => {
+		const history = emptyCriterionHistory();
+		for (let i = 0; i < CRITERION_FIRST; i += 1) recordCriterion(history, correct(S1));
+		expect(recordCriterion(history, correct(S2)).session.criterion.required).toBe(CRITERION_LATER);
 	});
 });
