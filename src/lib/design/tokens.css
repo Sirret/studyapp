@@ -1,0 +1,84 @@
+/*
+ * The token layer's entry point, imported once by the root layout: fonts, base tokens, semantic
+ * tokens and both themes, then the few element defaults every screen relies on. Components read
+ * only the semantic and theme tokens.
+ * @see DESIGN §3 and §13
+ */
+@import './tokens/base.css';
+@import './tokens/semantic.css';
+@import './themes/light.css';
+@import './themes/dark.css';
+
+/* Nunito: variable 400–800, Latin subset, self-hosted and preloaded (DESIGN §3.2, §10). */
+@font-face {
+	font-family: Nunito;
+	font-style: normal;
+	font-weight: 400 800;
+	font-display: swap;
+	src: url('/fonts/nunito-latin-wght-normal.woff2') format('woff2');
+}
+
+/* Caveat: accent only; the browser fetches it the first time text uses it. */
+@font-face {
+	font-family: Caveat;
+	font-style: normal;
+	font-weight: 600;
+	font-display: swap;
+	src: url('/fonts/caveat-latin-600-normal.woff2') format('woff2');
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+}
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--text);
+	font-family: var(--font-body);
+	font-size: var(--type-body-size);
+	line-height: var(--type-body-leading);
+	font-weight: var(--type-body-weight);
+	-webkit-font-smoothing: antialiased;
+}
+
+/* One visible focus ring for every interactive element (DESIGN §3.1, §9). */
+:focus-visible {
+	outline: var(--focus-width) solid var(--focus);
+	outline-offset: var(--focus-offset);
+}
+
+button,
+input,
+textarea,
+select {
+	font: inherit;
+	color: inherit;
+}
+
+/* Visually hidden, still read by screen readers. */
+.sr-only {
+	position: absolute;
+	width: var(--hairline);
+	height: var(--hairline);
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0ms !important;
+	}
+}

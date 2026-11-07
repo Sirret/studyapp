@@ -1,0 +1,118 @@
+/*
+ * Layer 2 — semantic tokens that don't change with the theme: type roles, spacing roles, radii,
+ * motion and stacking, mapped to base tokens. Colour meanings live in the theme files.
+ * @see DESIGN §3.2–§3.4 and §13.2
+ */
+:root {
+	--font-body: var(--font-nunito);
+	--font-hand: var(--font-caveat);
+
+	/* Type styles (DESIGN §3.2): size / line height / weight */
+	--type-display-size: var(--size-28);
+	--type-display-leading: var(--leading-34);
+	--type-display-weight: var(--weight-800);
+	--type-title-size: var(--size-22);
+	--type-title-leading: var(--leading-28);
+	--type-title-weight: var(--weight-800);
+	--type-heading-size: var(--size-18);
+	--type-heading-leading: var(--leading-24);
+	--type-heading-weight: var(--weight-700);
+	--type-body-size: var(--size-16);
+	--type-body-leading: var(--leading-24);
+	--type-body-weight: var(--weight-400);
+	--type-strong-weight: var(--weight-700);
+	--type-answer-size: var(--size-18);
+	--type-answer-leading: var(--leading-26);
+	--type-answer-weight: var(--weight-600);
+	--type-small-size: var(--size-14);
+	--type-small-leading: var(--leading-20);
+	--type-small-weight: var(--weight-500);
+	--type-caption-size: var(--size-12);
+	--type-caption-leading: var(--leading-16);
+	--type-caption-weight: var(--weight-600);
+	--type-button-size: var(--size-17);
+	--type-chip-size: var(--size-13);
+	--type-reading-size: var(--size-17);
+	--type-hand-size: var(--size-22);
+
+	/* Spacing roles (DESIGN §3.3) */
+	--gap-xs: var(--space-4);
+	--gap-sm: var(--space-8);
+	--gap-md: var(--space-12);
+	--gap-lg: var(--space-16);
+	--gap-xl: var(--space-24);
+	--gap-2xl: var(--space-32);
+	--gap-3xl: var(--space-40);
+	--screen-gutter: var(--space-16);
+	--card-gap: var(--space-12);
+	--content-max: var(--size-px-560);
+
+	/* Radii (DESIGN §3.3) */
+	--r-sm: var(--radius-10);
+	--r-md: var(--radius-14);
+	--r-lg: var(--radius-20);
+	--r-xl: var(--radius-28);
+	--r-pill: var(--radius-999);
+
+	/* Control sizes (DESIGN §5, §9, §12) */
+	--touch-min: var(--size-px-44);
+	--control-height: var(--size-px-52);
+	--control-height-session: var(--size-px-56);
+	--input-height: var(--size-px-48);
+	--option-min-height: var(--size-px-56);
+	--chip-height: var(--size-px-32);
+	--icon-list: var(--size-px-20);
+	--icon-nav: var(--size-px-24);
+	--hairline: var(--size-px-1);
+	--stroke: var(--size-px-2);
+	--focus-width: var(--size-px-3);
+	--focus-offset: var(--size-px-2);
+	--lip-height: var(--size-px-3);
+	--lip-pressed: var(--size-px-1);
+	--press-travel: var(--size-px-2);
+	--nav-height: var(--size-px-64);
+
+	/* Motion (DESIGN §3.4, §11.2) */
+	--dur-fast: var(--ms-120);
+	--dur-base: var(--ms-200);
+	--dur-slow: var(--ms-320);
+	--dur-toggle: var(--ms-160);
+	--dur-pop: var(--ms-240);
+	--dur-shake: var(--ms-300);
+	--dur-paw-press: var(--ms-300);
+	--dur-check-draw: var(--ms-220);
+	--dur-burst: var(--ms-450);
+	--dur-trot: var(--ms-500);
+	--dur-count-up: var(--ms-600);
+	--dur-flurry: var(--ms-800);
+	--dur-walk: var(--ms-1200);
+	--dur-interstitial: var(--ms-1200);
+	--ease-out: var(--curve-out);
+	--ease-bounce: var(--curve-bounce);
+	--ease-linear: var(--curve-linear);
+
+	/* Stacking */
+	--z-raised: var(--layer-1);
+	--z-sticky: var(--layer-10);
+	--z-sheet: var(--layer-20);
+	--z-effect: var(--layer-30);
+}
+
+/* Reduced motion: every duration collapses, so motion becomes an instant change (DESIGN §3.4). */
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--dur-fast: 0ms;
+		--dur-base: 0ms;
+		--dur-slow: 0ms;
+		--dur-toggle: 0ms;
+		--dur-pop: 0ms;
+		--dur-shake: 0ms;
+		--dur-paw-press: 0ms;
+		--dur-check-draw: 0ms;
+		--dur-burst: 0ms;
+		--dur-trot: 0ms;
+		--dur-count-up: 0ms;
+		--dur-flurry: 0ms;
+		--dur-walk: 0ms;
+	}
+}

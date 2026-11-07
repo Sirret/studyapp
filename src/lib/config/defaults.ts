@@ -145,6 +145,9 @@ export const IMAGE_WEBP_QUALITY = 0.8;
 export const DEFAULT_EXAM_FORMAT = 'mixed';
 export const BACKUP_REMINDER_DAYS = 7;
 
+/** Auto-night theme: hours before the sleep window starts that the dark theme begins (DESIGN §3.1). */
+export const AUTO_NIGHT_LEAD_HOURS = 2;
+
 /** Gzipped JavaScript budget for the app shell. */
 export const SHELL_JS_BUDGET_KB = 150;
 /** Minimum % lines and branches for `src/lib/engine`. */

@@ -1,13 +1,16 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { APP_NAME, PWA_BACKGROUND_COLOR } from '#lib/config/defaults.ts';
+	import { APP_NAME } from '#lib/config/defaults.ts';
+	import '#lib/design/tokens.css';
+	import AppRoot from '#lib/ui/layout/AppRoot.svelte';
 
 	let { children }: { children: Snippet } = $props();
 </script>
 
 <svelte:head>
 	<title>{APP_NAME}</title>
-	<meta name="theme-color" content={PWA_BACKGROUND_COLOR} />
 </svelte:head>
 
-{@render children()}
+<AppRoot>
+	{@render children()}
+</AppRoot>

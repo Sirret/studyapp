@@ -21,7 +21,7 @@ A **cozy study desk by day, a lofi desk by night.** Warm cream paper, lavender a
 
 ## 3. Design tokens
 
-All colours, sizes and timings are CSS custom properties in the token layer under `src/lib/design/` — base tokens, semantic tokens and one file per theme (§13.2), imported together by `src/lib/design/tokens.css` and mirrored in `tokens.ts` for tests. **Components never use raw hex values or pixel numbers outside the scales below.** The values are starting points: the automated contrast test (§9) may darken or lighten a shade to pass AA — keep the hue.
+All colours, sizes and timings are CSS custom properties in the token layer under `src/lib/design/` — base tokens, semantic tokens and one file per theme (§13.2), imported together by `src/lib/design/tokens.css` and mirrored in `tokens.ts` for tests. **Components never use raw hex values or pixel numbers outside the scales below.** The values are starting points: the automated contrast test (§9) may darken or lighten a shade to pass AA — keep the hue. Phase 5 darkened the light `--text-muted`, `--primary`/`--focus`, `--success` and `--error` slightly; the table shows the values in use.
 
 ### 3.1 Colour
 
@@ -32,19 +32,19 @@ All colours, sizes and timings are CSS custom properties in the token layer unde
 | `--surface-alt`  | `#F4EEFA` lavender tint | `#312B52`             | Inset areas, input backgrounds                 |
 | `--border`       | `#E8E1D5`               | `#3A3460`             | Hairlines, dark-mode card edges                |
 | `--text`         | `#2B2540`               | `#F3EFFF`             | Body text                                      |
-| `--text-muted`   | `#6B6482`               | `#B7AFD6`             | Secondary text                                 |
-| `--primary`      | `#6B5BC9` lavender      | `#A99BFF`             | Brand, links, selected states, progress        |
+| `--text-muted`   | `#69627F`               | `#B7AFD6`             | Secondary text                                 |
+| `--primary`      | `#6453C6` lavender      | `#A99BFF`             | Brand, links, selected states, progress        |
 | `--primary-soft` | `#E9E4FB`               | `#3B3466`             | Selected backgrounds, progress track           |
 | `--on-primary`   | `#FFFFFF`               | `#1B1830`             | Text on `--primary`                            |
 | `--accent`       | `#F29E6D` peach         | `#F5A97F`             | Main action button ("Start", "Check")          |
 | `--on-accent`    | `#2B2540`               | `#1B1830`             | Text on `--accent`                             |
-| `--success`      | `#357A55` sage          | `#7BCB9C`             | Correct (with ✓ icon)                          |
+| `--success`      | `#337653` sage          | `#7BCB9C`             | Correct (with ✓ icon)                          |
 | `--success-soft` | `#E3F1E8`               | `#21402F`             | Correct feedback panel                         |
-| `--error`        | `#B44A61` rose          | `#F08AA0`             | Wrong (with ✕ icon) — soft rose, not alarm red |
+| `--error`        | `#AB465C` rose          | `#F08AA0`             | Wrong (with ✕ icon) — soft rose, not alarm red |
 | `--error-soft`   | `#FBE6EA`               | `#4A2433`             | Wrong feedback panel                           |
 | `--warning`      | `#8A6100`               | `#F2C14E`             | Warning text/icons                             |
 | `--warning-soft` | `#FDF3D6`               | `#4A3D17`             | Sticky-note warnings (shortfall, backup)       |
-| `--focus`        | `#6B5BC9`               | `#A99BFF`             | 3 px focus ring, 2 px offset                   |
+| `--focus`        | `#6453C6`               | `#A99BFF`             | 3 px focus ring, 2 px offset                   |
 | `--moon`         | `#F2C14E`               | `#F2C14E`             | Moon motif (§11.1), end of the progress strip  |
 | `--paw-press`    | `--primary` at 35%      | white at 35%          | Paw-press effect (§11.2)                       |
 | `--paw-trail`    | `--on-primary` at 18%   | `--on-primary` at 18% | Paw-trail pattern on the progress fill (§11.2) |

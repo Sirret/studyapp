@@ -24,12 +24,12 @@ No reviewer this phase (Decisions log: reviewer only at the end of Phases 7–9)
 
 - [x] Docs: addendum merged, haptics setting (`65bc10f`). Icons side task (`ff41e1e`).
 - [x] BUILD_PLAN §5.1 written; config values added (`PARSONS_EXTRAS`, `MATCHING_PAIRS`, `ITEM_ROWS_SHOWN`, `BLURT_TITLE_CHARS`, `PRACTICE_SESSION_CARDS`).
-- [ ] Step 1 interfaces: `exercise-spec.ts`, `exercise-check.ts` (stubs), `currentStep` in `exercise-kinds.ts` (done + tested). Commit.
-- [ ] Step 2: `spec-test-writer` on `exercise-spec`, `exercise-check` and the replay re-judge (brief below). Resolve SPEC-GAPs.
-- [ ] Step 3: implement until the agent's tests pass.
+- [x] Step 1 interfaces (`908b7e7`).
+- [x] Step 2: agent wrote 219 tests (`exercise-spec.test.ts` 165, `exercise-check.test.ts` 45, `replay-accept.test.ts` 9, helper `exercise-fixtures.ts`); all fail only on not-implemented. 13 SPEC-GAPs settled in the Decisions log (only change: new `TypeSpec.otherPrompts`). UNCOMMITTED: the pre-commit hook runs these failing tests, so commit them with the implementation.
+- [x] Step 3: engine implemented, all agent tests pass unchanged (`639c373`).
 - [ ] Services: `SessionService` self-rated/pretest logging; `StudyService` (+ `study-wiring.ts`); tests written directly.
-- [ ] Layer 1–3: tokens (base, semantic), themes light/dark (+ auto-night), `tokens.ts` mirror, contrast unit test, fonts (Nunito, Caveat) self-hosted.
-- [ ] Layer 4–5: primitives (Button, Card, Chip, Input, Toggle, Checkbox, Icon) + motifs (Paw, Snowflake, Moon).
+- [x] Layer 1–3: tokens (base, semantic), themes light/dark (+ auto-night), `tokens.ts` mirror, contrast unit test, fonts (Nunito, Caveat) self-hosted.
+- [x] Layer 4–5: primitives (Button, Card, Chip, Input, Toggle, Checkbox, Icon) + motifs (Paw, Snowflake, Moon).
 - [ ] Layer 6: components (OptionButton, ProgressStrip, ProgressDots, PhaseLabel, ReadinessRing, StatusBadge, StickyNote, FeedbackPanel, Sheet, EmptyState, SpeechBubble, Banner, RoundSummary, ExerciseCard, WordBank, Yuki + states).
 - [ ] Layer 7: delight (PawPress, CheckDraw/SnowBurst, SnowFlurry, PawStamp, CountUp, PawWalk, PawLoader, haptics).
 - [ ] Layer 8: layout (Screen, Stack, Grid, TopBar, BottomNav, SafeArea).
@@ -47,4 +47,9 @@ Owns only: `tests/unit/engine/exercise-spec.test.ts`, `tests/unit/engine/exercis
 
 ## Decided but not yet in the docs
 
-(none)
+- Dev routes: `__DEV_ROUTES__` (vite define) is true unless mode is production; `build:test` (`vite build --mode test`) is what verify and e2e use; deploy uses `build`. Gate `/dev/*` pages with it (404 otherwise).
+- Effects follow `data-companion` on <html> (set by `ui/layout/AppRoot.svelte`); pressables carry `data-paw`; one `delight/PawPressLayer` draws paws.
+- Display prefs: `services/preferences.svelte.ts` ($state, lazily loads settings via `preferences-wiring.ts` so zod stays out of the shell); theme hint in localStorage; inline script in app.html.
+- Components may read semantic tokens and the `--space-*`/`--size-px-*` scales; never `--palette-*`, `--ms-*`, `--curve-*`, `--radius-*`, `--layer-*`. Stylelint to enforce.
+- Arrange/sort/pair exercises: tap-to-select then tap-target (works by touch, mouse, keyboard); pointer drag gestures deferred to Phase 10 polish.
+- Contrast-adjusted light shades already written into DESIGN §3.1.

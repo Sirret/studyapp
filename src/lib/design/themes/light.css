@@ -1,0 +1,47 @@
+/*
+ * Layer 3 — the day theme: semantic colour values. Applies to the root by default and to any
+ * subtree marked data-theme="light" (the style guide shows both themes side by side).
+ * @see DESIGN §3.1 and §13.2
+ */
+:root,
+[data-theme='light'] {
+	color-scheme: light;
+	--bg: var(--palette-cream);
+	--surface: var(--palette-paper);
+	--surface-alt: var(--palette-lavender-tint);
+	--border: var(--palette-sand);
+	--text: var(--palette-ink);
+	--text-muted: var(--palette-ink-muted);
+	--primary: var(--palette-lavender);
+	--primary-soft: var(--palette-lavender-soft);
+	--on-primary: var(--palette-white);
+	--accent: var(--palette-peach);
+	--on-accent: var(--palette-ink);
+	--success: var(--palette-sage);
+	--success-soft: var(--palette-sage-soft);
+	--error: var(--palette-rose);
+	--error-soft: var(--palette-rose-soft);
+	--warning: var(--palette-amber);
+	--warning-soft: var(--palette-amber-soft);
+	--focus: var(--palette-lavender);
+	--moon: var(--palette-gold);
+	--on-course: var(--palette-ink);
+
+	--paw-press: color-mix(in srgb, var(--primary) 35%, transparent);
+	--paw-trail: color-mix(in srgb, var(--on-primary) 18%, transparent);
+	--lip: var(--palette-ink-14);
+	--lip-secondary: color-mix(in srgb, var(--primary) 20%, transparent);
+	--tape: color-mix(in srgb, var(--surface-alt) 70%, transparent);
+
+	--shadow-1: 0 1px 2px var(--palette-ink-06), 0 6px 18px var(--palette-ink-08);
+	--shadow-2: 0 2px 4px var(--palette-ink-08), 0 12px 32px var(--palette-ink-12);
+	--card-edge: transparent;
+	--yuki-glow: none;
+
+	--course-lavender: var(--palette-course-lavender);
+	--course-peach: var(--palette-course-peach);
+	--course-sage: var(--palette-course-sage);
+	--course-sky: var(--palette-course-sky);
+	--course-rose: var(--palette-course-rose);
+	--course-butter: var(--palette-course-butter);
+}

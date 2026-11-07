@@ -1,0 +1,46 @@
+/*
+ * Layer 3 — the night theme ("lofi night desk"): semantic colour values. Auto-night reuses it.
+ * No shadows in the dark: cards get a hairline edge instead.
+ * @see DESIGN §2.6, §3.1, §3.3 and §13.2
+ */
+[data-theme='dark'] {
+	color-scheme: dark;
+	--bg: var(--palette-indigo);
+	--surface: var(--palette-indigo-surface);
+	--surface-alt: var(--palette-indigo-alt);
+	--border: var(--palette-indigo-border);
+	--text: var(--palette-moonlight);
+	--text-muted: var(--palette-moonlight-muted);
+	--primary: var(--palette-lilac);
+	--primary-soft: var(--palette-lilac-soft);
+	--on-primary: var(--palette-indigo);
+	--accent: var(--palette-peach-night);
+	--on-accent: var(--palette-indigo);
+	--success: var(--palette-mint);
+	--success-soft: var(--palette-mint-soft);
+	--error: var(--palette-pink);
+	--error-soft: var(--palette-pink-soft);
+	--warning: var(--palette-gold);
+	--warning-soft: var(--palette-gold-soft);
+	--focus: var(--palette-lilac);
+	--moon: var(--palette-gold);
+	--on-course: var(--palette-indigo);
+
+	--paw-press: color-mix(in srgb, var(--palette-white) 35%, transparent);
+	--paw-trail: color-mix(in srgb, var(--on-primary) 18%, transparent);
+	--lip: var(--palette-black-28);
+	--lip-secondary: color-mix(in srgb, var(--primary) 20%, transparent);
+	--tape: color-mix(in srgb, var(--surface-alt) 70%, transparent);
+
+	--shadow-1: none;
+	--shadow-2: none;
+	--card-edge: var(--border);
+	--yuki-glow: drop-shadow(0 0 10px var(--palette-glow));
+
+	--course-lavender: var(--palette-course-lavender-night);
+	--course-peach: var(--palette-course-peach-night);
+	--course-sage: var(--palette-course-sage-night);
+	--course-sky: var(--palette-course-sky-night);
+	--course-rose: var(--palette-course-rose-night);
+	--course-butter: var(--palette-course-butter-night);
+}

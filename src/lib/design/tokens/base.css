@@ -1,0 +1,147 @@
+/*
+ * Layer 1 — base tokens: raw values only. Nothing outside the token layer reads these directly;
+ * semantic tokens and themes map them to meanings.
+ * @see DESIGN §3 and §13.2
+ */
+:root {
+	/* Palette: day */
+	--palette-cream: #fbf7f0;
+	--palette-paper: #fffdf9;
+	--palette-lavender-tint: #f4eefa;
+	--palette-sand: #e8e1d5;
+	--palette-ink: #2b2540;
+	--palette-ink-muted: #69627f;
+	--palette-lavender: #6453c6;
+	--palette-lavender-soft: #e9e4fb;
+	--palette-white: #ffffff;
+	--palette-peach: #f29e6d;
+	--palette-sage: #337653;
+	--palette-sage-soft: #e3f1e8;
+	--palette-rose: #ab465c;
+	--palette-rose-soft: #fbe6ea;
+	--palette-amber: #8a6100;
+	--palette-amber-soft: #fdf3d6;
+
+	/* Palette: night */
+	--palette-indigo: #1b1830;
+	--palette-indigo-surface: #26223f;
+	--palette-indigo-alt: #312b52;
+	--palette-indigo-border: #3a3460;
+	--palette-moonlight: #f3efff;
+	--palette-moonlight-muted: #b7afd6;
+	--palette-lilac: #a99bff;
+	--palette-lilac-soft: #3b3466;
+	--palette-peach-night: #f5a97f;
+	--palette-mint: #7bcb9c;
+	--palette-mint-soft: #21402f;
+	--palette-pink: #f08aa0;
+	--palette-pink-soft: #4a2433;
+	--palette-gold: #f2c14e;
+	--palette-gold-soft: #4a3d17;
+
+	/* Course colours: light fill, dark fill */
+	--palette-course-lavender: #b9a9f5;
+	--palette-course-lavender-night: #8f7fe0;
+	--palette-course-peach: #f7be9b;
+	--palette-course-peach-night: #e59a6e;
+	--palette-course-sage: #a9d3b5;
+	--palette-course-sage-night: #6faf83;
+	--palette-course-sky: #a8cbef;
+	--palette-course-sky-night: #6e9fd6;
+	--palette-course-rose: #f2b3c2;
+	--palette-course-rose-night: #d8849a;
+	--palette-course-butter: #f3dc92;
+	--palette-course-butter-night: #cdb050;
+
+	/* Shadow colour (ink) at the strengths DESIGN §3.3 and §12 use */
+	--palette-ink-06: rgb(43 37 64 / 6%);
+	--palette-ink-08: rgb(43 37 64 / 8%);
+	--palette-ink-12: rgb(43 37 64 / 12%);
+	--palette-ink-14: rgb(43 37 64 / 14%);
+	--palette-black-28: rgb(0 0 0 / 28%);
+	--palette-glow: rgb(169 155 255 / 35%);
+
+	/* Type */
+	--font-nunito: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--font-caveat: 'Caveat', 'Comic Sans MS', cursive;
+	--size-12: 0.75rem;
+	--size-13: 0.8125rem;
+	--size-14: 0.875rem;
+	--size-16: 1rem;
+	--size-17: 1.0625rem;
+	--size-18: 1.125rem;
+	--size-22: 1.375rem;
+	--size-28: 1.75rem;
+	--leading-16: 1rem;
+	--leading-20: 1.25rem;
+	--leading-24: 1.5rem;
+	--leading-26: 1.625rem;
+	--leading-28: 1.75rem;
+	--leading-34: 2.125rem;
+	--weight-400: 400;
+	--weight-500: 500;
+	--weight-600: 600;
+	--weight-700: 700;
+	--weight-800: 800;
+
+	/* Spacing scale (DESIGN §3.3) */
+	--space-4: 4px;
+	--space-8: 8px;
+	--space-12: 12px;
+	--space-16: 16px;
+	--space-20: 20px;
+	--space-24: 24px;
+	--space-32: 32px;
+	--space-40: 40px;
+	--space-56: 56px;
+
+	/* Sizes used by controls (DESIGN §5, §12) */
+	--size-px-1: 1px;
+	--size-px-2: 2px;
+	--size-px-3: 3px;
+	--size-px-4: 4px;
+	--size-px-6: 6px;
+	--size-px-8: 8px;
+	--size-px-10: 10px;
+	--size-px-20: 20px;
+	--size-px-24: 24px;
+	--size-px-28: 28px;
+	--size-px-32: 32px;
+	--size-px-44: 44px;
+	--size-px-48: 48px;
+	--size-px-52: 52px;
+	--size-px-56: 56px;
+	--size-px-64: 64px;
+	--size-px-560: 560px;
+
+	/* Radii */
+	--radius-10: 10px;
+	--radius-14: 14px;
+	--radius-20: 20px;
+	--radius-28: 28px;
+	--radius-999: 999px;
+
+	/* Durations and easings (DESIGN §3.4, §11.2) */
+	--ms-120: 120ms;
+	--ms-160: 160ms;
+	--ms-200: 200ms;
+	--ms-220: 220ms;
+	--ms-240: 240ms;
+	--ms-300: 300ms;
+	--ms-320: 320ms;
+	--ms-450: 450ms;
+	--ms-500: 500ms;
+	--ms-600: 600ms;
+	--ms-700: 700ms;
+	--ms-800: 800ms;
+	--ms-1200: 1200ms;
+	--curve-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+	--curve-bounce: cubic-bezier(0.3, 1.6, 0.5, 1);
+	--curve-linear: linear;
+
+	/* Stacking */
+	--layer-1: 1;
+	--layer-10: 10;
+	--layer-20: 20;
+	--layer-30: 30;
+}

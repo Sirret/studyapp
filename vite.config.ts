@@ -8,8 +8,12 @@ import {
 	PWA_BACKGROUND_COLOR
 } from './src/lib/config/defaults.ts';
 
-/** @see BUILD_PLAN §1 (adapter-static SPA) and §8.3 (service worker) */
-export default defineConfig({
+/**
+ * @see BUILD_PLAN §1 (adapter-static SPA) and §8.3 (service worker). Dev-only routes (`/dev/*`) are
+ * compiled in for `vite dev` and `vite build --mode test` (e2e), and left out of the deploy build.
+ */
+export default defineConfig(({ mode }) => ({
+	define: { __DEV_ROUTES__: JSON.stringify(mode !== 'production') },
 	plugins: [
 		withPwa(
 			{
@@ -49,4 +53,4 @@ export default defineConfig({
 			}
 		)
 	]
-});
+}));

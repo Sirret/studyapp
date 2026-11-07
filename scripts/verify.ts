@@ -9,7 +9,15 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import type { VerifyReport } from './lib/summary.ts';
 
 const RESULTS_DIR = 'test-results';
-const STEPS = ['check', 'lint', 'stub-check', 'test', 'build', 'bundle-check', 'test:e2e:built'];
+const STEPS = [
+	'check',
+	'lint',
+	'stub-check',
+	'test',
+	'build:test',
+	'bundle-check',
+	'test:e2e:built'
+];
 
 function runScript(name: string): boolean {
 	console.log(`\n=== ${name} ===`);
