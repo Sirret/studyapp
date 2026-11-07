@@ -42,6 +42,17 @@ export const MC_UNTIL_ACCURACY = 0.75;
 export const MC_OPTIONS = 4;
 /** Options in first-letter and occlusion word banks. */
 export const BANK_SIZE = 4;
+/**
+ * Typed-answer tolerance: the edits allowed for an answer whose normalised length is at most
+ * `upTo` characters, checked in order. @see BUILD_PLAN §6.10
+ */
+export const FUZZY_EDITS = [
+	{ upTo: 4, edits: 0 },
+	{ upTo: 8, edits: 1 },
+	{ upTo: Number.POSITIVE_INFINITY, edits: 2 }
+] as const;
+/** First-letter bank options are within this many characters of the answer's length. */
+export const FIRST_LETTER_LENGTH_DELTA = 3;
 
 export const SECURE_STABILITY_DAYS = 21;
 export const SECURE_AT_EXAM = 0.95;
