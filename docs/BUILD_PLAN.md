@@ -69,7 +69,9 @@ src/
       acquisition.ts          # chunk flow, ordering, split flags, paths
       onenight.ts             # one-night triage plan
       planner.ts              # workload, feasibility, knapsack, least-laxity
-      grading.ts              # normalise, Damerau-Levenshtein, hit test, set diff
+      answers.ts              # the text answer of each card variant
+      grading.ts              # normalise, Damerau-Levenshtein, collision guard, accept check
+      grading-shapes.ts       # hit test, sequence LIS feedback, edge set diff
       distractors.ts          # sibling selection + ranking + first-letter bank
       replay.ts               # events -> card caches
       merge.ts                # union events, LWW content
@@ -891,3 +893,5 @@ Choices this plan makes where the concept was silent. Add new ones here.
 | Sequence feedback keeps the longest increasing subsequence with the earliest positions when several tie; the rest are misplaced, reported as step indexes | §6.10 doesn't break ties; earliest-placed steps read as "right so far" |
 | Diagram rebuild edges are directed; labels compare after normalising, a missing label equals an empty one; duplicates collapse | §6.10's set `{(from, to, label?)}` |
 | RNG: string seed parts hashed with FNV-1a (32-bit), then mulberry32; `rngFor(cardId, sessionId, attempt)` | Small, fast and fully deterministic across browsers |
+| Grading edge cases: an empty typed answer is wrong; option and bank `text` is the raw answer; the first letter is lowercase (the UI may capitalise it); edge-set output keeps the first raw triple of each duplicate; an empty order is a correct sequence; a collision has `edits: null` | Settled from the `spec-test-writer` report for Phase 3; none of them changes a rule in §6.10 or §6.11 |
+| `spec-test-writer` used for `grading`, `grading-shapes` and `distractors`; tests for `rng` and `answers` hand-written | Grading is on the risky-logic list; the RNG and the answer mapping are plumbing |

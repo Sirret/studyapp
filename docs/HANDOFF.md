@@ -4,9 +4,9 @@ The working notes passed from one phase to the next. Unlike `PROGRESS.md` (a his
 
 ## Current state
 
-- **Done:** Phases 0, 1 and 2. **Next:** Phase 3 (Cards & grading).
-- **Exists:** tooling, CI, logger, Dexie schema, zod schemas for every entity, repositories, event log, `merge()`, `replay()`, the import pipeline, `engine/cardgen.ts`, and the `/import` screen.
-- **Partial on purpose:** `replay()` only derives `accuracy`; Phase 4 adds FSRS, criterion, status and fragile. Phase 3 has `cardgen` already, so it builds `grading`, `distractors` and `rng`. Occlusion notes import with no boxes and so no cards, until the Phase 6 editor adds boxes.
+- **Done:** Phases 0–3. **Next:** Phase 4 (Engine core), then the scoped `reviewer` pass CLAUDE.md asks for at its end.
+- **Exists:** tooling, CI, logger, Dexie schema, zod schemas for every entity, repositories, event log, `merge()`, `replay()`, the import pipeline, `engine/cardgen.ts`, the `/import` screen, and Phase 3's `rng`, `answers`, `grading`, `grading-shapes` and `distractors`.
+- **Partial on purpose:** `replay()` only derives `accuracy`; Phase 4 adds FSRS, criterion, status and fragile. Grading and distractors are pure functions nothing calls yet; the Phase 4/5 session runner wires them (building `AnswerEntry` lists with `answerEntries`, confusions with `confusionCounts`). Occlusion notes import with no boxes and so no cards, until the Phase 6 editor adds boxes.
 - **Not wired yet:** `kv.schemaVersion` isn't written. Screens are unstyled and not in a style guide, because tokens and `/dev/ui` arrive in Phase 5, which must restyle `/import` (notebook paper, per `DESIGN` Import) and add `ImportPreviewPanel` to the guide.
 
 ## How data works here (reuse this; don't reinvent it)
@@ -20,6 +20,10 @@ The working notes passed from one phase to the next. Unlike `PROGRESS.md` (a his
 | Read or write settings | `KvRepo.get/set`, validated against `KV_SCHEMAS` | Touch `db.kv` directly |
 | Write across several tables, all or nothing | Build records with `repo.draft` and `repo.draftChange`, then `ContentStore.writeBatch`, which is one transaction | Open a Dexie transaction around repository calls |
 | Get cards for a note | `generateCards(note).result` in `engine/cardgen.ts` | Hard-code variants or paths |
+| Know what a card asks for | `cardAnswer(note, variant)` / `answerEntries(cards, notesById)` in `engine/answers.ts` | Derive answers from payloads in a screen |
+| Judge a typed answer | `gradeTyped({ cardId, typed, answer, accepted, others })`; log `result.normalized` as `chosen` and `chosenFromCardId` when set. "I was right" → `checkAccept`, append `acceptAdded`, re-log as correct only if `passesGuard` | Compare strings yourself or skip the collision guard |
+| Grade drag, order or rebuild | `hitTest`, `gradeSequence`, `gradeEdgeSet` in `engine/grading-shapes.ts` | |
+| Build multiple choice or a first-letter bank | `pickDistractors` / `firstLetterBank` with `rngFor(cardId, sessionId, attempt)` | `Math.random`, or options from another answer kind |
 | Import text | `ImportService`, which runs `parseImport`, `buildPlan` and `ImportBatchDrafter` | Call the pipeline from a screen |
 | Give a screen a service | A `services/*-wiring.ts` module, imported only by that route, so its dependencies stay out of the shell | Add repos or zod to `services/app.ts` |
 | Combine two devices | `merge()`, then replay `affectedCardIds` | Merge caches |
