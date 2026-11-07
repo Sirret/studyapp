@@ -1,33 +1,34 @@
 /**
- * Renders the PWA icons in `static/icons/` from Yuki's reference art. Run by hand with
- * `npm run icons` when the art changes; the PNGs are committed.
+ * Renders the PWA icons in `static/icons/` from the app-icon art in `docs/design/icons/`, and
+ * copies the SVG favicon next to them. Run by hand with `npm run icons` when the art changes; the
+ * outputs are committed.
  *
  * @see DESIGN §7.2
  */
-import { mkdirSync, readFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { chromium } from '@playwright/test';
-import { PWA_BACKGROUND_COLOR } from '../src/lib/config/defaults.ts';
 
+const SRC_DIR = 'docs/design/icons';
 const OUT_DIR = 'static/icons';
 const ICONS = [
-	{ file: 'icon-192.png', size: 192, artShare: 0.86 },
-	{ file: 'icon-512.png', size: 512, artShare: 0.86 },
-	// Maskable icons may be cropped to a circle: keep the art inside the central safe zone.
-	{ file: 'icon-maskable-512.png', size: 512, artShare: 0.64 }
+	{ file: 'icon-192.png', size: 192, source: 'icon-full.svg' },
+	{ file: 'icon-512.png', size: 512, source: 'icon-full.svg' },
+	// Maskable icons may be cropped to a circle: that art keeps Yuki inside the central safe zone.
+	{ file: 'icon-maskable-512.png', size: 512, source: 'icon-maskable.svg' }
 ];
 
-const svg = readFileSync('docs/design/wolf.svg', 'utf8');
 mkdirSync(OUT_DIR, { recursive: true });
+copyFileSync(`${SRC_DIR}/favicon.svg`, `${OUT_DIR}/favicon.svg`);
 
 const browser = await chromium.launch();
-for (const { file, size, artShare } of ICONS) {
+for (const { file, size, source } of ICONS) {
+	const svg = readFileSync(`${SRC_DIR}/${source}`, 'utf8');
 	const page = await browser.newPage({ viewport: { width: size, height: size } });
-	const art = Math.round(size * artShare);
 	await page.setContent(`<!doctype html>
-		<body style="margin:0;display:grid;place-items:center;width:${size}px;height:${size}px;background:${PWA_BACKGROUND_COLOR}">
-			<div style="width:${art}px;height:${art}px">${svg.replace('width="200" height="200"', 'width="100%" height="100%"')}</div>
+		<body style="margin:0;width:${size}px;height:${size}px;background:transparent">
+			<div style="width:${size}px;height:${size}px">${svg.replace('<svg ', '<svg width="100%" height="100%" ')}</div>
 		</body>`);
-	await page.screenshot({ path: `${OUT_DIR}/${file}` });
+	await page.screenshot({ path: `${OUT_DIR}/${file}`, omitBackground: true });
 	await page.close();
 }
 await browser.close();
