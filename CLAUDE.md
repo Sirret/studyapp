@@ -4,6 +4,8 @@
 
 An offline-first study app (SvelteKit PWA) for CS/IS students. Web in a laptop or phone browser is the priority; Android install is future work.
 
+**Resuming unfinished work:** if `docs/WIP.md` exists, a task was interrupted (usage limit, closed chat). Run `npm run wip` first and continue from its checkpoint before anything else (rule 21). Every phase is meant to be doable in a fresh chat: `WIP.md` carries a task across chats mid-way, and `HANDOFF.md` carries the project from one phase to the next.
+
 **Starting a session:** read `docs/HANDOFF.md` (current state, how data works here, and which sections each phase reads), then the Decisions log at the bottom of `BUILD_PLAN.md`, which overrides older text. Then read only the sections listed for the current phase. Don't read every doc in full; open others when a question needs them. The code and tests show what already exists.
 
 The docs, for reference:
@@ -49,15 +51,16 @@ The docs, for reference:
 18. **Follow the architecture and conventions** in `BUILD_PLAN.md` §15: UI → services → engine/repos, never the other way; stored data as plain zod-typed records (no classes); classes only for repositories and stateful services; discriminated unions with exhaustive `switch`; no `any`; files ≤ 300 lines, functions ≤ 50; JSDoc with `@see` to the spec section.
 19. **Data changes are one commit:** touching a stored field means updating `DATA_MODEL.md`, the zod schema and (if indexes change) a Dexie migration together.
 20. **Design comes from tokens.** Components use only `src/lib/design/tokens.css` variables and the scales in `DESIGN.md` — no raw hex colours or one-off sizes. Every new component and state goes into the `/dev/ui` style guide. Build Yuki from `docs/design/wolf.svg`, keeping its named groups; motion only via `transform`/`opacity`; respect reduced motion; never use Yuki to guilt or block.
+21. **Always keep `docs/WIP.md` current, so any task can continue in a new chat.** Create it at the start of every phase or multi-step task. Update it after **every** step, not only at the start: each commit, agent launch, agent report, resolved SPEC-GAP and decision, and before any long-running step. It holds the task and where its spec lives, a checklist of steps with what's done (commit hashes) and what's next, which files each agent owns, the full agent briefs (so a new chat can relaunch them), and anything decided but not yet written into the docs. Write it for a reader with no memory of this chat. Delete it in the commit that finishes the task, after HANDOFF.md has absorbed what the next phase needs.
 
 ## Workflow for every phase (use the agents in `.claude/agents/`)
 
-1. **Interface first.** Write the module's types and exported function/class signatures (bodies: `throw new Error('not implemented')`) and the zod schemas it needs. Commit.
+1. **Interface first.** Create or update `docs/WIP.md` (rule 21). Write the module's types and exported function/class signatures (bodies: `throw new Error('not implemented')`) and the zod schemas it needs. Commit.
 2. **Tests from the spec.** For risky logic (scheduling, merge/replay, planning, grading), call the `spec-test-writer` agent with the module path and the exact spec sections to read; it reads only those. Read its report; resolve every `SPEC-GAP` (decide, record in the Decisions log, and have the test updated by the agent if needed). Plumbing (repos, schemas, simple services) gets tests written directly, with no agent.
 3. **Implement** until those tests pass. Do not edit the agent's tests to make them pass; if a test contradicts the spec, fix the spec reading and re-run the agent on that test.
 4. **Verify.** `npm run verify` must pass.
 5. **Review.** Self-review as you go. The `reviewer` agent (runs on Sonnet) is called **once per phase, only at the end of Phases 7, 8 and 9**, scoped to that phase's diff and the spec sections it implements. It reviews the diff and opens files only when the diff isn't enough. Fix its `blocker` findings, and rerun it only if there were blockers; other findings are fixed at your judgement or logged as `nit`. No other reviewer runs.
-6. **Hand off and log.** Update `docs/HANDOFF.md` as its last section describes, so the next session starts correct. Append the phase entry to `docs/PROGRESS.md`, with any reviewer verdict and any findings deliberately left as `nit`.
+6. **Hand off and log.** Update `docs/HANDOFF.md` as its last section describes, so the next phase can start in a new chat with only CLAUDE.md, HANDOFF.md and the Decisions log: current state, the APIs and patterns to reuse (and what to stop doing), anything partial or not wired, and the next phase's reading list. Move anything still useful from `WIP.md` into HANDOFF.md or the Decisions log, then delete `WIP.md`. Append the phase entry to `docs/PROGRESS.md`, with any reviewer verdict and any findings deliberately left as `nit`.
 
 Agents are helpers giving a different point of view, not supervisors: give them the specifics they need so they don't read everything. Steps 1–3 repeat per module inside a phase; steps 4–6 run once at the end of the phase. UI-only work (screens, styling) skips step 2 but still gets e2e tests.
 
@@ -71,6 +74,7 @@ Agents are helpers giving a different point of view, not supervisors: give them 
 - `npm run check` — svelte-check + TypeScript
 - `npm run test:report` — builds `test-results/summary.md`
 - `npm run verify` — everything CI runs, locally; required before a phase is done
+- `npm run wip` — where interrupted work stands: the `docs/WIP.md` checkpoint, changed files, stubs left, type errors per file
 
 ## When unsure
 

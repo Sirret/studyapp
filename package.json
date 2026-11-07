@@ -25,6 +25,7 @@
 		"test:report": "node scripts/test-summary.ts",
 		"bundle-check": "node scripts/bundle-check.ts",
 		"stub-check": "node scripts/stub-check.ts",
+		"wip": "node scripts/wip-status.ts",
 		"icons": "node scripts/generate-icons.ts",
 		"verify": "node scripts/verify.ts"
 	},
