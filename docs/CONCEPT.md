@@ -1,6 +1,6 @@
-# Study & Cram App — Concept & Design Reference
+# Snowpack: Study & Cram — Concept & Design Reference
 
-*A flashcard and cram-study app for Computer Science & Information Systems students*
+_A flashcard and cram-study app for Computer Science & Information Systems students_
 
 Version 1 concept · 6 November 2026 · grounded in the research report “Cramming science for CS students”
 
@@ -8,7 +8,7 @@ Version 1 concept · 6 November 2026 · grounded in the research report “Cramm
 
 **In one line:** you enter your notes as cards, the app tests you with the exercise that fits each kind of material, it always makes you recall from memory and always shows the answer when you miss, and a scheduler — not you — decides when a card is learned and when you see it next.
 
-The aim is to learn a subject fast for a deadline *and* keep it long-term, using study methods that have evidence behind them. Two design rules shape everything: **no AI runs inside the app** (so it costs nothing to run), and **typing is kept minimal** (so spelling errors never corrupt the scoring). Anything the app scores is machine-checkable; anything open-ended is self-rated and kept out of the scoring.
+The aim is to learn a subject fast for a deadline _and_ keep it long-term, using study methods that have evidence behind them. Two design rules shape everything: **no AI runs inside the app** (so it costs nothing to run), and **typing is kept minimal** (so spelling errors never corrupt the scoring). Anything the app scores is machine-checkable; anything open-ended is self-rated and kept out of the scoring.
 
 There are **three modes** over the same cards: **acquisition** (learn it the first time, from cold), **cram** (peak recall for an exam within a week), and **long-term** (keep it for months). A card moves through them in that order.
 
@@ -35,14 +35,14 @@ The app is only four moving pieces, plus an input system and a side lane:
 The app can’t read your material, so it learns the type from the template you pick when you make the card — and the template is obvious from what you enter. One template switches on the exercises that fit it.
 
 | **Material type**   | **Example**                         | **Template → exercises**                                                          |
-|---------------------|-------------------------------------|-----------------------------------------------------------------------------------|
+| ------------------- | ----------------------------------- | --------------------------------------------------------------------------------- |
 | Fact / terminology  | TCP = connection-oriented; port 443 | Fact → cloze, multiple choice, matching                                           |
 | Concept / theory    | Why TCP uses a 3-way handshake      | Concept → explain-it + checklist (self-rated), cloze over structure               |
 | Procedure / problem | Normalization steps; Dijkstra       | Procedure → worked example, fade, sequence, Parsons, subgoal labels, new instance |
 | Diagram / structure | OSI stack, ER diagram, query plan   | Diagram → image occlusion, node-edge build, hotspot                               |
 | Comparison / class. | TCP vs UDP; 2NF vs 3NF              | Comparison → table rebuild, which-one, scenario, categorize, pick-the-principle   |
 
-**One topic becomes several cards.** A topic is rarely one type. Normalization, for example, needs a sequence card for the 1NF→BCNF order *and* separate cards for what distinguishes each form — because knowing the order isn’t the same skill as telling 2NF from 3NF on a real table. See the worked example in section 15.
+**One topic becomes several cards.** A topic is rarely one type. Normalization, for example, needs a sequence card for the 1NF→BCNF order _and_ separate cards for what distinguishes each form — because knowing the order isn’t the same skill as telling 2NF from 3NF on a real table. See the worked example in section 15.
 
 # 4. The full exercise catalog
 
@@ -51,7 +51,7 @@ Grouped by the action each one demands. The last column is what matters most: on
 ## Recall — you produce the answer
 
 | **Exercise**              | **What it does**                                                                                  | **Counts?**     |
-|---------------------------|---------------------------------------------------------------------------------------------------|-----------------|
+| ------------------------- | ------------------------------------------------------------------------------------------------- | --------------- |
 | Cloze / fill-in-the-blank | Key term hidden; type it (spell-check) or use first-letter mode                                   | Yes             |
 | Worked-example fade       | A shown procedure has a step blanked; supply it (progressive)                                     | Yes             |
 | Solve a new instance      | A fresh problem with an exact checkable answer (Dijkstra distances, resulting tables, DFA states) | Yes — strongest |
@@ -59,18 +59,18 @@ Grouped by the action each one demands. The last column is what matters most: on
 ## Choose — you pick
 
 | **Exercise**    | **What it does**                                             | **Counts?** |
-|-----------------|--------------------------------------------------------------|-------------|
+| --------------- | ------------------------------------------------------------ | ----------- |
 | Multiple choice | Wrong answers pulled from sibling cards so they’re plausible | Partly\*    |
 | Multiple-select | “Select all that apply” — harder than single MC              | Partly\*    |
 | Matching        | Pair terms to definitions; light warm-up only                | No          |
 | True / false    | Excluded — 50% guess, and it plants false statements         | Dropped     |
 
-*\* Choose-type answers can help a card climb while accuracy is low, but the final, criterion-meeting correct must come from a Recall or Arrange exercise. The target is recall, not recognition.*
+_\* Choose-type answers can help a card climb while accuracy is low, but the final, criterion-meeting correct must come from a Recall or Arrange exercise. The target is recall, not recognition._
 
 ## Arrange — you order or build
 
 | **Exercise**           | **What it does**                                                                          | **Counts?**                                       |
-|------------------------|-------------------------------------------------------------------------------------------|---------------------------------------------------|
+| ---------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------- |
 | Sequencing             | Drag steps into the right order                                                           | Yes                                               |
 | Parsons-style          | Order steps with extra wrong ones to reject (standard procedures only)                    | Yes                                               |
 | Subgoal-label matching | Drag labels like “relax edges” onto the steps they describe                               | Yes                                               |
@@ -81,7 +81,7 @@ Grouped by the action each one demands. The last column is what matters most: on
 ## Sort & discriminate — you compare or classify
 
 | **Exercise**                    | **What it does**                                                                                    | **Counts?** |
-|---------------------------------|-----------------------------------------------------------------------------------------------------|-------------|
+| ------------------------------- | --------------------------------------------------------------------------------------------------- | ----------- |
 | Categorize                      | Drag items into the right buckets                                                                   | Yes         |
 | Odd-one-out                     | Pick the item that doesn’t belong                                                                   | Yes         |
 | Which one? (property → concept) | Given a property, pick the concept it describes                                                     | Yes         |
@@ -92,7 +92,7 @@ Grouped by the action each one demands. The last column is what matters most: on
 ## Self-rated lane — never counts toward the criterion
 
 | **Exercise**            | **What it does**                                                 | **Counts?** |
-|-------------------------|------------------------------------------------------------------|-------------|
+| ----------------------- | ---------------------------------------------------------------- | ----------- |
 | Flip-card covert recall | Think, flip, rate yourself — fallback for anything un-checkable  | No          |
 | Explain-it + checklist  | Recall the “why”, reveal key points, tick what you hit           | No          |
 | Blurt triage            | Recall a whole topic; tap what you missed; those cards resurface | No          |
@@ -106,7 +106,7 @@ Grouped by the action each one demands. The last column is what matters most: on
 
 **Recall-weighted.** Choose-type (MC) answers can advance a card while its accuracy is below ~75%, but at least the final correct must be Recall or Arrange. Matching, hotspot, pretests and warm-ups never count.
 
-**Wrong first try.** You see the answer and redo the card until right (options reshuffled so you can’t just re-tap), but only the *first* attempt is logged. A miss resets that card’s progress toward the 3 and re-queues it a few cards later.
+**Wrong first try.** You see the answer and redo the card until right (options reshuffled so you can’t just re-tap), but only the _first_ attempt is logged. A miss resets that card’s progress toward the 3 and re-queues it a few cards later.
 
 **The scheduler decides, not you.** There is no “I know this” skip — the single most important rule, because when students chose when to drop cards the benefit vanished.
 
@@ -182,7 +182,7 @@ The material is split into small chunks (one idea each). Every chunk goes throug
 
 3.  **Read.** The chunk itself is shown.
 
-4.  **Chunk quiz.** Recall formats first (fill-in-the-blank, drag-to-order), multiple choice only as a fallback, each with contrastive feedback explaining why the wrong choice was wrong. It earns *no* scheduler credit: at short delay it barely beats rereading. Its job is engagement and boosting the next chunk.
+4.  **Chunk quiz.** Recall formats first (fill-in-the-blank, drag-to-order), multiple choice only as a fallback, each with contrastive feedback explaining why the wrong choice was wrong. It earns _no_ scheduler credit: at short delay it barely beats rereading. Its job is engagement and boosting the next chunk.
 
 5.  **Retest tomorrow.** The chunk’s cards appear as the first block of tomorrow’s session. Mastery is judged here, never on the day you first meet a card.
 
@@ -230,7 +230,7 @@ Acquisition needs a next-day retest, so with the exam tomorrow nothing can reach
 
 5.  **Exam-morning check.** A re-quiz of everything from the evening. This acts as the delayed retest: cards passed both evening and morning get the best status possible for one night, and anything missed gets one last look.
 
-*Flag: using the morning check as the delayed retest is reasoning from the sleep findings, not a directly tested design.*
+_Flag: using the morning check as the delayed retest is reasoning from the sleep findings, not a directly tested design._
 
 # 10. Several exams at once
 
@@ -261,7 +261,7 @@ No new research was needed here: round one found that no study app publishes a p
 ## Every part and its algorithm
 
 | **Part**                        | **Algorithm**                                                                       | **Why**                                                                        |
-|---------------------------------|-------------------------------------------------------------------------------------|--------------------------------------------------------------------------------|
+| ------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | When a card is due (long-term)  | FSRS                                                                                | State of the art, open source                                                  |
 | Recall chance at exam time      | FSRS forgetting-curve formula                                                       | Deterministic, comes with FSRS                                                 |
 | Feasibility                     | Expected attempts + per-deadline check                                              | Correct for multiple deadlines, cheap                                          |
@@ -285,7 +285,7 @@ No new research was needed here: round one found that no study app publishes a p
 # 12. Challenges and how they’re handled
 
 | **Challenge**                         | **How it’s handled**                                                                                                                                                                                                                        |
-|---------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Spelling wrecking the score           | Two modes: (a) type with fuzzy match + a grow-as-you-go accept list; (b) first-letter mode, where a missed card next shows its first letter and a word bank whose options all start with that same letter (so the letter isn’t a giveaway). |
 | Knowing when a card is done           | The scheduler decides, never the student. No skip button.                                                                                                                                                                                   |
 | A big drag being punishing            | It doesn’t force a full redo; the wrong links are peeled off as small focused cards, drilled uncounted until known.                                                                                                                         |
@@ -486,7 +486,7 @@ Here are my notes:
 
 - **New instance** — normalize a fresh table and check the resulting tables.
 
-The sequence card proves you know the order; the comparison, scenario and new-instance cards prove you can actually *tell the forms apart on real data* — the skill a bare 1-2-3 drill never builds.
+The sequence card proves you know the order; the comparison, scenario and new-instance cards prove you can actually _tell the forms apart on real data_ — the skill a bare 1-2-3 drill never builds.
 
 # 16. Settings
 
@@ -566,7 +566,7 @@ After either, the app shows what came in (e.g. “1,240 cards and 3,812 reviews 
 
 4.  **Check.** Confirm the counts shown match, then study as normal.
 
-*The file contains all your study data, so treat it like any personal file. The app also nudges you to export a backup now and then, since data lives only on the device until sync exists.*
+_The file contains all your study data, so treat it like any personal file. The app also nudges you to export a backup now and then, since data lives only on the device until sync exists._
 
 # 19. Offline and storage
 
@@ -585,7 +585,7 @@ The app is offline-first: it caches itself on the first visit and keeps every ca
 Text is tiny; only images (and later audio) take real space. Rough estimate for a heavy year:
 
 | **What**       | **Size each**       | **Heavy year**          | **Total**     |
-|----------------|---------------------|-------------------------|---------------|
+| -------------- | ------------------- | ----------------------- | ------------- |
 | Cards (text)   | ~0.5 KB             | 2,000 cards (4 courses) | ~1 MB         |
 | Review history | ~0.15 KB per review | 200 reviews/day × 365   | ~11 MB        |
 | Diagram images | ~100 KB compressed  | 200 diagrams            | ~20 MB        |
@@ -601,7 +601,7 @@ Text is tiny; only images (and later audio) take real space. Rough estimate for 
 
 - **Never trim the review history** — it is small, and deleting it would make the scheduling worse.
 
-*The real risk was never size but the phone clearing the app’s data — which the offline switch and the backup reminder handle together.*
+_The real risk was never size but the phone clearing the app’s data — which the offline switch and the backup reminder handle together._
 
 # 20. Future improvements
 
@@ -619,4 +619,4 @@ Text is tiny; only images (and later audio) take real space. Rough estimate for 
 
 # 21. Source
 
-The evidence behind every rule here is in the research report *“Cramming science for CS students”* (and its visual PDF). That report flags which findings are strong, contested, unverified or inferred; those flags carry into this document — nothing here is firmer than the evidence under it.
+The evidence behind every rule here is in the research report _“Cramming science for CS students”_ (and its visual PDF). That report flags which findings are strong, contested, unverified or inferred; those flags carry into this document — nothing here is firmer than the evidence under it.

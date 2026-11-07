@@ -1,4 +1,6 @@
-# CLAUDE.md — Study & Cram App
+# CLAUDE.md — Snowpack: Study & Cram
+
+**App name:** "Snowpack: Study & Cram" (full/store name) · "Snowpack" (short name: PWA short_name, home-screen label, header) · brand "Snowpack Study". Companion: **Yuki**, the snow wolf. Never hard-code the name — use `APP_NAME` / `APP_SHORT_NAME` from `config/defaults.ts`.
 
 An offline-first study app (SvelteKit PWA) for CS/IS students. Read before working:
 
@@ -10,7 +12,7 @@ An offline-first study app (SvelteKit PWA) for CS/IS students. Read before worki
 
 ## Rules
 
-1. **Work phase by phase** (`BUILD_PLAN.md` §10). Finish a phase — code *and* its tests — before starting the next. Never leave stubs, TODO placeholders or mocked engine logic in place of the real thing. The only allowed stub is the interface step of the workflow below (`throw new Error('not implemented')`), and it must be gone before the phase ends — `verify` fails if any remain.
+1. **Work phase by phase** (`BUILD_PLAN.md` §10). Finish a phase — code _and_ its tests — before starting the next. Never leave stubs, TODO placeholders or mocked engine logic in place of the real thing. The only allowed stub is the interface step of the workflow below (`throw new Error('not implemented')`), and it must be gone before the phase ends — `verify` fails if any remain.
 2. **The engine is pure.** Code in `src/lib/engine/` has no DOM, no IndexedDB, no network, no `Date.now()` and no `Math.random()`. Time is passed in; randomness comes from `engine/rng.ts` seeded by `(cardId, sessionId, attempt)`.
 3. **Every engine change has unit tests.** Run `npm run test` before calling anything done. Simulation tests live in `tests/sim`.
 4. **No magic numbers.** Every tunable value lives in `src/lib/config/defaults.ts`.

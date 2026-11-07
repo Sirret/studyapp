@@ -1,4 +1,4 @@
-# Build Plan — Study & Cram App
+# Build Plan — Snowpack: Study & Cram
 
 This is the **how**. The look and feel is in `docs/DESIGN.md`. The **what and why** is in `docs/CONCEPT.md` (section numbers below refer to it). When the two disagree, the concept wins and this plan gets fixed.
 
@@ -6,7 +6,7 @@ This is the **how**. The look and feel is in `docs/DESIGN.md`. The **what and wh
 
 ## 0. Principles (non-negotiable)
 
-1. **Full engine in v1. No stubs.** Every algorithm in the concept ships in v1. A phase is done only when its pieces are complete *and tested*. Only things that don't touch the core stay out (audio, sync server, calendar import, learned reminder times, ILP optimiser — concept §20).
+1. **Full engine in v1. No stubs.** Every algorithm in the concept ships in v1. A phase is done only when its pieces are complete _and tested_. Only things that don't touch the core stay out (audio, sync server, calendar import, learned reminder times, ILP optimiser — concept §20).
 2. **The engine is pure TypeScript.** No DOM, no network, no `Date.now()` inside logic (time is passed in), no unseeded randomness. Every engine module is unit-tested in Vitest.
 3. **One source of truth.** Reviews are an **append-only event log**. All scheduler state on a card (FSRS state, status, fragile flag, criterion progress) is a **cache rebuilt by replaying events**. Content (courses, topics, chunks, notes, cards) is merged **last-write-wins** with tombstones.
 4. **Deterministic.** FSRS fuzz off. Ties broken by ID. Any shuffle (option order, distractors) uses a seeded RNG keyed by `(cardId, sessionId, attempt)`. Replaying the same events always gives the same state.
@@ -19,26 +19,26 @@ This is the **how**. The look and feel is in `docs/DESIGN.md`. The **what and wh
 
 ## 1. Stack
 
-| Concern | Choice | Notes |
-|---|---|---|
-| Language | TypeScript (`strict`) | |
-| Framework | SvelteKit + Svelte 5 (runes) | `adapter-static`, SPA mode (`ssr = false`, `fallback: 'index.html'`) |
-| Storage | IndexedDB via **Dexie** | `liveQuery` for reactive UI |
-| Scheduler | **ts-fsrs** | Fuzz off; day-based intervals (see §6.2) |
-| FSRS personal optimisation | **fsrs-rs via WASM** (`fsrs-browser`) | Verify package availability at setup; fall back to default params if absent |
-| Validation | **zod** | Import text AST, export/import files |
-| Zip | **fflate** | Export/import `.zip` |
-| Structured diagrams | **@xyflow/svelte** (Svelte Flow) + **elkjs** | ELK runs in a Web Worker |
-| OCR | **tesseract.js** | Web Worker; English data cached by the service worker |
-| Drag & drop | Own small pointer-events module (preferred) | Must work with touch; `svelte-dnd-action` only if confirmed Svelte 5 compatible |
-| PWA | **@vite-pwa/sveltekit** (Workbox) | Precache shell, runtime-cache lazy chunks + OCR data |
-| IDs | `crypto.randomUUID()` | Globally unique from day one |
-| Tests | **Vitest** (unit + sim), **Playwright** (e2e, mobile viewport) | Coverage via `@vitest/coverage-v8` |
-| Continuous testing | **GitHub Actions** CI + **simple-git-hooks** with **lint-staged** | Hooks on commit/push; CI on every push and PR |
-| Lint/format | ESLint + Prettier + `svelte-check` | |
-| Hosting | Cloudflare Pages (static) | HTTPS required for service workers |
-| Icons | **lucide-svelte** | Tree-shaken, 2 px rounded stroke |
-| Fonts | Nunito (variable) + Caveat, self-hosted subset `woff2` | Caveat lazy-loaded (DESIGN §3.2) |
+| Concern                    | Choice                                                            | Notes                                                                           |
+| -------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Language                   | TypeScript (`strict`)                                             |                                                                                 |
+| Framework                  | SvelteKit + Svelte 5 (runes)                                      | `adapter-static`, SPA mode (`ssr = false`, `fallback: 'index.html'`)            |
+| Storage                    | IndexedDB via **Dexie**                                           | `liveQuery` for reactive UI                                                     |
+| Scheduler                  | **ts-fsrs**                                                       | Fuzz off; day-based intervals (see §6.2)                                        |
+| FSRS personal optimisation | **fsrs-rs via WASM** (`fsrs-browser`)                             | Verify package availability at setup; fall back to default params if absent     |
+| Validation                 | **zod**                                                           | Import text AST, export/import files                                            |
+| Zip                        | **fflate**                                                        | Export/import `.zip`                                                            |
+| Structured diagrams        | **@xyflow/svelte** (Svelte Flow) + **elkjs**                      | ELK runs in a Web Worker                                                        |
+| OCR                        | **tesseract.js**                                                  | Web Worker; English data cached by the service worker                           |
+| Drag & drop                | Own small pointer-events module (preferred)                       | Must work with touch; `svelte-dnd-action` only if confirmed Svelte 5 compatible |
+| PWA                        | **@vite-pwa/sveltekit** (Workbox)                                 | Precache shell, runtime-cache lazy chunks + OCR data                            |
+| IDs                        | `crypto.randomUUID()`                                             | Globally unique from day one                                                    |
+| Tests                      | **Vitest** (unit + sim), **Playwright** (e2e, mobile viewport)    | Coverage via `@vitest/coverage-v8`                                              |
+| Continuous testing         | **GitHub Actions** CI + **simple-git-hooks** with **lint-staged** | Hooks on commit/push; CI on every push and PR                                   |
+| Lint/format                | ESLint + Prettier + `svelte-check`                                |                                                                                 |
+| Hosting                    | Cloudflare Pages (static)                                         | HTTPS required for service workers                                              |
+| Icons                      | **lucide-svelte**                                                 | Tree-shaken, 2 px rounded stroke                                                |
+| Fonts                      | Nunito (variable) + Caveat, self-hosted subset `woff2`            | Caveat lazy-loaded (DESIGN §3.2)                                                |
 
 Do **not** add: React, three.js, a server, an AI SDK.
 
@@ -121,66 +121,122 @@ docs/
 
 ```ts
 db.version(1).stores({
-  courses:  'id, status, examDate, updatedAt',
-  topics:   'id, courseId, [courseId+order], updatedAt',
-  chunks:   'id, topicId, [topicId+order], updatedAt',
-  notes:    'id, courseId, topicId, chunkId, type, updatedAt',
-  cards:    'id, noteId, courseId, status, due, updatedAt',
-  events:   'id, ts, cardId, sessionId, type, [cardId+ts]',
-  media:    'id, hash',
-  sessions: 'id, startedAt, mode',
-  kv:       'key',  // settings, availability, deviceId, seq, lastExportAt, schemaVersion, fsrsParams, calibration
-  logs:     '++seq, ts, level, area'   // app log ring buffer (local)
+	courses: 'id, status, examDate, updatedAt',
+	topics: 'id, courseId, [courseId+order], updatedAt',
+	chunks: 'id, topicId, [topicId+order], updatedAt',
+	notes: 'id, courseId, topicId, chunkId, type, updatedAt',
+	cards: 'id, noteId, courseId, status, due, updatedAt',
+	events: 'id, ts, cardId, sessionId, type, [cardId+ts]',
+	media: 'id, hash',
+	sessions: 'id, startedAt, mode',
+	kv: 'key', // settings, availability, deviceId, seq, lastExportAt, schemaVersion, fsrsParams, calibration
+	logs: '++seq, ts, level, area', // app log ring buffer (local)
 });
 ```
 
 ### 3.2 Types (abbreviated — full definitions in `DATA_MODEL.md`, implemented as zod schemas in `db/schemas/`)
 
 ```ts
-type ID = string;                       // crypto.randomUUID()
-interface Meta { id: ID; createdAt: number; updatedAt: number; deviceId: ID; deleted?: true }
+type ID = string; // crypto.randomUUID()
+interface Meta {
+	id: ID;
+	createdAt: number;
+	updatedAt: number;
+	deviceId: ID;
+	deleted?: true;
+}
 
 interface Course extends Meta {
-  name: string; status: 'active' | 'archived';
-  examDate?: string;  examTime?: string;          // local 'YYYY-MM-DD', 'HH:mm'
-  examFormat: 'recall' | 'recognition' | 'mixed';
-  color: 'lavender' | 'peach' | 'sage' | 'sky' | 'rose' | 'butter';
+	name: string;
+	status: 'active' | 'archived';
+	examDate?: string;
+	examTime?: string; // local 'YYYY-MM-DD', 'HH:mm'
+	examFormat: 'recall' | 'recognition' | 'mixed';
+	color: 'lavender' | 'peach' | 'sage' | 'sky' | 'rose' | 'butter';
 }
-interface Topic extends Meta { courseId: ID; name: string; order: number;
-  placement: 'unread' | 'read'; priority: 'high' | 'normal' }
-interface Chunk extends Meta { topicId: ID; order: number; text: string; words: number;
-  source: 'notes' | 'generated'; splitFlag?: true }
+interface Topic extends Meta {
+	courseId: ID;
+	name: string;
+	order: number;
+	placement: 'unread' | 'read';
+	priority: 'high' | 'normal';
+}
+interface Chunk extends Meta {
+	topicId: ID;
+	order: number;
+	text: string;
+	words: number;
+	source: 'notes' | 'generated';
+	splitFlag?: true;
+}
 
-type NoteType = 'keyterm' | 'fact' | 'cloze' | 'sequence' | 'compare'
-              | 'scenario' | 'example' | 'diagram' | 'occlusion';
+type NoteType =
+	| 'keyterm'
+	| 'fact'
+	| 'cloze'
+	| 'sequence'
+	| 'compare'
+	| 'scenario'
+	| 'example'
+	| 'diagram'
+	| 'occlusion';
 interface Note extends Meta {
-  courseId: ID; topicId: ID; chunkId?: ID; type: NoteType; payload: NotePayload;
-  priority: 'high' | 'normal'; tags: string[]; generated: boolean; check: boolean;
-  accept: Record<string, string[]>;               // grow-as-you-go accept list per answer key
+	courseId: ID;
+	topicId: ID;
+	chunkId?: ID;
+	type: NoteType;
+	payload: NotePayload;
+	priority: 'high' | 'normal';
+	tags: string[];
+	generated: boolean;
+	check: boolean;
+	accept: Record<string, string[]>; // grow-as-you-go accept list per answer key
 }
 
 interface Card extends Meta {
-  noteId: ID; courseId: ID; variant: string;      // e.g. 'fwd','rev','c1','row:2:col:1','edge:<id>','box:<id>','step:4'
-  path: ExerciseKind[];                           // fixed format path (no random formats)
-  suspended: boolean;
-  // ---- caches, rebuilt by replay ----
-  fsrs: FsrsCardState | null; due?: number;
-  status: CardStatus; fragile: boolean; weak: boolean;
-  daysCorrect: number; pathStep: number; accuracy: { n: number; correct: number };
+	noteId: ID;
+	courseId: ID;
+	variant: string; // e.g. 'fwd','rev','c1','row:2:col:1','edge:<id>','box:<id>','step:4'
+	path: ExerciseKind[]; // fixed format path (no random formats)
+	suspended: boolean;
+	// ---- caches, rebuilt by replay ----
+	fsrs: FsrsCardState | null;
+	due?: number;
+	status: CardStatus;
+	fragile: boolean;
+	weak: boolean;
+	daysCorrect: number;
+	pathStep: number;
+	accuracy: { n: number; correct: number };
 }
-type CardStatus = 'unseen' | 'learning' | 'needs-work' | 'provisional'
-                | 'exam-ready' | 'secure' | 'one-night';
+type CardStatus =
+	| 'unseen'
+	| 'learning'
+	| 'needs-work'
+	| 'provisional'
+	| 'exam-ready'
+	| 'secure'
+	| 'one-night';
 
 type Mode = 'acquisition' | 'cram' | 'longterm' | 'onenight';
 interface ReviewEvent {
-  id: ID; ts: number; deviceId: ID; seq: number; type: 'review';
-  cardId: ID; sessionId: ID; mode: Mode; kind: ExerciseKind;
-  weight: 'full' | 'recognition' | 'none';
-  firstAttempt: boolean;        // first attempt at this card in this session
-  correct: boolean; responseMs: number;
-  credited: boolean;            // false for same-day acquisition chunk-quiz answers
-  chosen?: string; chosenFromCardId?: ID;   // logged confusion (wrong pick)
-  answerText?: string;                      // typed answer, for accept-list review
+	id: ID;
+	ts: number;
+	deviceId: ID;
+	seq: number;
+	type: 'review';
+	cardId: ID;
+	sessionId: ID;
+	mode: Mode;
+	kind: ExerciseKind;
+	weight: 'full' | 'recognition' | 'none';
+	firstAttempt: boolean; // first attempt at this card in this session
+	correct: boolean;
+	responseMs: number;
+	credited: boolean; // false for same-day acquisition chunk-quiz answers
+	chosen?: string;
+	chosenFromCardId?: ID; // logged confusion (wrong pick)
+	answerText?: string; // typed answer, for accept-list review
 }
 // other event types: 'pretest' (never affects scheduling), 'selfRated' (self-rated lane),
 // 'acceptAdded' (synonym added to accept list)
@@ -190,14 +246,14 @@ interface ReviewEvent {
 
 ### 3.3 Exercise kinds and weights
 
-| Kind | Group | Weight |
-|---|---|---|
-| `cloze`, `firstLetterType`, `fadeStep`, `newInstance` | Recall | full |
-| `sequence`, `parsons`, `subgoalMatch`, `occlusionType`, `occlusionDrag`, `structureRebuild`, `layerOrder`, `nodeCloze`, `edgeCloze` | Arrange / Recall | full |
-| `categorize`, `oddOneOut`, `whichOne`, `scenario`, `tableRow`, `pickPrinciple` | Sort & discriminate | full |
-| `mc`, `multiSelect`, `occlusionBank`, `firstLetterBank` | Choose | recognition |
-| `matching`, `hotspot`, `pretest` | Warm-up | none |
-| `flip`, `explainIt`, `blurt`, `redraw`, `exampleStudy` | Self-rated | none (separate lane) |
+| Kind                                                                                                                                | Group               | Weight               |
+| ----------------------------------------------------------------------------------------------------------------------------------- | ------------------- | -------------------- |
+| `cloze`, `firstLetterType`, `fadeStep`, `newInstance`                                                                               | Recall              | full                 |
+| `sequence`, `parsons`, `subgoalMatch`, `occlusionType`, `occlusionDrag`, `structureRebuild`, `layerOrder`, `nodeCloze`, `edgeCloze` | Arrange / Recall    | full                 |
+| `categorize`, `oddOneOut`, `whichOne`, `scenario`, `tableRow`, `pickPrinciple`                                                      | Sort & discriminate | full                 |
+| `mc`, `multiSelect`, `occlusionBank`, `firstLetterBank`                                                                             | Choose              | recognition          |
+| `matching`, `hotspot`, `pretest`                                                                                                    | Warm-up             | none                 |
+| `flip`, `explainIt`, `blurt`, `redraw`, `exampleStudy`                                                                              | Self-rated          | none (separate lane) |
 
 True/false is not implemented.
 
@@ -209,23 +265,23 @@ True/false is not implemented.
 
 Plain UTF-8 text, line-based. Blank lines ignored. A line starting with `@` opens a block; other lines belong to the current block.
 
-| Directive | Meaning | Line syntax inside |
-|---|---|---|
-| `@deck <name>` | Selects/creates a **Topic** in the course chosen on the import screen | — |
-| `@tag <name>` | Sticky tag for following notes | — |
-| `@priority high\|normal` | Sticky priority | — |
-| `@keyterms` | Pre-training notes for the current chunk | `term :: short meaning` |
-| `@read` | Starts a **new chunk**; following cards attach to it until the next `@read`/`@deck` | free text; `[GENERATED]` prefix → `source:'generated'` |
-| `@fact` | Fact notes | `term :: definition` |
-| `@cloze` | Cloze notes | sentence with one or more `{{answer}}` → variants c1, c2… |
-| `@sequence <name>` | Ordered steps | one step per line |
-| `@compare` | Comparison table | Markdown-style rows `\| attr \| A \| B \|`; first row = item names |
-| `@scenario` | Scenario cards | `situation :: answer` |
-| `@example <name>` | Worked example | `subgoal label :: step` |
-| `@diagram stack <name>` | Layered diagram | `layer :: role`, top to bottom |
-| `@diagram flow <name>` | Box-and-arrow diagram | `A -> B : label` (label optional) |
-| `@occlusion <file>` | Occlusion card from an attached image | — (boxes from OCR/editor) |
-| `@coverage` | Section list from the chatbot | comma-separated; shown in preview, not stored as cards |
+| Directive                | Meaning                                                                             | Line syntax inside                                                 |
+| ------------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `@deck <name>`           | Selects/creates a **Topic** in the course chosen on the import screen               | —                                                                  |
+| `@tag <name>`            | Sticky tag for following notes                                                      | —                                                                  |
+| `@priority high\|normal` | Sticky priority                                                                     | —                                                                  |
+| `@keyterms`              | Pre-training notes for the current chunk                                            | `term :: short meaning`                                            |
+| `@read`                  | Starts a **new chunk**; following cards attach to it until the next `@read`/`@deck` | free text; `[GENERATED]` prefix → `source:'generated'`             |
+| `@fact`                  | Fact notes                                                                          | `term :: definition`                                               |
+| `@cloze`                 | Cloze notes                                                                         | sentence with one or more `{{answer}}` → variants c1, c2…          |
+| `@sequence <name>`       | Ordered steps                                                                       | one step per line                                                  |
+| `@compare`               | Comparison table                                                                    | Markdown-style rows `\| attr \| A \| B \|`; first row = item names |
+| `@scenario`              | Scenario cards                                                                      | `situation :: answer`                                              |
+| `@example <name>`        | Worked example                                                                      | `subgoal label :: step`                                            |
+| `@diagram stack <name>`  | Layered diagram                                                                     | `layer :: role`, top to bottom                                     |
+| `@diagram flow <name>`   | Box-and-arrow diagram                                                               | `A -> B : label` (label optional)                                  |
+| `@occlusion <file>`      | Occlusion card from an attached image                                               | — (boxes from OCR/editor)                                          |
+| `@coverage`              | Section list from the chatbot                                                       | comma-separated; shown in preview, not stored as cards             |
 
 Any line ending in `[CHECK]` sets `check: true` (strip the marker). Unknown directives and malformed lines become **errors with line numbers**; the preview screen shows them and lets valid blocks import. Commit runs in one Dexie transaction (all-or-nothing for the valid set).
 
@@ -323,18 +379,18 @@ Here are my notes:
 
 ## 5. Card generation (note → cards, fixed paths)
 
-| Note | Cards (variants) | Path (in order) |
-|---|---|---|
-| keyterm | `fwd` | `mc → cloze` (pre-training) |
-| fact | `fwd` (term→def), `rev` (def→term) | `mc → cloze` |
-| cloze | one per `{{}}` | `cloze` (first-letter fallback after a miss, §6.10) |
-| sequence | `seq` + `step:i` (what comes after X) | `sequence → parsons`; step cards `whichOne → cloze` |
-| compare | `row:r` per row, `cell:r:c` per cell, `which:attr` | `tableRow`, `cloze`, `whichOne → scenario`; `pickPrinciple` fires after a set |
-| scenario | `fwd` | `scenario` (options = table items / sibling answers) |
-| example | `ex` | `exampleStudy → fadeStep(1..n, backward) → newInstance`; `subgoalMatch`; `parsons` as fallback |
-| diagram stack | `layers`, `layer:i` | `layerOrder`; `nodeCloze` |
-| diagram flow | `node:<id>`, `edge:<id>`, `rebuild` | `nodeCloze`, `edgeCloze`, `structureRebuild` |
-| occlusion | `box:<id>` | `occlusionBank → occlusionType/occlusionDrag` |
+| Note          | Cards (variants)                                   | Path (in order)                                                                                |
+| ------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| keyterm       | `fwd`                                              | `mc → cloze` (pre-training)                                                                    |
+| fact          | `fwd` (term→def), `rev` (def→term)                 | `mc → cloze`                                                                                   |
+| cloze         | one per `{{}}`                                     | `cloze` (first-letter fallback after a miss, §6.10)                                            |
+| sequence      | `seq` + `step:i` (what comes after X)              | `sequence → parsons`; step cards `whichOne → cloze`                                            |
+| compare       | `row:r` per row, `cell:r:c` per cell, `which:attr` | `tableRow`, `cloze`, `whichOne → scenario`; `pickPrinciple` fires after a set                  |
+| scenario      | `fwd`                                              | `scenario` (options = table items / sibling answers)                                           |
+| example       | `ex`                                               | `exampleStudy → fadeStep(1..n, backward) → newInstance`; `subgoalMatch`; `parsons` as fallback |
+| diagram stack | `layers`, `layer:i`                                | `layerOrder`; `nodeCloze`                                                                      |
+| diagram flow  | `node:<id>`, `edge:<id>`, `rebuild`                | `nodeCloze`, `edgeCloze`, `structureRebuild`                                                   |
+| occlusion     | `box:<id>`                                         | `occlusionBank → occlusionType/occlusionDrag`                                                  |
 
 `mc`/`occlusionBank` steps are offered only while the card's accuracy is below `MC_UNTIL_ACCURACY` (0.75); above it the path jumps to the recall step.
 
@@ -345,10 +401,12 @@ Here are my notes:
 Each subsection is one pure module with unit tests. "Done when" lines are the acceptance checks.
 
 ### 6.1 Time (`time.ts`)
+
 - A study **day** runs from `DAY_ROLLOVER_HOUR` (04:00) to the next 04:00, local time, so late-night study counts for the previous day.
 - `dayIndex(ts)`, `daysBetween(a, b)`, `isSameStudyDay(a, b)`. All engine functions take `now` as an argument.
 
 ### 6.2 FSRS (`fsrs.ts`)
+
 - `fsrs(generatorParameters({ request_retention: RETENTION, enable_fuzz: false, enable_short_term: false, maximum_interval }))` — confirm exact parameter names against the installed ts-fsrs version. Short-term steps are off because our session runner handles same-day repetition.
 - **Only the first attempt at a card in a session is an FSRS review.** Later attempts in that session are logged but don't touch FSRS.
 - **Rating map (auto-graded, deterministic):** first-attempt correct with `weight:'full'` → `Good`; correct with `weight:'recognition'` → `Hard`; wrong → `Again`. `Easy` is never auto-assigned in v1. `weight:'none'` events never reach FSRS.
@@ -356,37 +414,41 @@ Each subsection is one pure module with unit tests. "Done when" lines are the ac
 - **Optimisation:** once `FSRS_OPTIMISE_MIN_REVIEWS` (1000) reviews exist, run the optimiser in a worker, store `{params, version}` in `kv`, and replay. Until then, default params.
 
 ### 6.3 Criterion (`criterion.ts`)
+
 - **First credited session** for a card (any mode) needs `CRITERION_FIRST` (3) counting corrects; **later sessions** need `CRITERION_LATER` (1). Acquisition chunk-quiz sessions give no credit, so for a card handed off by acquisition the next-day retest is its first credited session.
 - Counting corrects: first attempts after each reinsertion with `weight` `full` or `recognition`.
 - **Recall-weighted:** the criterion is met only if the **last** counting correct was `weight:'full'`.
 - A wrong answer resets that card's count for the session.
 - `none`-weight kinds never count. Self-rated events never count.
-- *Done when:* tests cover MC-only streaks not meeting criterion, reset on error, and the full-weight-final rule.
+- _Done when:_ tests cover MC-only streaks not meeting criterion, reset on error, and the full-weight-final rule.
 
 ### 6.4 Session queue (`queue.ts`, `session.ts`)
+
 - **Reinsertion lags** (`LAGS`): after a correct on a new card, reinsert at 5, then 10, then 20 cards (done at 3 counting corrects). After an error, reinsert at 3 and reset. Relearning cards: done after 1 correct; a failure reinserts at 3, requires 1 correct, and sets `weak = true` (its next cram gap becomes 1 day). If the queue is shorter than the lag, append to the end.
 - **Redo-till-right:** on a wrong first try, show the answer with contrastive feedback, then make the student clear it (options reshuffled with a new seed). Only the first attempt is logged as the counting event; the clear-it attempts are logged with `firstAttempt:false`.
-- **Contrastive feedback:** when the student picked a distractor that came from another card, show both cards' texts side by side ("You chose *X* — that's the definition of *Y*").
+- **Contrastive feedback:** when the student picked a distractor that came from another card, show both cards' texts side by side ("You chose _X_ — that's the definition of _Y_").
 - **Phases, not shuffle:** a session is ordered warm-up → new material → recall drilling → discrimination → cleanup (concept §6). Within a phase the format is stable; confusable cards (same `compare` note or logged confusion pair) are placed **adjacently** in the discrimination phase.
 - **No skip.** There is no "I know this" action anywhere.
 - Session state (queue, counts) is persisted after every answer so a closed tab resumes exactly.
 
 ### 6.5 Status (`status.ts`)
+
 `daysCorrect` = number of distinct study days with a counting first-attempt correct since the last lapse.
 
-| Status | Rule |
-|---|---|
-| `unseen` | never studied |
-| `learning` | met in acquisition today; label **"New — retest tomorrow"** |
-| `needs-work` | last first attempt on a later day was wrong (lapse → `daysCorrect = 0`) |
-| `provisional` | `daysCorrect = 1` |
-| `exam-ready` | `daysCorrect ≥ 2` and last review correct |
-| `secure` | FSRS stability ≥ `SECURE_STABILITY_DAYS` (21), `fragile = false`, last review correct |
-| `one-night` | studied only in one-night mode; label **"One-night triage"**; never `exam-ready` until a later-day correct |
+| Status        | Rule                                                                                                       |
+| ------------- | ---------------------------------------------------------------------------------------------------------- |
+| `unseen`      | never studied                                                                                              |
+| `learning`    | met in acquisition today; label **"New — retest tomorrow"**                                                |
+| `needs-work`  | last first attempt on a later day was wrong (lapse → `daysCorrect = 0`)                                    |
+| `provisional` | `daysCorrect = 1`                                                                                          |
+| `exam-ready`  | `daysCorrect ≥ 2` and last review correct                                                                  |
+| `secure`      | FSRS stability ≥ `SECURE_STABILITY_DAYS` (21), `fragile = false`, last review correct                      |
+| `one-night`   | studied only in one-night mode; label **"One-night triage"**; never `exam-ready` until a later-day correct |
 
 `secure` overrides `exam-ready` when its rule holds.
 
 ### 6.6 Cram (`cram.ts`) — concept §7
+
 - **Triage:** `R_exam` = retrievability at exam time with no further review. `R_exam ≥ SECURE_AT_EXAM` (0.95) → secure (final pass only); otherwise at-risk; never reviewed → new.
 - **Feasibility:** via `planner.ts` (§6.9). If short: degrade in order — criterion 3 → 2, then reduce relearning sessions `K`, then defer lowest value-per-minute new cards (knapsack). Always shown to the student.
 - **New cards:** `new_per_day = ceil(N_new / max(1, D − 1))`, also capped so new-card trials stay under `NEW_SHARE_MAX` (0.5) of a session. Introduced in the evening session; none after the evening of day D−2 when D ≥ 3; none on exam day.
@@ -396,14 +458,15 @@ Each subsection is one pure module with unit tests. "Done when" lines are the ac
 - **Sleep:** the plan never schedules work inside the sleep window or implies an all-nighter. When planned work is done, show a firm sleep reminder. **Never lock the student out.**
 - **Cram-fragile:** after any FSRS update from a review in `mode:'cram'`, cap stability at `FRAGILE_CAP_DAYS` (2) and set `fragile = true`. Clear `fragile` on a correct review in `mode:'longterm'` whose elapsed time since the previous review is ≥ 1 day. The cap is applied inside `replay()` so it is deterministic.
 - **Handback:** after the exam date the course's cards return to normal long-term scheduling.
-- *Done when:* simulation tests (§11) show D = 1…7 plans are feasible-or-flagged, deterministic, never schedule inside the sleep window, and produce the documented D = 1 and D = 2 shapes.
+- _Done when:_ simulation tests (§11) show D = 1…7 plans are feasible-or-flagged, deterministic, never schedule inside the sleep window, and produce the documented D = 1 and D = 2 shapes.
 
 ### 6.7 Acquisition (`acquisition.ts`) — concept §8
+
 - **Per chunk:** pre-train (keyterm cards, `mc → cloze`, no credit) → pretest (optional) → read → chunk quiz → retest tomorrow.
 - **Pretest:** up to `PRETEST_MAX` (3) factual cards from the chunk, covert "tap when you have a guess, then reveal", logged as `pretest` events (no scheduling effect). One-tap skip; after `PRETEST_AUTOHIDE_SKIPS` (2) skips it hides for the session. Off in the quick path.
 - **Chunk quiz:** recall formats first (`cloze`, `sequence`), `mc` only as fallback; contrastive feedback; events logged with `weight` as usual but `mode:'acquisition'` same-day events **give no FSRS credit and no criterion credit**.
 - **Handoff:** at the end of the chunk, create the card's FSRS state with `due` = next study day. Status `learning`. The next-day retest is the first FSRS review; mastery is judged there.
-- **Ordering:** by topic priority (high first), then by note order within the topic; procedures after their pre-training. *(Heuristic — "easy/value first"; concept §8.)*
+- **Ordering:** by topic priority (high first), then by note order within the topic; procedures after their pre-training. _(Heuristic — "easy/value first"; concept §8.)_
 - **Split flag:** if first-attempt accuracy on a chunk's quiz is < `SPLIT_THRESHOLD` (0.75), set `splitFlag`. If the next-day retest accuracy for that chunk is still below it, prompt the student to split the chunk (editor action), never mid-session.
 - **Full vs quick path:** chosen by the planner's feasibility result (or the user setting). Quick path = pre-train → read → quiz → retest.
 - **Deadline breadth pass:** first pass covers pre-training + one example per high-priority topic across all unread topics, then deepens by priority. Soft default, user-overridable.
@@ -411,6 +474,7 @@ Each subsection is one pure module with unit tests. "Done when" lines are the ac
 - **Shows cost before starting:** estimated minutes from the planner's estimator, plus a step progress strip.
 
 ### 6.8 One-night (`onenight.ts`) — concept §9
+
 Triage by value per minute within tonight's available minutes → block 1 (quick-path acquisition on chosen chunks) → break (`ONENIGHT_BREAK_MIN`, 10) → block 2 (mixed re-quiz of everything from block 1) → sleep reminder → exam-morning check (re-quiz everything from the evening). Cards get status `one-night`. Hardest-from-cold material is excluded first when cutting.
 
 ### 6.9 Planner (`planner.ts`) — concept §10–11
@@ -418,6 +482,7 @@ Triage by value per minute within tonight's available minutes → block 1 (quick
 **Availability:** `{ weekdayMinutes[7], overrides: {date: minutes}[], sleepWindow: {start, end}, examMorningMinutes }`.
 
 **Workload estimate (minutes) per card:**
+
 ```
 p0[type]           default first-attempt accuracy for new cards (replaced by measured
                    per-type accuracy after CALIBRATION_MIN_ATTEMPTS attempts)
@@ -428,13 +493,15 @@ minutes  = attempts × secPerAttempt[kind] / 60
          + (acquisition chunks) words / READ_WPM
 total    = Σ minutes × SAFETY_MARGIN
 ```
+
 `secPerAttempt` is the user's rolling median per exercise kind, starting from defaults (§13).
 
-**Feasibility (several deadlines, processor-demand test):** sort exams by date. For each exam *k*: `Σ work(exams 1..k) ≤ Σ availability(days before exam k) + examMorningMinutes`. The first *k* that fails is named in the shortfall message with the gap in hours.
+**Feasibility (several deadlines, processor-demand test):** sort exams by date. For each exam _k_: `Σ work(exams 1..k) ≤ Σ availability(days before exam k) + examMorningMinutes`. The first _k_ that fails is named in the shortfall message with the gap in hours.
 
 **Cuts (knapsack, greedy):** value = `PRIORITY_WEIGHT[priority] × (R_target − R_exam_without)`; ratio = value ÷ minutes. For the first failing deadline, apply the degrade order, then remove lowest-ratio items among exams due by that date until it passes; repeat for later deadlines. Ties by ID.
 
 **Daily split (least-laxity-first, re-planned daily):**
+
 ```
 for each day d (today first):
   cap = availability(d)
@@ -445,11 +512,13 @@ for each day d (today first):
   update remaining work, repeat until cap is used
 output: today's minutes per course + a forecast for the coming days
 ```
+
 **Re-plan** on the first app open of each study day and after any change to exams, availability or cards. **After an exam**, its course drops to long-term and leaves the planner.
 
-*Done when:* unit tests cover the processor-demand check (including a case where totals fit but the first deadline fails), deterministic cuts, and least-laxity never starving a course with remaining work.
+_Done when:_ unit tests cover the processor-demand check (including a case where totals fit but the first deadline fails), deterministic cuts, and least-laxity never starving a course with remaining work.
 
 ### 6.10 Grading (`grading.ts`)
+
 - **Normalise:** Unicode NFKC, lowercase, trim, collapse whitespace, strip punctuation except inside tokens like `C++`/`3NF`.
 - **Fuzzy match:** Damerau–Levenshtein (optimal string alignment). Allowed edits by answer length: ≤ 4 chars → 0 (exact); 5–8 → 1; ≥ 9 → 2.
 - **Collision guard:** never accept a typed answer that exactly matches **another** card's answer in the same course (stops "UDP" being accepted for "TCP"-like near misses).
@@ -460,19 +529,22 @@ output: today's minutes per course + a forecast for the coming days
 - **Diagram rebuild:** compare the student's edge set with the reference set `{(from, to, label?)}`; correct iff equal; feedback lists missing and extra edges.
 
 ### 6.11 Distractors (`distractors.ts`)
+
 Candidates in order: same `compare` column / same tag siblings → same topic → same course. Rank by logged confusion count with the target (desc), then by similar length, then ID. Pick `MC_OPTIONS − 1` (3). Never include an accepted synonym of the correct answer. Option order is a seeded shuffle.
 
 ### 6.12 Replay & merge (`replay.ts`, `merge.ts`)
+
 - **Event order:** `(ts, deviceId, seq)`. `seq` is a per-device counter persisted in `kv`.
 - **Replay:** for each card, fold its events in order through FSRS + criterion + status + fragile rules, writing the caches. Replay is pure: `replay(events, notes, config) → caches`.
 - **Merge:** events = union by `id`; content records = last-write-wins by `(updatedAt, deviceId)`; a tombstone (`deleted: true`) wins over an older edit. Then replay affected cards.
-- *Done when:* property tests prove `merge(a,b) = merge(b,a)`, `merge(a,a) = a`, and `replay(merge(a,b))` is identical regardless of import order.
+- _Done when:_ property tests prove `merge(a,b) = merge(b,a)`, `merge(a,a) = a`, and `replay(merge(a,b))` is identical regardless of import order.
 
 ---
 
 ## 7. Diagrams — concept §13
 
 ### 7.1 Image occlusion
+
 - **Editor:** add image (file / paste / camera) → compress (§4.2) → run OCR in `ocr.worker.ts` (tesseract.js, English) → word boxes with confidence ≥ `OCR_MIN_CONFIDENCE` merged into label boxes (adjacent words on one line become one box) → student confirms, adjusts, deletes, or draws boxes → each box gets a label (prefilled from OCR text).
 - **Storage:** boxes as fractions of image width/height: `{id, x, y, w, h, label}`.
 - **Rendering:** `<img>` plus an absolutely positioned SVG overlay using `viewBox="0 0 1 1"` with `preserveAspectRatio="none"`.
@@ -481,6 +553,7 @@ Candidates in order: same `compare` column / same tag siblings → same topic �
 - Without OCR (handwriting, or OCR not yet downloaded) the student draws boxes manually; the editor must be fully usable that way.
 
 ### 7.2 Structured diagrams
+
 - **Model:** `{kind: 'stack' | 'flow', nodes: {id, label, role?}[], edges: {id, from, to, label?}[], sourceMediaId?}`. Node IDs are generated; labels are display text.
 - **Layout:** `elk.worker.ts` runs elkjs (`layered` algorithm, direction DOWN for flows; a fixed vertical stack for `stack`). Layout positions are cached on the note and recomputed only when the structure changes.
 - **Rendering & editing:** Svelte Flow — drag nodes, drag-to-connect handles, rename, delete, zoom/pan. Editing a structure bumps `updatedAt` and regenerates affected cards (keeping card IDs for unchanged nodes/edges so history survives).
@@ -494,6 +567,7 @@ Both editors are lazy-loaded routes; OCR and ELK never load on the Today or stud
 ## 8. Data transfer & offline — concept §18–19
 
 ### 8.1 Export (`.zip`)
+
 ```
 manifest.json   { formatVersion, appVersion, exportedAt, deviceId,
                   scope: 'all' | { courseIds: ID[] }, includesProgress: boolean }
@@ -501,15 +575,18 @@ data.json       courses, topics, chunks, notes, cards (content fields only),
                 events (only if includesProgress), settings + availability (only if scope 'all')
 media/<id>.webp
 ```
+
 Validated with zod on both sides.
 
 ### 8.2 Import
+
 - **Replace:** scope `all` → wipe and restore. Course scope → delete only those courses (and their topics/chunks/notes/cards/events/media) and restore them; other courses untouched.
 - **Merge:** §6.12.
 - Without progress: cards import with empty caches (fresh schedule).
 - Preview shows counts first ("1,240 cards and 3,812 reviews"); commit is one transaction.
 
 ### 8.3 Offline & storage
+
 - "Make available offline" switch: `navigator.storage.persist()`, confirm precache complete, show "✓ Ready offline" (or the reason if denied).
 - Settings shows `navigator.storage.estimate()` usage.
 - **Archive course:** export that course (with progress) → delete it locally → keep a stub course record `{name, status:'archived'}` for the list.
@@ -522,15 +599,15 @@ Validated with zod on both sides.
 
 > Layouts, components, states and Yuki's behaviour per screen are specified in `docs/DESIGN.md` §5–7. This table is the route map.
 
-| Route | Purpose |
-|---|---|
-| `/` Today | Today's plan: minutes per course, "start session", retests due, shortfall banner, sleep reminder when done |
-| `/course/[id]` | Topics with placement taps, statuses summary, exam date/format, start acquisition/cram |
-| `/import` | Course picker, paste text, attach images/zip, copy-prompt button, preview with errors, commit |
-| `/study/[sessionId]` | Session runner: progress strip, exercise, feedback, redo, phase indicator |
-| `/planner` | Exams list, availability calendar (weekday defaults + date overrides + sleep window), feasibility per exam, cuts |
-| `/diagram/[noteId]/edit` | Occlusion or structured editor |
-| `/settings` | Retention, spelling mode, exercise toggles, occlusion mode, acquisition options, offline switch, storage usage, export/import, archive |
+| Route                    | Purpose                                                                                                                                |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `/` Today                | Today's plan: minutes per course, "start session", retests due, shortfall banner, sleep reminder when done                             |
+| `/course/[id]`           | Topics with placement taps, statuses summary, exam date/format, start acquisition/cram                                                 |
+| `/import`                | Course picker, paste text, attach images/zip, copy-prompt button, preview with errors, commit                                          |
+| `/study/[sessionId]`     | Session runner: progress strip, exercise, feedback, redo, phase indicator                                                              |
+| `/planner`               | Exams list, availability calendar (weekday defaults + date overrides + sleep window), feasibility per exam, cuts                       |
+| `/diagram/[noteId]/edit` | Occlusion or structured editor                                                                                                         |
+| `/settings`              | Retention, spelling mode, exercise toggles, occlusion mode, acquisition options, offline switch, storage usage, export/import, archive |
 
 Mobile-first, one-handed, minimum 44 px touch targets, works at 360 px wide, all drag interactions also usable with tap-to-select alternatives.
 
@@ -540,19 +617,19 @@ Mobile-first, one-handed, minimum 44 px touch targets, works at 360 px wide, all
 
 Each phase ends with its tests green. Later phases never require rewriting earlier ones. Every phase follows the workflow in `CLAUDE.md` (interface → `spec-test-writer` agent → implement → `verify` → `reviewer` agent → log), using the agent definitions in `.claude/agents/`.
 
-| # | Phase | Deliverables | Done when |
-|---|---|---|---|
-| 0 | **Setup** | SvelteKit + TS strict, adapter-static SPA, Vitest (+ coverage, JUnit/JSON reporters), Playwright (traces, screenshots, video on failure), PWA plugin, Dexie, `defaults.ts`, ESLint/Prettier, git hooks, CI workflow, `test-summary` and `bundle-check` scripts, app logger, `docs/PROGRESS.md` | App installs as a PWA on Android and opens offline (empty shell); a push runs CI green and uploads reports; a deliberately failing test blocks the commit |
-| 1 | **Data layer** | Schema, types, repo helpers, IDs, device ID + seq, event log, replay skeleton, merge | §6.12 property tests pass |
-| 2 | **Import** | Lexer/parser for every directive, zod AST, builder, image/zip handling, preview + errors, placement taps, prompt copy button | Golden-file tests: sample text → exact notes/cards; malformed input → correct line errors |
-| 3 | **Cards & grading** | `cardgen`, `grading`, `distractors`, seeded RNG | Unit tests for every note type, fuzzy thresholds, collision guard, first-letter bank, hit test, set diff |
-| 4 | **Engine core** | `fsrs`, `criterion`, `queue`, `session`, `status`, full `replay` | Simulated sessions reproduce documented lag/criterion/status behaviour; replay determinism test |
-| 5 | **Design system & exercises UI** | Tokens (light/dark/auto-night) + contrast test, fonts, `src/lib/ui` components, `Yuki` with all states, `/dev/ui` style guide; then every exercise component (§3.3) with a shared `{card, seed, onAnswer}` interface; feedback, redo-till-right, phases, interstitials | Contrast test passes in both themes; style guide shows every component and Yuki state; Playwright: complete a session on a mobile viewport using each exercise kind, with reduced motion on and off |
-| 6 | **Diagrams** | Occlusion editor + OCR worker; structured model, ELK worker, Svelte Flow editor + exercises | Import an OSI stack, a flow diagram and an occlusion image; study each |
-| 7 | **Modes** | Long-term, cram (incl. fragile), acquisition (full/quick, pretest, chunk quiz, handoff, split flag), one-night | Simulation tests for D = 1…7; acquisition handoff produces next-day retests; statuses correct |
-| 8 | **Planner** | Availability calendar, estimator, processor-demand check, cuts, least-laxity split, daily re-plan, shortfall UI | §6.9 tests; 4-exams-in-one-week simulation gives a feasible-or-flagged, deterministic plan |
-| 9 | **Transfer & offline** | Scoped export/import (replace/merge, progress toggle), offline switch, storage estimate, archive, backup reminder, SW update prompt, debug-log panel + log export | Round-trip tests: export → import replace → identical state; two-device merge test |
-| 10 | **Polish & ship** | Accessibility, performance budget, e2e flows, deploy to Cloudflare Pages | Shell JS ≤ `SHELL_JS_BUDGET_KB` gzipped; Lighthouse PWA checks pass on a throttled "Slow 4G" profile; installed and used offline on an Android phone |
+| #   | Phase                            | Deliverables                                                                                                                                                                                                                                                                                   | Done when                                                                                                                                                                                           |
+| --- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0   | **Setup**                        | SvelteKit + TS strict, adapter-static SPA, Vitest (+ coverage, JUnit/JSON reporters), Playwright (traces, screenshots, video on failure), PWA plugin, Dexie, `defaults.ts`, ESLint/Prettier, git hooks, CI workflow, `test-summary` and `bundle-check` scripts, app logger, `docs/PROGRESS.md` | App installs as a PWA on Android and opens offline (empty shell); a push runs CI green and uploads reports; a deliberately failing test blocks the commit                                           |
+| 1   | **Data layer**                   | Schema, types, repo helpers, IDs, device ID + seq, event log, replay skeleton, merge                                                                                                                                                                                                           | §6.12 property tests pass                                                                                                                                                                           |
+| 2   | **Import**                       | Lexer/parser for every directive, zod AST, builder, image/zip handling, preview + errors, placement taps, prompt copy button                                                                                                                                                                   | Golden-file tests: sample text → exact notes/cards; malformed input → correct line errors                                                                                                           |
+| 3   | **Cards & grading**              | `cardgen`, `grading`, `distractors`, seeded RNG                                                                                                                                                                                                                                                | Unit tests for every note type, fuzzy thresholds, collision guard, first-letter bank, hit test, set diff                                                                                            |
+| 4   | **Engine core**                  | `fsrs`, `criterion`, `queue`, `session`, `status`, full `replay`                                                                                                                                                                                                                               | Simulated sessions reproduce documented lag/criterion/status behaviour; replay determinism test                                                                                                     |
+| 5   | **Design system & exercises UI** | Tokens (light/dark/auto-night) + contrast test, fonts, `src/lib/ui` components, `Yuki` with all states, `/dev/ui` style guide; then every exercise component (§3.3) with a shared `{card, seed, onAnswer}` interface; feedback, redo-till-right, phases, interstitials                         | Contrast test passes in both themes; style guide shows every component and Yuki state; Playwright: complete a session on a mobile viewport using each exercise kind, with reduced motion on and off |
+| 6   | **Diagrams**                     | Occlusion editor + OCR worker; structured model, ELK worker, Svelte Flow editor + exercises                                                                                                                                                                                                    | Import an OSI stack, a flow diagram and an occlusion image; study each                                                                                                                              |
+| 7   | **Modes**                        | Long-term, cram (incl. fragile), acquisition (full/quick, pretest, chunk quiz, handoff, split flag), one-night                                                                                                                                                                                 | Simulation tests for D = 1…7; acquisition handoff produces next-day retests; statuses correct                                                                                                       |
+| 8   | **Planner**                      | Availability calendar, estimator, processor-demand check, cuts, least-laxity split, daily re-plan, shortfall UI                                                                                                                                                                                | §6.9 tests; 4-exams-in-one-week simulation gives a feasible-or-flagged, deterministic plan                                                                                                          |
+| 9   | **Transfer & offline**           | Scoped export/import (replace/merge, progress toggle), offline switch, storage estimate, archive, backup reminder, SW update prompt, debug-log panel + log export                                                                                                                              | Round-trip tests: export → import replace → identical state; two-device merge test                                                                                                                  |
+| 10  | **Polish & ship**                | Accessibility, performance budget, e2e flows, deploy to Cloudflare Pages                                                                                                                                                                                                                       | Shell JS ≤ `SHELL_JS_BUDGET_KB` gzipped; Lighthouse PWA checks pass on a throttled "Slow 4G" profile; installed and used offline on an Android phone                                                |
 
 ---
 
@@ -561,20 +638,20 @@ Each phase ends with its tests green. Later phases never require rewriting earli
 ### 11.1 What is tested
 
 - **Unit (Vitest):** every engine module. Coverage thresholds enforced in config: `src/lib/engine/**` ≥ `COVERAGE_ENGINE_MIN` (90%) lines and branches; `import/`, `transfer/`, `db/` ≥ 80%. Falling below fails the run.
-- **Simulation harness (`tests/sim`):** a simulated learner whose recall follows a known forgetting curve answers sessions produced by the real engine. Named scenarios (e.g. *cold start, exam in 3 days*; *four exams in one week*; *one night*; *missed two days*) check feasibility flags, determinism (same seed → same plan), no work in the sleep window, no course starved, and statuses as specified.
+- **Simulation harness (`tests/sim`):** a simulated learner whose recall follows a known forgetting curve answers sessions produced by the real engine. Named scenarios (e.g. _cold start, exam in 3 days_; _four exams in one week_; _one night_; _missed two days_) check feasibility flags, determinism (same seed → same plan), no work in the sleep window, no course starved, and statuses as specified.
 - **Golden files (`tests/golden`):** import text → expected notes/cards; export → expected zip manifest and data. Changing a golden file requires a note in the commit message.
 - **E2E (Playwright):** import → acquisition → next-day retest (clock mocked) → cram → export/import, at 360 × 740, plus an offline test (network disabled after first load).
 - **Performance:** `scripts/bundle-check.ts` fails if the shell chunk exceeds `SHELL_JS_BUDGET_KB` or contains tesseract.js, elkjs or Svelte Flow.
 
 ### 11.2 When tests run (continuously)
 
-| Trigger | What runs | Blocks? |
-|---|---|---|
-| Saving a file during development | `npm run test:watch` (Vitest watch mode, re-runs affected tests) | — |
-| `git commit` (pre-commit hook) | lint-staged: Prettier + ESLint on staged files, `svelte-check`, Vitest `--changed` (tests related to changed files) | Yes |
-| `git push` (pre-push hook) | Full unit + sim suite with coverage thresholds | Yes |
-| Every push and pull request (CI) | `check` → `lint` → unit + sim with coverage → build → `bundle-check` → Playwright e2e (mobile + offline) | Yes — deploy only from a green `main` |
-| Deploy | Cloudflare Pages builds only after CI passes on `main` | — |
+| Trigger                          | What runs                                                                                                           | Blocks?                               |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| Saving a file during development | `npm run test:watch` (Vitest watch mode, re-runs affected tests)                                                    | —                                     |
+| `git commit` (pre-commit hook)   | lint-staged: Prettier + ESLint on staged files, `svelte-check`, Vitest `--changed` (tests related to changed files) | Yes                                   |
+| `git push` (pre-push hook)       | Full unit + sim suite with coverage thresholds                                                                      | Yes                                   |
+| Every push and pull request (CI) | `check` → `lint` → unit + sim with coverage → build → `bundle-check` → Playwright e2e (mobile + offline)            | Yes — deploy only from a green `main` |
+| Deploy                           | Cloudflare Pages builds only after CI passes on `main`                                                              | —                                     |
 
 Tests are never skipped, deleted or loosened to make a run pass; a failing test is fixed or the behaviour is corrected (and, if the spec was wrong, the decision is logged in the Decisions log).
 
@@ -582,15 +659,15 @@ Tests are never skipped, deleted or loosened to make a run pass; a failing test 
 
 Every run writes machine- and human-readable output:
 
-| File | Produced by | Contents |
-|---|---|---|
-| `test-results/unit.junit.xml`, `unit.json` | Vitest reporters (`default`, `junit`, `json`) | Every test, pass/fail, duration, failure messages |
-| `coverage/` (HTML + `coverage-summary.json`) | `@vitest/coverage-v8` | Coverage per file vs thresholds |
-| `test-results/sim/<scenario>.json` | Sim harness | The full plan per day, each scheduling decision with its reason, metrics (predicted recall at exam, minutes used, cuts made), and the seed |
-| `test-results/sim/<scenario>.md` | Sim harness | A readable day-by-day summary of the same run |
-| `playwright-report/` + traces, screenshots, videos on failure | Playwright | Step-by-step replay of failed e2e runs |
-| `test-results/bundle.json` | `bundle-check` | Chunk sizes vs budget |
-| **`test-results/summary.md`** | `npm run test:report` (`scripts/test-summary.ts`) | One page: totals, failures with file:line, coverage vs thresholds, bundle size, sim scenario verdicts — **Claude Code reads this first after any failed run** |
+| File                                                          | Produced by                                       | Contents                                                                                                                                                      |
+| ------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `test-results/unit.junit.xml`, `unit.json`                    | Vitest reporters (`default`, `junit`, `json`)     | Every test, pass/fail, duration, failure messages                                                                                                             |
+| `coverage/` (HTML + `coverage-summary.json`)                  | `@vitest/coverage-v8`                             | Coverage per file vs thresholds                                                                                                                               |
+| `test-results/sim/<scenario>.json`                            | Sim harness                                       | The full plan per day, each scheduling decision with its reason, metrics (predicted recall at exam, minutes used, cuts made), and the seed                    |
+| `test-results/sim/<scenario>.md`                              | Sim harness                                       | A readable day-by-day summary of the same run                                                                                                                 |
+| `playwright-report/` + traces, screenshots, videos on failure | Playwright                                        | Step-by-step replay of failed e2e runs                                                                                                                        |
+| `test-results/bundle.json`                                    | `bundle-check`                                    | Chunk sizes vs budget                                                                                                                                         |
+| **`test-results/summary.md`**                                 | `npm run test:report` (`scripts/test-summary.ts`) | One page: totals, failures with file:line, coverage vs thresholds, bundle size, sim scenario verdicts — **Claude Code reads this first after any failed run** |
 
 CI uploads `test-results/`, `coverage/` and `playwright-report/` as build artifacts on every run (kept 14 days), so any failure can be inspected later.
 
@@ -609,58 +686,59 @@ At the end of every phase (and any session that changes the engine), append an e
 
 ### 11.6 Scripts
 
-| Script | Does |
-|---|---|
-| `npm run test` | Unit + sim once, with reporters |
-| `npm run test:watch` | Watch mode |
-| `npm run test:e2e` | Playwright (mobile + offline) |
-| `npm run test:report` | Builds `test-results/summary.md` from the latest reports |
-| `npm run verify` | Everything CI runs, locally: check → lint → stub-check → test (coverage) → build → bundle-check → e2e → test:report |
+| Script                | Does                                                                                                                |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `npm run test`        | Unit + sim once, with reporters                                                                                     |
+| `npm run test:watch`  | Watch mode                                                                                                          |
+| `npm run test:e2e`    | Playwright (mobile + offline)                                                                                       |
+| `npm run test:report` | Builds `test-results/summary.md` from the latest reports                                                            |
+| `npm run verify`      | Everything CI runs, locally: check → lint → stub-check → test (coverage) → build → bundle-check → e2e → test:report |
 
 ---
 
 ## 12. Evidence-to-config traceability
 
-Every default in §13 marked *tunable* comes from the research (concept §14–17 caveats). The app logs what's needed to tune them later: per-kind response times, first-attempt accuracy by type, same-day vs next-day accuracy, pretest gain, planned vs actual minutes. Logging only — no tuning logic in v1 beyond `secPerAttempt` and `p0` calibration.
+Every default in §13 marked _tunable_ comes from the research (concept §14–17 caveats). The app logs what's needed to tune them later: per-kind response times, first-attempt accuracy by type, same-day vs next-day accuracy, pretest gain, planned vs actual minutes. Logging only — no tuning logic in v1 beyond `secPerAttempt` and `p0` calibration.
 
 ---
 
 ## 13. Defaults (`src/lib/config/defaults.ts`)
 
-| Name | Default | Source / note |
-|---|---|---|
-| `RETENTION` | 0.90 | User range 0.80–0.95; RCT favoured high targets |
-| `DAY_ROLLOVER_HOUR` | 4 | Anki convention |
-| `CRITERION_FIRST` / `CRITERION_LATER` | 3 / 1 | Successive relearning |
-| `CRITERION_FIRST_DEGRADED` | 2 | First cut when infeasible |
-| `LAGS` | [5, 10, 20]; error lag 3 | Concept §7 |
-| `MC_UNTIL_ACCURACY` | 0.75 | Competitive MC while accuracy < 75% |
-| `MC_OPTIONS` | 4 | |
-| `BANK_SIZE` | 4 | First-letter / occlusion banks |
-| `SECURE_STABILITY_DAYS` | 21 | Status rule (tunable) |
-| `SECURE_AT_EXAM` | 0.95 | Cram triage |
-| `FRAGILE_CAP_DAYS` | 2 | Cram-fragile cap (tunable) |
-| `ALPHA` | recognition 0.25, mixed 0.35, recall 0.42 | Cepeda ridgeline (single-study split) |
-| `NEW_SHARE_MAX` | 0.5 | Inferred |
-| `RELEARN_SESSIONS_MAX` (K) | 3 | Successive relearning |
-| `PRETEST_MAX` / `PRETEST_AUTOHIDE_SKIPS` | 3 / 2 | Reviewer decisions |
-| `CHUNK_WORDS` | 150–400 | No evidence-based optimum |
-| `SPLIT_THRESHOLD` | 0.75 | Aligned with ≥75% success threshold |
-| `READ_WPM` | 225 | Comprehension reading pace |
-| `SAFETY_MARGIN` | 1.2 | Estimates run optimistic |
-| `PRIORITY_WEIGHT` | high 3, normal 1 | Knapsack value |
-| `DAILY_FLOOR_MIN` / `BLOCK_MIN` | 10 / 10 | Planner |
-| `ONENIGHT_BREAK_MIN` | 10 | |
-| `CALIBRATION_MIN_ATTEMPTS` | 30 | Switch from default p0 to measured |
-| `p0` (new-card first-attempt accuracy) | fact 0.5, concept 0.4, procedure 0.35, diagram 0.45, comparison 0.4 | Guesses until calibrated |
-| `secPerAttempt` defaults (s) | mc 8, cloze 12, sequence 25, parsons 30, occlusion 10, structureRebuild 60, categorize 20, scenario 15, tableRow 25, fadeStep 30, newInstance 120 | Replaced by rolling median |
-| `FSRS_OPTIMISE_MIN_REVIEWS` | 1000 | |
-| `OCR_MIN_CONFIDENCE` | 60 | Tesseract word confidence (0–100) |
-| `IMAGE_MAX_PX` | 1600 | WebP re-encode |
-| `BACKUP_REMINDER_DAYS` | 7 | |
-| `SHELL_JS_BUDGET_KB` | 150 | Gzipped app shell |
-| `COVERAGE_ENGINE_MIN` | 90 | % lines and branches for `src/lib/engine` |
-| `LOG_RING_SIZE` | 2000 | App log entries kept on the device |
+| Name                                     | Default                                                                                                                                           | Source / note                                          |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `APP_NAME` / `APP_SHORT_NAME`            | "Snowpack: Study & Cram" / "Snowpack"                                                                                                             | PWA manifest, page titles, header; one place to rename |
+| `RETENTION`                              | 0.90                                                                                                                                              | User range 0.80–0.95; RCT favoured high targets        |
+| `DAY_ROLLOVER_HOUR`                      | 4                                                                                                                                                 | Anki convention                                        |
+| `CRITERION_FIRST` / `CRITERION_LATER`    | 3 / 1                                                                                                                                             | Successive relearning                                  |
+| `CRITERION_FIRST_DEGRADED`               | 2                                                                                                                                                 | First cut when infeasible                              |
+| `LAGS`                                   | [5, 10, 20]; error lag 3                                                                                                                          | Concept §7                                             |
+| `MC_UNTIL_ACCURACY`                      | 0.75                                                                                                                                              | Competitive MC while accuracy < 75%                    |
+| `MC_OPTIONS`                             | 4                                                                                                                                                 |                                                        |
+| `BANK_SIZE`                              | 4                                                                                                                                                 | First-letter / occlusion banks                         |
+| `SECURE_STABILITY_DAYS`                  | 21                                                                                                                                                | Status rule (tunable)                                  |
+| `SECURE_AT_EXAM`                         | 0.95                                                                                                                                              | Cram triage                                            |
+| `FRAGILE_CAP_DAYS`                       | 2                                                                                                                                                 | Cram-fragile cap (tunable)                             |
+| `ALPHA`                                  | recognition 0.25, mixed 0.35, recall 0.42                                                                                                         | Cepeda ridgeline (single-study split)                  |
+| `NEW_SHARE_MAX`                          | 0.5                                                                                                                                               | Inferred                                               |
+| `RELEARN_SESSIONS_MAX` (K)               | 3                                                                                                                                                 | Successive relearning                                  |
+| `PRETEST_MAX` / `PRETEST_AUTOHIDE_SKIPS` | 3 / 2                                                                                                                                             | Reviewer decisions                                     |
+| `CHUNK_WORDS`                            | 150–400                                                                                                                                           | No evidence-based optimum                              |
+| `SPLIT_THRESHOLD`                        | 0.75                                                                                                                                              | Aligned with ≥75% success threshold                    |
+| `READ_WPM`                               | 225                                                                                                                                               | Comprehension reading pace                             |
+| `SAFETY_MARGIN`                          | 1.2                                                                                                                                               | Estimates run optimistic                               |
+| `PRIORITY_WEIGHT`                        | high 3, normal 1                                                                                                                                  | Knapsack value                                         |
+| `DAILY_FLOOR_MIN` / `BLOCK_MIN`          | 10 / 10                                                                                                                                           | Planner                                                |
+| `ONENIGHT_BREAK_MIN`                     | 10                                                                                                                                                |                                                        |
+| `CALIBRATION_MIN_ATTEMPTS`               | 30                                                                                                                                                | Switch from default p0 to measured                     |
+| `p0` (new-card first-attempt accuracy)   | fact 0.5, concept 0.4, procedure 0.35, diagram 0.45, comparison 0.4                                                                               | Guesses until calibrated                               |
+| `secPerAttempt` defaults (s)             | mc 8, cloze 12, sequence 25, parsons 30, occlusion 10, structureRebuild 60, categorize 20, scenario 15, tableRow 25, fadeStep 30, newInstance 120 | Replaced by rolling median                             |
+| `FSRS_OPTIMISE_MIN_REVIEWS`              | 1000                                                                                                                                              |                                                        |
+| `OCR_MIN_CONFIDENCE`                     | 60                                                                                                                                                | Tesseract word confidence (0–100)                      |
+| `IMAGE_MAX_PX`                           | 1600                                                                                                                                              | WebP re-encode                                         |
+| `BACKUP_REMINDER_DAYS`                   | 7                                                                                                                                                 |                                                        |
+| `SHELL_JS_BUDGET_KB`                     | 150                                                                                                                                               | Gzipped app shell                                      |
+| `COVERAGE_ENGINE_MIN`                    | 90                                                                                                                                                | % lines and branches for `src/lib/engine`              |
+| `LOG_RING_SIZE`                          | 2000                                                                                                                                              | App log entries kept on the device                     |
 
 ---
 
@@ -694,13 +772,13 @@ flowchart TD
 
 ### 15.2 Where OOP is used and where it isn't
 
-| Thing | Style | Why |
-|---|---|---|
-| Stored data (courses, cards, events…) | **Plain typed records** — zod schema → `type X = z.infer<typeof XSchema>` | IndexedDB and JSON drop class methods; plain records make replay, merge and export trivial and safe |
-| Variants of data (note payloads, events) | **Discriminated unions** on `type`, handled with an exhaustive `switch` ending in `assertNever` | The compiler forces every case to be handled — no ad-hoc "if it has this field" checks |
-| Engine logic (scheduling, grading, planning) | **Pure functions**, grouped in one module per concern | Deterministic and unit-testable; returns `{ result, trace }` |
-| Things with state or a lifecycle | **Classes**: repositories, `SessionController`, `PlannerService`, `TransferService`, `OcrService` / `LayoutService` (worker wrappers), `Logger` | Encapsulate IO, workers and reactive state behind a small public API |
-| Exercise UIs | **One Svelte component per `ExerciseKind`**, all implementing the same props interface `{ card, note, seed, onAnswer }` | Uniform, swappable, testable |
+| Thing                                        | Style                                                                                                                                           | Why                                                                                                 |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Stored data (courses, cards, events…)        | **Plain typed records** — zod schema → `type X = z.infer<typeof XSchema>`                                                                       | IndexedDB and JSON drop class methods; plain records make replay, merge and export trivial and safe |
+| Variants of data (note payloads, events)     | **Discriminated unions** on `type`, handled with an exhaustive `switch` ending in `assertNever`                                                 | The compiler forces every case to be handled — no ad-hoc "if it has this field" checks              |
+| Engine logic (scheduling, grading, planning) | **Pure functions**, grouped in one module per concern                                                                                           | Deterministic and unit-testable; returns `{ result, trace }`                                        |
+| Things with state or a lifecycle             | **Classes**: repositories, `SessionController`, `PlannerService`, `TransferService`, `OcrService` / `LayoutService` (worker wrappers), `Logger` | Encapsulate IO, workers and reactive state behind a small public API                                |
+| Exercise UIs                                 | **One Svelte component per `ExerciseKind`**, all implementing the same props interface `{ card, note, seed, onAnswer }`                         | Uniform, swappable, testable                                                                        |
 
 Rules for classes: constructor-injected dependencies (repos, clock, logger) so tests can pass fakes; no static mutable state; public methods documented; no inheritance deeper than one level (prefer composition and interfaces).
 
@@ -713,16 +791,16 @@ Rules for classes: constructor-injected dependencies (repos, clock, logger) so t
 
 ### 15.4 Naming and layout
 
-| Item | Convention | Example |
-|---|---|---|
-| Modules | `kebab-case.ts`, one concern each | `engine/cram.ts`, `db/repos/card-repo.ts` |
-| Svelte components | `PascalCase.svelte` | `exercises/ClozeExercise.svelte` |
-| Svelte state modules | `*.svelte.ts` (runes) | `services/session-controller.svelte.ts` |
-| Types / classes | `PascalCase` | `ReviewEvent`, `PlannerService` |
-| Functions | `camelCase`, verb first | `planDay`, `gradeTyped`, `replayCard` |
-| Booleans | `is/has/should` prefix | `isFragile` |
-| Constants | `UPPER_SNAKE` in `config/defaults.ts` only | `CRITERION_FIRST` |
-| Tests | mirror the source path | `tests/unit/engine/cram.test.ts` |
+| Item                 | Convention                                 | Example                                   |
+| -------------------- | ------------------------------------------ | ----------------------------------------- |
+| Modules              | `kebab-case.ts`, one concern each          | `engine/cram.ts`, `db/repos/card-repo.ts` |
+| Svelte components    | `PascalCase.svelte`                        | `exercises/ClozeExercise.svelte`          |
+| Svelte state modules | `*.svelte.ts` (runes)                      | `services/session-controller.svelte.ts`   |
+| Types / classes      | `PascalCase`                               | `ReviewEvent`, `PlannerService`           |
+| Functions            | `camelCase`, verb first                    | `planDay`, `gradeTyped`, `replayCard`     |
+| Booleans             | `is/has/should` prefix                     | `isFragile`                               |
+| Constants            | `UPPER_SNAKE` in `config/defaults.ts` only | `CRITERION_FIRST`                         |
+| Tests                | mirror the source path                     | `tests/unit/engine/cram.test.ts`          |
 
 ### 15.5 Size and documentation limits (lint-enforced where possible)
 
@@ -742,15 +820,15 @@ Rules for classes: constructor-injected dependencies (repos, clock, logger) so t
 
 Choices this plan makes where the concept was silent. Add new ones here.
 
-| Decision | Reason |
-|---|---|
-| Added a `needs-work` status for a card whose last later-day attempt was wrong | The concept's four labels had no state for a lapsed card |
-| Auto rating map: full-weight correct → Good, recognition correct → Hard, wrong → Again; never Easy | Deterministic auto-grading; recognition is weaker evidence of recall |
-| FSRS short-term steps off; the session runner owns same-day repetition | Avoids two systems scheduling the same day |
-| Fuzzy tolerance 0 / 1 / 2 edits by answer length, plus a collision guard | Short CS terms (TCP/UDP, IP/IS) must not be accepted for each other |
-| First-letter mode falls back to "letter + type" when fewer than 3 same-letter candidates exist | Otherwise the letter gives the answer away |
-| Acquisition ordering = topic priority, then note order | "Easy/value first" needs a concrete, testable rule; refine once accuracy data exists |
-| `FRAGILE_CAP_DAYS = 2`, α for recall exams = 0.42 | Concrete values inside the concept's ranges; tunable |
-| The next-day retest of an acquisition card is its first credited session (needs 3) | Chunk-quiz sessions give no credit, so the 3-correct first session must happen somewhere |
-| Review events carry `credited` (false for same-day acquisition chunk-quiz answers) | Makes "no same-day credit" explicit in the data instead of inferred |
-| Chunks can be `reported` (hidden until edited) | Implements the "report wrong" button for generated chunks |
+| Decision                                                                                           | Reason                                                                                   |
+| -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Added a `needs-work` status for a card whose last later-day attempt was wrong                      | The concept's four labels had no state for a lapsed card                                 |
+| Auto rating map: full-weight correct → Good, recognition correct → Hard, wrong → Again; never Easy | Deterministic auto-grading; recognition is weaker evidence of recall                     |
+| FSRS short-term steps off; the session runner owns same-day repetition                             | Avoids two systems scheduling the same day                                               |
+| Fuzzy tolerance 0 / 1 / 2 edits by answer length, plus a collision guard                           | Short CS terms (TCP/UDP, IP/IS) must not be accepted for each other                      |
+| First-letter mode falls back to "letter + type" when fewer than 3 same-letter candidates exist     | Otherwise the letter gives the answer away                                               |
+| Acquisition ordering = topic priority, then note order                                             | "Easy/value first" needs a concrete, testable rule; refine once accuracy data exists     |
+| `FRAGILE_CAP_DAYS = 2`, α for recall exams = 0.42                                                  | Concrete values inside the concept's ranges; tunable                                     |
+| The next-day retest of an acquisition card is its first credited session (needs 3)                 | Chunk-quiz sessions give no credit, so the 3-correct first session must happen somewhere |
+| Review events carry `credited` (false for same-day acquisition chunk-quiz answers)                 | Makes "no same-day credit" explicit in the data instead of inferred                      |
+| Chunks can be `reported` (hidden until edited)                                                     | Implements the "report wrong" button for generated chunks                                |
