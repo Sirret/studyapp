@@ -10,7 +10,7 @@
 
 	type Props = HTMLButtonAttributes & {
 		variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
-		size?: 'md' | 'session';
+		size?: 'md' | 'session' | 'icon';
 		full?: boolean;
 		loading?: boolean;
 		icon?: Snippet;
@@ -33,7 +33,7 @@
 <button
 	{...rest}
 	{type}
-	class="button {variant} {size}"
+	class="button {variant} {size === 'icon' ? 'icon-size' : size}"
 	class:full
 	class:loading
 	disabled={disabled || loading}
@@ -99,6 +99,12 @@
 
 	.session {
 		--button-height: var(--control-height-session);
+	}
+
+	.icon-size {
+		width: var(--touch-min);
+		min-height: var(--touch-min);
+		padding: 0;
 	}
 
 	.full {

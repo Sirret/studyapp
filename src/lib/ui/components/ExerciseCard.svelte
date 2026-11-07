@@ -41,6 +41,7 @@
 
 <style>
 	.exercise {
+		position: relative;
 		display: grid;
 		gap: var(--gap-lg);
 		padding: var(--gap-lg);

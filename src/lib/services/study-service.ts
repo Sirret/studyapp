@@ -204,8 +204,19 @@ export class StudyService {
 			ended: session.endedAt !== undefined,
 			item,
 			round: view.round,
-			progress: { done: states.filter((card) => card.done).length, total: states.length }
+			progress: { done: states.filter((card) => card.done).length, total: states.length },
+			summary: session.endedAt === undefined ? null : await this.summaryOf(view)
 		};
+	}
+
+	/** Cards practised in the session and how many now count as learned. */
+	private async summaryOf(view: SessionView): Promise<{ practised: number; ready: number }> {
+		const ids = Object.keys(view.session.snapshot.cards) as CardId[];
+		const cards = await Promise.all(ids.map((cardId) => this.deps.repos.cards.get(cardId)));
+		const ready = cards.filter(
+			(card) => card?.status === 'exam-ready' || card?.status === 'secure'
+		);
+		return { practised: ids.length, ready: ready.length };
 	}
 
 	private async buildItem(view: SessionView, material: CourseMaterial): Promise<StudyItem | null> {

@@ -135,7 +135,7 @@ export function buildMatching(ctx: BuildContext): Built {
 		ctx.rng
 	);
 	return {
-		...baseOf(ctx, 'matching'),
+		...baseOf(ctx, 'matching', 'Match each term to its meaning'),
 		shape: 'pair',
 		left: pairs.map(([term]) => term),
 		right,

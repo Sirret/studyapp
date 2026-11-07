@@ -16,13 +16,15 @@
 </script>
 
 {#key key}
-	<div class="flurry" aria-hidden="true" data-flurry={key}>
-		{#each FLAKES as flake, i (i)}
-			<span class="flake" style:left="{flake.left}%" style:animation-delay="{flake.delay}ms">
-				<Snowflake size={flake.size} />
-			</span>
-		{/each}
-	</div>
+	{#if key > 0}
+		<div class="flurry" aria-hidden="true" data-flurry={key}>
+			{#each FLAKES as flake, i (i)}
+				<span class="flake" style:left="{flake.left}%" style:animation-delay="{flake.delay}ms">
+					<Snowflake size={flake.size} />
+				</span>
+			{/each}
+		</div>
+	{/if}
 {/key}
 
 <style>

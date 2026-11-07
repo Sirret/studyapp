@@ -1,6 +1,6 @@
 <!--
 	Snow burst (DESIGN §11.2): after a first-attempt correct, a few small snowflakes burst out from
-	the check and fade. Place it over the element it bursts from; change `key` to play it again.
+	the check and fade. Place it over the element it bursts from; raise `key` (from 0) to play it.
 	Never blocks input (pointer-events: none); nothing under reduced motion.
 -->
 <script lang="ts">
@@ -18,13 +18,15 @@
 </script>
 
 {#key key}
-	<span class="burst" aria-hidden="true">
-		{#each FLAKES as flake, i (i)}
-			<span class="flake" style:--dx="{flake.x}px" style:--dy="{flake.y}px"
-				><Snowflake size={12} /></span
-			>
-		{/each}
-	</span>
+	{#if key > 0}
+		<span class="burst" aria-hidden="true">
+			{#each FLAKES as flake, i (i)}
+				<span class="flake" style:--dx="{flake.x}px" style:--dy="{flake.y}px"
+					><Snowflake size={12} /></span
+				>
+			{/each}
+		</span>
+	{/if}
 {/key}
 
 <style>

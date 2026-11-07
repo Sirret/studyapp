@@ -46,6 +46,8 @@ export interface StudyView {
 	item: StudyItem | null;
 	round: RoundSummary | null;
 	progress: { done: number; total: number };
+	/** Once ended: cards practised and how many are now exam-ready or secure. */
+	summary: { practised: number; ready: number } | null;
 }
 
 /** The outcome of an answer: the verdict for feedback, and the session after it. */
