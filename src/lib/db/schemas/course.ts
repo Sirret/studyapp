@@ -48,6 +48,7 @@ export const ChunkSchema = MetaSchema.extend({
 	text: z.string(),
 	words: z.number().int().min(0),
 	source: z.enum(['notes', 'generated']),
+	check: z.literal(true).optional(),
 	splitFlag: z.literal(true).optional(),
 	reported: z.literal(true).optional()
 });

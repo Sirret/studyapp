@@ -32,8 +32,14 @@ const bannedImports = (message, paths, packages = []) => ({
 
 const uiBoundary = bannedImports(
 	'UI imports services, never Dexie or repos (BUILD_PLAN §15.1).',
-	['db/schema', 'db/repos', 'engine'],
+	['db/schema', 'db/repos', 'engine', 'import'],
 	['dexie']
+);
+
+const importBoundary = bannedImports(
+	'The import pipeline turns text into plans: it imports only config, schemas and the engine.',
+	['db/schema', 'db/repos', 'services', 'ui', 'exercises', 'log', 'pwa'],
+	['dexie', 'svelte', '\\$app']
 );
 
 const serviceBoundary = bannedImports(
@@ -113,6 +119,7 @@ export default ts.config(
 		rules: serviceBoundary
 	},
 	{ files: ['src/lib/db/**'], rules: dataBoundary },
+	{ files: ['src/lib/import/**'], rules: importBoundary },
 	{
 		files: ['tests/**', 'scripts/**', '*.config.ts', '*.config.js'],
 		rules: { 'max-lines': 'off', 'max-lines-per-function': 'off', complexity: 'off' }

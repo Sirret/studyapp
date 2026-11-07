@@ -95,6 +95,10 @@ export const FSRS_OPTIMISE_MIN_REVIEWS = 1000;
 export const OCR_MIN_CONFIDENCE = 60;
 /** Long side of an imported image, in pixels. */
 export const IMAGE_MAX_PX = 1600;
+/** WebP quality of an imported image, from 0 to 1. */
+export const IMAGE_WEBP_QUALITY = 0.8;
+/** Exam format of a new course (DATA_MODEL §3.1). */
+export const DEFAULT_EXAM_FORMAT = 'mixed';
 export const BACKUP_REMINDER_DAYS = 7;
 
 /** Gzipped JavaScript budget for the app shell. */

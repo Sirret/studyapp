@@ -9,7 +9,8 @@ import {
 	TopicIdSchema
 } from './common.ts';
 
-const MIN_STEPS = 2;
+/** Fewest steps a sequence or worked example can have. @see DATA_MODEL §4.2 */
+export const MIN_STEPS = 2;
 
 const DiagramPayloadSchema = z
 	.object({

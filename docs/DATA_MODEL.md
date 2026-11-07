@@ -149,6 +149,7 @@ Indexes: `id, courseId, [courseId+order], updatedAt`.
 | `text` | `string` | ✓ | from `@read` | What the student reads |
 | `words` | `number` | ✓ | computed on write | For reading-time estimates |
 | `source` | `'notes' \| 'generated'` | ✓ | `generated` if `[GENERATED]` | Shows the AI-generated banner |
+| `check` | `true` | — | from `[CHECK]` | Had a `[CHECK]` marker; shown flagged |
 | `splitFlag` | `true` | — | set by acquisition | Chunk quiz < 75%; re-check next day |
 | `reported` | `true` | — | set by "report wrong" | Hidden from study until edited |
 

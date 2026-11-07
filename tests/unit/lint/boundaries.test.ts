@@ -120,6 +120,29 @@ describe('lint boundaries', () => {
 		expect(await ruleIdsFor(code, 'src/lib/services/sample.ts')).toEqual([]);
 	});
 
+	describe('the import pipeline stays free of IO', () => {
+		it.each([
+			["import Dexie from 'dexie';\nexport const x = Dexie;\n"],
+			["import { CardRepo } from '#lib/db/repos/content-repos.ts';\nexport const x = CardRepo;\n"],
+			["import { logger } from '#lib/services/app.ts';\nexport const x = logger;\n"]
+		])('rejects a forbidden import: %s', async (code) => {
+			expect(await ruleIdsFor(code, 'src/lib/import/sample.ts')).toContain('no-restricted-imports');
+		});
+
+		it('allows the engine and schemas', async () => {
+			const code =
+				"import { x } from '#lib/engine/sample.ts';\n" +
+				"import { y } from '#lib/db/schemas/note.ts';\n" +
+				'export const z = [x, y];\n';
+			expect(await ruleIdsFor(code, 'src/lib/import/sample.ts')).toEqual([]);
+		});
+
+		it('is reached through a service, not from the UI', async () => {
+			const code = "import { x } from '#lib/import/parser.ts';\nexport const y = x;\n";
+			expect(await ruleIdsFor(code, 'src/routes/sample.ts')).toContain('no-restricted-imports');
+		});
+	});
+
 	describe('the data layer never imports upward', () => {
 		it.each(['services/app.ts', 'engine/sample.ts', 'log/logger.ts', 'pwa/register-sw.ts'])(
 			'rejects importing %s in a repo',
