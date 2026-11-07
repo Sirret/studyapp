@@ -263,7 +263,7 @@ Indexes: `id, ts, cardId, sessionId, type, [cardId+ts]`. **Order for replay:** `
 | `startedAt` / `endedAt` | `number` | ✓ / — | |
 | `plannedMinutes` | `number` | ✓ | From the planner |
 | `phase` | `'warmup' \| 'new' \| 'recall' \| 'discrimination' \| 'cleanup'` | ✓ | Current phase |
-| `snapshot` | `SessionSnapshot` | ✓ | Queue, per-card counts, seeds — saved after every answer so a closed tab resumes |
+| `snapshot` | `{ queue: CardId[]; counts: Record<CardId, number>; attempts: Record<CardId, number> }` | ✓ | Queue, per-card counts and attempt numbers (seeds derive from `(cardId, sessionId, attempt)`) — saved after every answer so a closed tab resumes |
 
 Not exported (events keep `sessionId` for grouping).
 
@@ -358,7 +358,7 @@ The ts-fsrs `Card` object as stored by the library (due, stability, difficulty, 
 | `settings` | `Settings` | content | See below |
 | `availability` | `Availability` | content | See below |
 | `fsrsParams` | `{ version: number; params: number[]; optimisedAt: number }` | cache | Personal FSRS parameters |
-| `calibration` | `{ secPerAttempt: Record<ExerciseKind, number>; p0: Record<Material, number> }` | cache | Rolling medians / measured accuracy |
+| `calibration` | `{ secPerAttempt: Partial<Record<ExerciseKind, number>>; p0: Partial<Record<Material, number>> }` | cache | Rolling medians / measured accuracy; a missing key uses the default |
 | `lastExportAt` | `number` | local | For the backup reminder |
 | `offline` | `{ persisted: boolean; checkedAt: number }` | local | "Ready offline" status |
 
@@ -368,7 +368,7 @@ The ts-fsrs `Card` object as stored by the library (due, stability, difficulty, 
 |---|---|---|
 | `retention` | `number` (0.80–0.95) | 0.90 |
 | `spellingMode` | `'fuzzy' \| 'firstLetter'` | `fuzzy` |
-| `exercises` | `Record<ExerciseKind, boolean>` | all `true` |
+| `exercises` | `Partial<Record<ExerciseKind, boolean>>` | `{}`; a missing kind counts as `true`, so a new kind starts enabled |
 | `occlusionMode` | `'hideOne' \| 'hideAll'` | `hideOne` |
 | `acquisition` | `{ pretest: boolean; path: 'auto' \| 'full' \| 'quick'; deadlineOrder: 'breadth' \| 'depth' }` | `{ true, 'auto', 'breadth' }` |
 | `theme` | `'system' \| 'light' \| 'dark' \| 'auto-night'` | `system` |

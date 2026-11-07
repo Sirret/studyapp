@@ -841,5 +841,11 @@ Choices this plan makes where the concept was silent. Add new ones here.
 | Added `scripts/verify.ts` (runs the steps, always writes the summary)                              | `summary.md` must exist whichever step fails                                             |
 | Phase 0 skipped `spec-test-writer`; tests for its tooling and logger were written directly         | User's call for the setup phase; later phases keep the full workflow                     |
 | §14: ts-fsrs 6 names confirmed (`enable_fuzz`, `enable_short_term`, `maximum_interval`, `get_retrievability`) | Read from the package's types; re-check against the installed version in Phase 4 |
+| `replay(events, cardIds)` takes cards, not notes; config arrives with FSRS in Phase 4               | Cards with no events still need empty caches, and `path` lives on the card               |
+| Merge order: strings by code unit; event ties by `id`; full LWW ties to a tombstone, then canonical JSON | Merge must not depend on argument order or device locale                            |
+| Only an event's `cardId` marks a card as affected by a merge, not `missedCardIds` or `chosenFromCardId` | Those don't change that card's caches yet; revisit if Phase 4 uses them              |
+| `accuracy` counts first-attempt reviews with `weight` not `none`, whatever `credited` or `mode` says | It gates multiple choice, which depends on how the card went, not on scheduling credit  |
+| `settings` and `availability` merge in Phase 9, not in `merge()`                                   | They are `kv` values with no `updatedAt`; transfer decides how they combine              |
+| Reviewer runs at the end of Phase 5 or on big or repeated errors; `spec-test-writer` for risky logic only | User's call: agents are scoped helpers, and token use matters                       |
 | §14: `fsrs-browser` 6.6 exists (`computeParameters`, 338 KB WASM) and exports a rayon thread pool  | May need cross-origin isolation headers on the host; confirm when building the optimiser |
 | §14: `@xyflow/svelte` 1.7 declares Svelte 5 support; touch use and the tesseract.js worker are unverified | Both need the real code; verify in Phase 6                                     |

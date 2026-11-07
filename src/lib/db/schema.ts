@@ -1,10 +1,26 @@
-import Dexie, { type EntityTable } from 'dexie';
+import Dexie, { type Table } from 'dexie';
 import { DB_NAME } from '#lib/config/defaults.ts';
-import type { LogEntry } from './schemas/log-entry.ts';
+import type { Card } from './schemas/card.ts';
+import type { Chunk, Course, Media, Topic } from './schemas/course.ts';
+import type { StudyEvent } from './schemas/event.ts';
+import type { KvKey } from './schemas/kv.ts';
+import type { LogEntry, NewLogEntry } from './schemas/log-entry.ts';
+import type { Note } from './schemas/note.ts';
+import type { Session } from './schemas/session.ts';
 
-/** The Dexie database. Entity tables gain their record types as their schemas are added. */
+/** The Dexie database. */
 export type SnowpackDb = Dexie & {
-	logs: EntityTable<LogEntry, 'seq'>;
+	courses: Table<Course, string>;
+	topics: Table<Topic, string>;
+	chunks: Table<Chunk, string>;
+	notes: Table<Note, string>;
+	cards: Table<Card, string>;
+	events: Table<StudyEvent, string>;
+	media: Table<Media, string>;
+	sessions: Table<Session, string>;
+	/** Values are validated by `KvRepo`, the only code that touches this table. */
+	kv: Table<{ key: KvKey; value: unknown }, KvKey>;
+	logs: Table<LogEntry, number, NewLogEntry>;
 };
 
 /**
