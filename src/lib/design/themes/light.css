@@ -36,6 +36,7 @@
 	--shadow-1: 0 1px 2px var(--palette-ink-06), 0 6px 18px var(--palette-ink-08);
 	--shadow-2: 0 2px 4px var(--palette-ink-08), 0 12px 32px var(--palette-ink-12);
 	--card-edge: transparent;
+	--scrim: var(--palette-black-30);
 	--yuki-glow: none;
 
 	--course-lavender: var(--palette-course-lavender);

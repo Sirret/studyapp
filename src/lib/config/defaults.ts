@@ -145,6 +145,9 @@ export const IMAGE_WEBP_QUALITY = 0.8;
 export const DEFAULT_EXAM_FORMAT = 'mixed';
 export const BACKUP_REMINDER_DAYS = 7;
 
+/** How long a phase interstitial stays before it leaves by itself (DESIGN §7.3). */
+export const PHASE_INTERSTITIAL_MS = 1200;
+
 /** Auto-night theme: hours before the sleep window starts that the dark theme begins (DESIGN §3.1). */
 export const AUTO_NIGHT_LEAD_HOURS = 2;
 

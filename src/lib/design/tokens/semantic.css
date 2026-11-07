@@ -86,10 +86,40 @@
 	--dur-count-up: var(--ms-600);
 	--dur-flurry: var(--ms-800);
 	--dur-walk: var(--ms-1200);
-	--dur-interstitial: var(--ms-1200);
+	/* Yuki (DESIGN §7.3) */
+	--dur-yuki-hop: var(--ms-400);
+	--dur-yuki-oops: var(--ms-600);
+	--dur-yuki-sparkle: var(--ms-700);
+	--dur-yuki-wag: var(--ms-900);
+	--dur-yuki-celebrate: var(--ms-1000);
+	--dur-yuki-twinkle: var(--ms-1100);
+	--dur-yuki-think: var(--ms-2600);
+	--dur-yuki-sway: var(--ms-2800);
+	--dur-yuki-float: var(--ms-3000);
+	--dur-yuki-breathe: var(--ms-3200);
+	--dur-yuki-sleepy: var(--ms-4800);
+	--dur-yuki-blink: var(--ms-5000);
 	--ease-out: var(--curve-out);
 	--ease-bounce: var(--curve-bounce);
 	--ease-linear: var(--curve-linear);
+
+	/* Yuki (DESIGN §7.1) */
+	--yuki-fur: var(--palette-yuki-fur);
+	--yuki-shade: var(--palette-yuki-shade);
+	--yuki-ice: var(--palette-yuki-ice);
+	--yuki-mask: var(--palette-yuki-mask);
+	--yuki-pink: var(--palette-yuki-pink);
+	--yuki-outline: var(--palette-yuki-outline);
+	--yuki-eye: var(--palette-yuki-eye);
+	--yuki-iris: var(--palette-yuki-iris);
+	--yuki-smile: var(--palette-yuki-smile);
+	--yuki-nose: var(--palette-yuki-nose);
+	--yuki-zzz: var(--palette-yuki-zzz);
+	--yuki-book: var(--palette-yuki-book);
+	--yuki-sparkle: var(--palette-gold);
+	--yuki-sparkle-alt: var(--palette-lilac);
+	--yuki-note: var(--palette-amber-soft);
+	--yuki-white: var(--palette-white);
 
 	/* Stacking */
 	--z-raised: var(--layer-1);

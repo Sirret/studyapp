@@ -35,6 +35,7 @@
 	--shadow-1: none;
 	--shadow-2: none;
 	--card-edge: var(--border);
+	--scrim: var(--palette-black-50);
 	--yuki-glow: drop-shadow(0 0 10px var(--palette-glow));
 
 	--course-lavender: var(--palette-course-lavender-night);

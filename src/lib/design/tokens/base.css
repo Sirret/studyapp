@@ -53,12 +53,28 @@
 	--palette-course-butter: #f3dc92;
 	--palette-course-butter-night: #cdb050;
 
+	/* Yuki (DESIGN §7.1): the companion keeps its colours in both themes */
+	--palette-yuki-fur: #fcfbff;
+	--palette-yuki-shade: #e3e8f6;
+	--palette-yuki-ice: #d3e3f7;
+	--palette-yuki-mask: #dce5f4;
+	--palette-yuki-pink: #f6b9c4;
+	--palette-yuki-outline: #3b3663;
+	--palette-yuki-eye: #2e3c78;
+	--palette-yuki-iris: #4a68b8;
+	--palette-yuki-smile: #c3cce4;
+	--palette-yuki-nose: #2b2540;
+	--palette-yuki-zzz: #7c6cd8;
+	--palette-yuki-book: #b9a9f5;
+
 	/* Shadow colour (ink) at the strengths DESIGN §3.3 and §12 use */
 	--palette-ink-06: rgb(43 37 64 / 6%);
 	--palette-ink-08: rgb(43 37 64 / 8%);
 	--palette-ink-12: rgb(43 37 64 / 12%);
 	--palette-ink-14: rgb(43 37 64 / 14%);
 	--palette-black-28: rgb(0 0 0 / 28%);
+	--palette-black-30: rgb(0 0 0 / 30%);
+	--palette-black-50: rgb(0 0 0 / 50%);
 	--palette-glow: rgb(169 155 255 / 35%);
 
 	/* Type */
@@ -103,6 +119,7 @@
 	--size-px-6: 6px;
 	--size-px-8: 8px;
 	--size-px-10: 10px;
+	--size-px-16: 16px;
 	--size-px-20: 20px;
 	--size-px-24: 24px;
 	--size-px-28: 28px;
@@ -131,10 +148,20 @@
 	--ms-320: 320ms;
 	--ms-450: 450ms;
 	--ms-500: 500ms;
+	--ms-400: 400ms;
 	--ms-600: 600ms;
 	--ms-700: 700ms;
 	--ms-800: 800ms;
+	--ms-900: 900ms;
+	--ms-1000: 1000ms;
+	--ms-1100: 1100ms;
 	--ms-1200: 1200ms;
+	--ms-2600: 2600ms;
+	--ms-2800: 2800ms;
+	--ms-3000: 3000ms;
+	--ms-3200: 3200ms;
+	--ms-4800: 4800ms;
+	--ms-5000: 5000ms;
 	--curve-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 	--curve-bounce: cubic-bezier(0.3, 1.6, 0.5, 1);
 	--curve-linear: linear;

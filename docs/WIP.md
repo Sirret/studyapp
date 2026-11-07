@@ -31,8 +31,8 @@ No reviewer this phase (Decisions log: reviewer only at the end of Phases 7–9)
 - [x] Layer 1–3: tokens (base, semantic), themes light/dark (+ auto-night), `tokens.ts` mirror, contrast unit test, fonts (Nunito, Caveat) self-hosted.
 - [x] Layer 4–5: primitives (Button, Card, Chip, Input, Toggle, Checkbox, Icon) + motifs (Paw, Snowflake, Moon).
 - [x] /dev/ui skeleton: `src/routes/dev/ui` (404 unless __DEV_ROUTES__), sections in `src/lib/ui/styleguide/` (GuideSection renders light+dark panes, data-guide-section ids). Tokens + Primitives sections done. Screenshot helper: scratchpad shot.mjs (copy into repo root to run; serve with `node scripts/serve-build.ts --port 4173` after `npm run build:test`).
-- [ ] Layer 6 (NEXT): components (OptionButton, ProgressStrip, ProgressDots, PhaseLabel, ReadinessRing, StatusBadge, StickyNote, FeedbackPanel, Sheet, EmptyState, SpeechBubble, Banner, RoundSummary, ExerciseCard, WordBank, Yuki + states).
-- [ ] Layer 7: delight (PawPress, CheckDraw/SnowBurst, SnowFlurry, PawStamp, CountUp, PawWalk, PawLoader, haptics).
+- [x] Layer 6 components + Yuki (components/yuki/: Yuki.svelte, YukiProps.svelte, yuki.ts YUKI_STATES) and their /dev/ui sections. Extra components: TapChip, Slot (tap-to-place), PhaseInterstitial (timer PHASE_INTERSTITIAL_MS), SessionSummary (figure/footer snippets for count-up and paw walk). Deferred: ExamCountdown (Phase 8 Today), Segmented/Slider (Settings screen). Was: components (OptionButton, ProgressStrip, ProgressDots, PhaseLabel, ReadinessRing, StatusBadge, StickyNote, FeedbackPanel, Sheet, EmptyState, SpeechBubble, Banner, RoundSummary, ExerciseCard, WordBank, Yuki + states).
+- [ ] Layer 7 (NEXT): delight (PawPress, CheckDraw/SnowBurst, SnowFlurry, PawStamp, CountUp, PawWalk, PawLoader, haptics).
 - [ ] Layer 8: layout (Screen, Stack, Grid, TopBar, BottomNav, SafeArea).
 - [ ] Layer 9: exercises (one component per shape, dispatcher `Exercise.svelte`).
 - [ ] Screens: `/study/[sessionId]`, start from a course (Today), restyle `/import`, `/dev/ui` (dev only), `/dev/session` harness for e2e with forced kinds.
