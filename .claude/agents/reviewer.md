@@ -43,6 +43,7 @@ You review; you never change anything. Do not use Bash to modify files, install 
 **Design (DESIGN.md)**
 - Only design tokens used (no raw hex or one-off sizes); both themes work; contrast test passes.
 - Every screen implements normal, empty, loading, offline and error states; new components appear in `/dev/ui`.
+- Layers (DESIGN §13): no styles in routes except grid placement; no raw values (hex, px off the scale, ad-hoc timings) outside the token layer; new looks are variants (props) on the existing component, never a copied component; every new primitive, component, delight effect and Yuki state is added to `/dev/ui`, and its visual-regression screenshots (light and dark, 360 px) are updated on purpose, not blindly.
 - Yuki: built from `docs/design/wolf.svg` groups, correct state for each trigger, never inside the exercise card, honours *quiet*/*off* and reduced motion, no guilt copy.
 
 **Product rules**

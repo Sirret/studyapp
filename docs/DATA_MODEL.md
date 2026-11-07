@@ -400,6 +400,7 @@ The ts-fsrs 6 `Card` object as stored by the library (due, stability, difficulty
 | `theme` | `'system' \| 'light' \| 'dark' \| 'auto-night'` | `system` |
 | `companion` | `'full' \| 'quiet' \| 'off'` | `full` |
 | `companionName` | `string` | `Yuki` |
+| `haptics` | `boolean` | `true`; the short vibration on a first-attempt correct (DESIGN §11.2), where the device supports it |
 | `debugLogging` | `boolean` | `false` |
 
 `Availability`:

@@ -21,7 +21,7 @@ A **cozy study desk by day, a lofi desk by night.** Warm cream paper, lavender a
 
 ## 3. Design tokens
 
-All colours, sizes and timings are CSS custom properties in `src/lib/design/tokens.css` (mirrored in `tokens.ts` for tests). **Components never use raw hex values or pixel numbers outside the scales below.** The values are starting points: the automated contrast test (§9) may darken or lighten a shade to pass AA — keep the hue.
+All colours, sizes and timings are CSS custom properties in the token layer under `src/lib/design/` — base tokens, semantic tokens and one file per theme (§13.2), imported together by `src/lib/design/tokens.css` and mirrored in `tokens.ts` for tests. **Components never use raw hex values or pixel numbers outside the scales below.** The values are starting points: the automated contrast test (§9) may darken or lighten a shade to pass AA — keep the hue.
 
 ### 3.1 Colour
 
@@ -45,6 +45,12 @@ All colours, sizes and timings are CSS custom properties in `src/lib/design/toke
 | `--warning`      | `#8A6100`               | `#F2C14E`             | Warning text/icons                             |
 | `--warning-soft` | `#FDF3D6`               | `#4A3D17`             | Sticky-note warnings (shortfall, backup)       |
 | `--focus`        | `#6B5BC9`               | `#A99BFF`             | 3 px focus ring, 2 px offset                   |
+| `--moon`         | `#F2C14E`               | `#F2C14E`             | Moon motif (§11.1), end of the progress strip  |
+| `--paw-press`    | `--primary` at 35%      | white at 35%          | Paw-press effect (§11.2)                       |
+| `--paw-trail`    | `--on-primary` at 18%   | `--on-primary` at 18% | Paw-trail pattern on the progress fill (§11.2) |
+| `--lip`          | `rgba(43,37,64,.14)`    | `rgba(0,0,0,.28)`     | 3 px bottom "lip" of pressable controls (§12)  |
+| `--lip-secondary` | `--primary` at 20%    | `--primary` at 20%    | Lip of secondary buttons (§12)                 |
+| `--tape`         | `--surface-alt` at 70%  | `--surface-alt` at 70% | Tape strip on sticky notes (§12)              |
 
 **Course colours** — each course gets one, assigned in order on creation and editable (`Course.color`):
 
@@ -118,17 +124,17 @@ Numbers that change (timers, counts) use `font-variant-numeric: tabular-nums`. T
 
 ## 5. Components
 
-Each lives in `src/lib/ui/`, uses only tokens, and appears in the style guide (§10).
+Each lives in its layer's folder under `src/lib/ui/` (§13.2), uses only tokens, and appears in the style guide (§10). §12 fixes how each control looks; where this table and §12 differ, §12 wins.
 
 | Component                       | Purpose                           | Key specs and states                                                                                                                                                                                                                                           |
 | ------------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Button`                        | Actions                           | Variants: `primary` (accent fill), `secondary` (primary-soft fill, primary text), `ghost`, `danger` (error text). Height 48 (56 for the session action). States: default, pressed (scale .98), disabled (40% opacity), loading (spinner, label kept for width) |
+| `Button`                        | Actions                           | Variants: `primary` (accent fill), `secondary` (primary-soft fill, primary text), `ghost`, `danger` (error text). Height 52 (56 for the session action), 3 px bottom lip (§12). States: default, pressed (moves down 2 px, lip shrinks to 1 px, paw press §11.2), disabled (40% opacity), loading (paw loader §11.2, label kept for width) |
 | `Card`                          | Group content                     | `--surface`, `--r-lg`, `--shadow-1`, 16 padding. Optional course-colour top stripe (4 px)                                                                                                                                                                      |
 | `CourseChip` / `CourseTab`      | Identify a course                 | Course-colour fill + name; tabs on Today/Courses switch course filter                                                                                                                                                                                          |
-| `StatusBadge`                   | Card status                       | Pill, `caption` text, icon + label always: New — retest tomorrow (sparkle), Needs work (refresh), Provisional (half-circle), Exam-ready (check), Long-term secure (shield), One-night triage (moon)                                                            |
+| `StatusBadge`                   | Card status                       | Pill, `caption` text, icon + label always: New — retest tomorrow (sparkle), Needs work (refresh), Provisional (half-circle), Exam-ready (paw), Long-term secure (snowflake), One-night triage (moon). Paw, snowflake and moon are the §11.1 motifs; the rest are Lucide. Reaching Exam-ready or Long-term secure plays the paw stamp (§11.2) |
 | `ReadinessRing`                 | Course readiness                  | Ring in course colour showing % exam-ready (or % secure in long-term), number in the centre, label below                                                                                                                                                       |
 | `ExamCountdown`                 | Upcoming exams                    | Horizontal chips: course colour, name, "in 3 days" / "Tomorrow" / "Today 14:00"                                                                                                                                                                                |
-| `ProgressStrip`                 | Session progress                  | 10 px track (`--primary-soft`) and fill (`--primary`), moon at the end, Yuki trotting along the fill (§7)                                                                                                                                                      |
+| `ProgressStrip`                 | Session progress                  | 10 px track (`--primary-soft`) and fill (`--primary`) with the paw trail (§11.2), moon at the end, Yuki trotting along the fill (§7)                                                                                                                                                    |
 | `PhaseLabel`                    | Current phase                     | `caption` uppercase: WARM-UP · NEW · RECALL · COMPARE · CLEANUP                                                                                                                                                                                                |
 | `ProgressDots`                  | A card's criterion progress       | One dot per required correct (`required`, 1–3), filled for counting corrects (`count`): ●●○. 8 px dots, 6 px gap, filled `--primary`, empty `--primary-soft` ring. Top-right of the prompt; empties on a wrong answer with a 200 ms fade (none with reduced motion). Label: "2 of 3 correct" |
 | `RoundSummary`                  | Between rounds                    | Round number, cards finished this round, carried over, left; three full-width buttons: **Continue** (primary), **Take a break** (secondary), **Stop here** (ghost). After 25 min one line: "Good moment for a 5-minute break"; Take a break shows a 5:00 countdown whose Continue works at any time. Never a lock. Yuki `idle`, 96 px |
@@ -143,7 +149,7 @@ Each lives in `src/lib/ui/`, uses only tokens, and appears in the style guide (�
 | `Sheet`                         | Secondary choices                 | Bottom sheet, `--r-xl` top corners, drag handle, `--shadow-2`                                                                                                                                                                                                  |
 | `EmptyState`                    | Nothing here yet                  | Yuki (96 px) + one line + one action ("Import your first lecture")                                                                                                                                                                                             |
 | `SpeechBubble`                  | Yuki talking                      | Caveat text, `--surface`, small tail pointing to Yuki, max 2 short lines                                                                                                                                                                                       |
-| `Toggle`, `Segmented`, `Slider` | Settings                          | 44 px touch height, `--primary` when on                                                                                                                                                                                                                        |
+| `Toggle`, `Segmented`, `Slider` | Settings                          | 44 px touch height, `--primary` when on; the toggle knob shows a tiny paw when on and checkboxes are paw checkboxes (§11.2)                                                                                                                                  |
 
 ---
 
@@ -191,7 +197,7 @@ For every screen implement **all** states: normal, empty, loading (skeleton card
 
 ### Settings
 
-Grouped lists: Study (retention, spelling mode, exercise toggles, occlusion mode), Learning from cold (pretest, path, breadth/depth), Availability, Appearance (theme, **Yuki: full / quiet / off**), Data (export, import, archive, storage used, "Make available offline"), Debug (logging, log panel, export logs).
+Grouped lists: Study (retention, spelling mode, exercise toggles, occlusion mode), Learning from cold (pretest, path, breadth/depth), Availability, Appearance (theme, **Yuki: full / quiet / off** — also sets which delight effects run, §11.2 — and **haptics** on/off), Data (export, import, archive, storage used, "Make available offline"), Debug (logging, log panel, export logs).
 
 ---
 
@@ -227,7 +233,7 @@ In dark mode Yuki gets a soft lavender glow (`drop-shadow(0 0 10px rgba(169,155,
 
 **Session rules:** inside the exercise card Yuki never appears. In the session header Yuki is still between reactions (no constant idle motion while you read a question). Reactions fire only on first attempts, never on redo-till-right attempts.
 
-**Settings:** _full_ (everything above), _quiet_ (no interstitials, header reactions only), _off_ (no Yuki; progress strip without runner).
+**Settings:** _full_ (everything above), _quiet_ (no interstitials, header reactions only), _off_ (no Yuki; progress strip without runner). The same setting picks which delight effects run (§11.2).
 
 ### 7.4 Voice
 
@@ -257,7 +263,120 @@ Plain, warm, specific. Use numbers and next steps ("Retest tomorrow evening", "4
 
 ## 10. Implementation notes
 
-- `src/lib/design/tokens.css` (+ `tokens.ts`), `src/lib/ui/*` components, `src/lib/ui/yuki/Yuki.svelte` + props.
-- **Style guide route** `/dev/ui` (dev builds only): every component in every state, both themes, and all Yuki states side by side. The reviewer agent checks new UI against it.
+- The token layer in `src/lib/design/` (+ `tokens.ts`), the UI layers in `src/lib/ui/` and `src/lib/exercises/` (§13.2), `src/lib/ui/components/yuki/Yuki.svelte` + props, motifs in `src/lib/ui/motifs/`.
+- **Style guide route** `/dev/ui` (dev builds only): every primitive, component, delight effect and Yuki state, grouped by layer, in both themes (§13.4). The reviewer agent checks new UI against it.
 - Fonts in `static/fonts/` (subset `woff2`), preloaded: Nunito only; Caveat loaded on first use.
 - Performance: no raster images in the UI; Yuki and illustrations inline SVG; the style guide and diagram editor are lazy routes.
+
+---
+
+## 11. The wolf theme: accents, not everywhere
+
+The theme lives in four motifs only — **Yuki, paw prints, snow, the moon** — used as small accents. Rule: **at most one decorative element per card**, and none inside the exercise card except feedback effects. Surfaces, text and layout stay clean.
+
+### 11.1 Motif assets (inline SVG, `src/lib/ui/motifs/`)
+
+**Paw print** (`Paw.svelte`, 24 × 24, fill `currentColor`):
+```svg
+<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+  <path d="M12 11.2c2.9 0 5.4 2.2 5.4 4.6 0 1.8-1.4 2.6-3 2.6-.9 0-1.6-.4-2.4-.4s-1.5.4-2.4.4c-1.6 0-3-.8-3-2.6 0-2.4 2.5-4.6 5.4-4.6z"/>
+  <ellipse cx="6.6" cy="9.6" rx="1.7" ry="2.2" transform="rotate(-20 6.6 9.6)"/>
+  <ellipse cx="10" cy="6.6" rx="1.7" ry="2.3"/>
+  <ellipse cx="14" cy="6.6" rx="1.7" ry="2.3"/>
+  <ellipse cx="17.4" cy="9.6" rx="1.7" ry="2.2" transform="rotate(20 17.4 9.6)"/>
+</svg>
+```
+
+**Snowflake** (`Snowflake.svelte`, 24 × 24, stroke `currentColor`, width 2, round caps):
+```svg
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+  <path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9"/>
+  <path d="M9.5 4.5 12 6l2.5-1.5M9.5 19.5 12 18l2.5 1.5M4 10.4l2.6.1 1.2-2.4M20 13.6l-2.6-.1-1.2 2.4M4 13.6l2.6-.1 1.2 2.4M20 10.4l-2.6.1-1.2-2.4"/>
+</svg>
+```
+
+**Moon** (`Moon.svelte`): a 3/4 crescent in `--moon` (§3.1; also used at the end of the progress strip). Motifs are part of layer 5 (§13.2) and keep their own folder.
+
+Status badge icons use these motifs where they fit: *Exam-ready* = paw, *Long-term secure* = snowflake, *One-night triage* = moon. Other icons stay Lucide.
+
+### 11.2 Delight catalogue (reinforcement and small touches)
+
+All effects live in `src/lib/ui/delight/`, are triggered by the session controller (never by exercise components directly), run **in parallel** with the next interaction (never block input or delay the next card), animate only `transform`/`opacity`, and are disabled under reduced motion.
+
+| Effect | Trigger | Look & motion | Duration | Limit |
+|---|---|---|---|---|
+| **Paw press** | Tap on any `Button` or `OptionButton` | A paw print (20 px, `--paw-press`) appears at the touch point, scales 0.6 → 1, fades out | 300 ms | Every tap |
+| **Check draw + snow burst** | First-attempt correct | The ✓ draws itself (stroke animation, 220 ms), then 4–5 small snowflakes burst out from it and fade | 450 ms total | Every first-attempt correct |
+| **Haptic tick** | First-attempt correct | `navigator.vibrate(12)` on Android | 12 ms | Setting `haptics` (default on) |
+| **Paw trail** | Progress strip fills | The filled part shows a faint repeating paw-print pattern behind Yuki (CSS background, `--paw-trail`) | static | — |
+| **Snow flurry** | 3 first-attempt corrects in a row | A light flurry of ~10 flakes drifts down across the top of the card | 800 ms | At most once per 3 corrects |
+| **Paw stamp** | A card reaches Exam-ready or Long-term secure | Its status badge appears with a "stamp" (scale 1.3 → 1, rotate −8° → 0°) | 300 ms | Once per card per status |
+| **Count-up** | Session summary | Numbers count up | 600 ms | — |
+| **Paw walk** | Session summary | A line of paw prints walks across the bottom of the summary card to Yuki (celebrate) | 1.2 s | Once per summary |
+| **Paw loader** | Any loading > 300 ms | Three paw prints appear in sequence and loop (replaces spinners) | loop | — |
+| **Paw checkbox** | Explain-it / blurt checklist ticks, settings checkboxes | Box fills `--primary` with a white paw instead of a plain ✓ (keeps checkbox semantics and an accessible label) | 160 ms | — |
+| **Paw toggle** | Toggles | The knob shows a tiny paw when on | 160 ms | — |
+
+Wrong answers keep their gentle shake and Yuki's ear droop — **no** negative bursts, sounds or red flashes. No sounds in v1.
+
+**Settings mapping:** `companion: full` → everything above; `quiet` → paw press, check draw, haptic tick, paw checkbox/toggle only; `off` → no motifs except status-badge icons (functional feedback animations from §3.4 remain). Setting `haptics: boolean` (default `true`, `DATA_MODEL §5 Settings`) turns the haptic tick off whatever `companion` says.
+
+---
+
+## 12. What controls look like (complements §5)
+
+**Overall feel:** soft and slightly tactile — rounded shapes with a small darker "lip" at the bottom of pressable things, so pressing feels physical, like a soft clay button. Not full claymorphism (no heavy 3D shading).
+
+| Control | Look |
+|---|---|
+| **Primary button** (`accent`) | Height 52 (56 in the session), radius `--r-md`, Nunito 700 17 px, `--on-accent` text, 3 px bottom lip (`inset 0 -3px 0 var(--lip)`). **Press:** moves down 2 px, lip shrinks to 1 px, paw press appears. Optional leading icon 20 px |
+| **Secondary button** | Same shape, `--primary-soft` fill, `--primary` text, lip in `--primary` at 20% (`--lip-secondary`) |
+| **Ghost button** | No fill, `--primary` text, `--primary-soft` background on press |
+| **Option button** | `--surface`, 2 px `--border`, radius `--r-md`, min height 56. Left "letter bubble" (A/B/C/D) — 28 px circle in `--primary-soft` with `--primary` letter. Selected: 2 px `--primary` border + `--primary-soft` fill. Correct: `--success-soft` + ✓ (draws in). Wrong: `--error-soft` + ✕. Revealed correct: 2 px `--success` border |
+| **Card** | `--surface`, radius `--r-lg`, `--shadow-1`; optional 4 px course-colour top stripe; at most one motif (e.g. a tiny snowflake by a "secure" count) |
+| **Chip / course tab** | Pill, course-colour fill, Nunito 700 13 px, 32 px tall; selected tab gets a 2 px `--text` underline bar |
+| **Input** | `--surface-alt`, radius `--r-sm`, 48 px tall, 2 px `--primary` border on focus, first-letter hint as a faded letter |
+| **Toggle** | 52 × 32 track, `--primary` when on, knob with tiny paw (§11.2) |
+| **Bottom nav** | `--surface`, top hairline; active tab: icon + label in `--primary` with a small `--primary-soft` pill behind the icon |
+| **Sticky note** | `--warning-soft`, rotated −1.5°, a small "tape" strip at the top (`--tape`), Caveat heading |
+| **Progress strip** | 10 px pill track, paw-trail fill (§11.2), Yuki runner, moon at the end |
+
+All values come from tokens; this table just fixes the choices.
+
+---
+
+## 13. UI architecture: layers so the look can change later
+
+The goal: **change the look by editing tokens or one component file, never by editing screens.**
+
+### 13.1 Styling approach
+
+- **Svelte scoped component styles + CSS custom properties.** No Tailwind. Each component owns its styles in one file; screens contain no visual styles.
+- **No raw values outside the token layer**: lint (Stylelint `declaration-strict-value` for colour, spacing, radius, shadow, font, z-index, duration) fails on hex colours, px sizes not in the scale, or ad-hoc timings in components and routes.
+
+### 13.2 The layers (each may use only the layers above it)
+
+| Layer | Folder | Contains | May style? |
+|---|---|---|---|
+| **1. Base tokens** | `src/lib/design/tokens/base.css` | Raw palette, type scale, spacing scale, radii, shadows, durations | Defines values |
+| **2. Semantic tokens** | `src/lib/design/tokens/semantic.css` | Meaning-based names mapped to base tokens: `--bg`, `--text`, `--primary`, `--success`… | Maps only |
+| **3. Theme files** | `src/lib/design/themes/light.css`, `dark.css` | Semantic token values per theme (auto-night reuses dark). A future theme (e.g. seasonal) is just another file here | Maps only |
+| **4. Component tokens** | Top of each component file | Component-level knobs mapped to semantic tokens, e.g. `--button-primary-bg: var(--accent)`; `--card-radius: var(--r-lg)` | Maps only |
+| **5. Primitives** | `src/lib/ui/primitives/` | Button, Card, Chip, Input, Toggle, Icon; the motifs Paw, Snowflake, Moon live beside them in `src/lib/ui/motifs/` | Yes — via their component tokens |
+| **6. Components** | `src/lib/ui/components/` | OptionButton, ProgressStrip, ReadinessRing, StatusBadge, StickyNote, FeedbackPanel, Sheet, EmptyState, Yuki (`components/yuki/`) | Composition + their own tokens |
+| **7. Delight** | `src/lib/ui/delight/` | PawPress, SnowBurst, SnowFlurry, PawStamp, PawWalk, PawLoader, haptics | Own effects only |
+| **8. Layout** | `src/lib/ui/layout/` | Screen, Stack, Grid, TopBar, BottomNav, SafeArea | Spacing/layout props only |
+| **9. Exercises** | `src/lib/exercises/` | One component per exercise kind, built only from layers 5–8 | No new visual styles |
+| **10. Screens** | `src/routes/` | Compose layout + components with data | **No styles** except grid placement |
+
+**How a change flows:** recolour the app → edit a theme file. Make every card rounder → change `--card-radius` in Card. Redesign the option buttons → edit `OptionButton.svelte` once; every exercise updates. Add a new theme → add one theme file.
+
+### 13.3 Variants, not copies
+
+New looks are **props on the existing component** (`<Button variant="secondary" size="lg">`), never a copied component. If a variant needs more than a few token overrides, it gets reviewed as a design change first.
+
+### 13.4 Protecting the look when it changes
+
+- **Style guide `/dev/ui`** lists every primitive, component, delight effect and Yuki state, grouped by layer, in both themes.
+- **Visual regression tests:** Playwright screenshots of each `/dev/ui` section (`toHaveScreenshot`, light and dark, 360 px wide). Any visual change shows up as a diff to accept or reject, so future updates can't silently break other screens.
+- The reviewer agent checks: no styles in routes, no raw values, variants instead of copies, every new piece added to `/dev/ui`.

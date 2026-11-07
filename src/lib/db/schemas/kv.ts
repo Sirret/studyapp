@@ -22,6 +22,7 @@ export const SettingsSchema = z.object({
 	theme: z.enum(['system', 'light', 'dark', 'auto-night']),
 	companion: z.enum(['full', 'quiet', 'off']),
 	companionName: z.string().min(1),
+	haptics: z.boolean(),
 	debugLogging: z.boolean()
 });
 export type Settings = z.infer<typeof SettingsSchema>;
@@ -36,6 +37,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	theme: 'system',
 	companion: 'full',
 	companionName: 'Yuki',
+	haptics: true,
 	debugLogging: false
 };
 
