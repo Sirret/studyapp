@@ -19,10 +19,7 @@ export class ReplayService {
 	/** Replays every event over every live card, stores the result, and logs a summary. */
 	async rebuildAll(): Promise<void> {
 		const [events, cards] = await Promise.all([this.events.list(), this.cards.list()]);
-		const { result, trace } = replay(
-			events,
-			cards.map((card) => card.id)
-		);
+		const { result, trace } = replay(events, cards);
 		await this.cards.applyReplay(result);
 		this.logger.info('replay', 'rebuilt caches', { cards: cards.length, events: events.length });
 		this.logger.debug('replay', 'trace', trace);

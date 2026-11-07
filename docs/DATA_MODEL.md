@@ -265,7 +265,19 @@ Indexes: `id, ts, cardId, sessionId, type, [cardId+ts]`. **Order for replay:** `
 | `startedAt` / `endedAt` | `number` | ✓ / — | |
 | `plannedMinutes` | `number` | ✓ | From the planner |
 | `phase` | `'warmup' \| 'new' \| 'recall' \| 'discrimination' \| 'cleanup'` | ✓ | Current phase |
-| `snapshot` | `{ queue: CardId[]; counts: Record<CardId, number>; attempts: Record<CardId, number> }` | ✓ | Queue, per-card counts and attempt numbers (seeds derive from `(cardId, sessionId, attempt)`) — saved after every answer so a closed tab resumes |
+| `snapshot` | `{ queue: CardId[]; cards: Record<CardId, SessionCard>; clearing: CardId \| null; cleanup: boolean }` | ✓ | Queue (head = current card), per-card state, the card being cleared by redo-till-right, and whether cleanup has started — saved after every answer so a closed tab resumes |
+
+`SessionCard` (plan §6.3, §6.4):
+
+| Field | Type | Meaning |
+|---|---|---|
+| `phase` | `SessionPhase` | Phase the card was placed in |
+| `required` | `number` | Counting corrects needed this session |
+| `count` | `number` | Counting corrects so far (reset by a wrong one) |
+| `lastFull` | `boolean` | Whether the last counting correct was `weight: 'full'` |
+| `failed` | `boolean` | Had a wrong counting answer this session |
+| `attempt` | `number` | Presentations so far; seeds derive from `(cardId, sessionId, attempt)` |
+| `done` | `boolean` | Criterion met (or warm-up shown) |
 
 Not exported (events keep `sessionId` for grouping).
 
@@ -346,7 +358,7 @@ Variant strings are stable: editing a note keeps existing variants (and their ca
 
 ### 4.5 `FsrsCardState`
 
-The ts-fsrs `Card` object as stored by the library (due, stability, difficulty, elapsed/scheduled days, reps, lapses, state, last review). Stored verbatim; dates as epoch ms. Never edited outside `replay()`.
+The ts-fsrs 6 `Card` object as stored by the library (due, stability, difficulty, scheduled days, learning steps, reps, lapses, state, last review; v6 removed elapsed days). Stored verbatim; dates as epoch ms. Never edited outside `replay()`.
 
 ---
 

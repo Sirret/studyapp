@@ -18,6 +18,7 @@ import {
 	makeReview,
 	makeSelfRated,
 	NUM_RUNS,
+	replayCards,
 	T1,
 	T2
 } from './fixtures.ts';
@@ -41,7 +42,7 @@ function expectBefore(earlier: EventOrderKey, later: EventOrderKey): void {
 }
 
 const accuracyOf = (events: readonly StudyEvent[], card = CARD_A) =>
-	replay(events, [card]).result[card]?.accuracy;
+	replay(events, replayCards(card)).result[card]?.accuracy;
 
 describe('compareEvents', () => {
 	it('orders by ts first, over deviceId and seq', () => {
@@ -93,21 +94,23 @@ describe('compareEvents', () => {
 
 describe('replay: cards and scope', () => {
 	it('gives a card with no events EMPTY_CARD_CACHES', () => {
-		expect(replay([], [CARD_A]).result).toStrictEqual({ [CARD_A]: EMPTY_CARD_CACHES });
+		expect(replay([], replayCards(CARD_A)).result).toStrictEqual({ [CARD_A]: EMPTY_CARD_CACHES });
 	});
 
 	it('returns nothing for no cards, even with events', () => {
-		expect(replay([makeReview()], []).result).toStrictEqual({});
+		expect(replay([makeReview()], replayCards()).result).toStrictEqual({});
 	});
 
 	it('returns exactly the requested cards', () => {
-		const { result } = replay([makeReview({ cardId: CARD_A })], [CARD_A, CARD_B]);
+		const { result } = replay([makeReview({ cardId: CARD_A })], replayCards(CARD_A, CARD_B));
 		expect(Object.keys(result).sort()).toStrictEqual([CARD_A, CARD_B]);
 	});
 
 	it('ignores an event for a card not in cardIds', () => {
 		const stray = makeReview({ id: eventId(2), cardId: CARD_B });
-		expect(replay([stray], [CARD_A]).result).toStrictEqual({ [CARD_A]: EMPTY_CARD_CACHES });
+		expect(replay([stray], replayCards(CARD_A)).result).toStrictEqual({
+			[CARD_A]: EMPTY_CARD_CACHES
+		});
 	});
 
 	it('does not leak one card events into another', () => {
@@ -116,14 +119,14 @@ describe('replay: cards and scope', () => {
 			makeReview({ id: eventId(2), cardId: CARD_A, correct: false }),
 			makeReview({ id: eventId(3), cardId: CARD_B, correct: true })
 		];
-		const { result } = replay(events, [CARD_A, CARD_B, CARD_C]);
+		const { result } = replay(events, replayCards(CARD_A, CARD_B, CARD_C));
 		expect(result[CARD_A]?.accuracy).toStrictEqual({ n: 2, correct: 1 });
 		expect(result[CARD_B]?.accuracy).toStrictEqual({ n: 1, correct: 1 });
 		expect(result[CARD_C]).toStrictEqual(EMPTY_CARD_CACHES);
 	});
 
 	it('does not count a card twice when its id is requested twice', () => {
-		const { result } = replay([makeReview()], [CARD_A, CARD_A]);
+		const { result } = replay([makeReview()], replayCards(CARD_A, CARD_A));
 		expect(Object.keys(result)).toStrictEqual([CARD_A]);
 		expect(result[CARD_A]?.accuracy).toStrictEqual({ n: 1, correct: 1 });
 	});
@@ -180,7 +183,7 @@ describe('replay: accuracy', () => {
 	it('matches its definition on any events', () => {
 		fc.assert(
 			fc.property(arbEvents, (events) => {
-				const { result } = replay(events, CARD_POOL);
+				const { result } = replay(events, replayCards(...CARD_POOL));
 				for (const card of CARD_POOL) {
 					const counted = events.filter(
 						(event) =>
@@ -208,14 +211,14 @@ describe('replay: purity and determinism', () => {
 	];
 
 	it('does not mutate its inputs', () => {
-		const cards = [CARD_B, CARD_A];
+		const cards = replayCards(CARD_B, CARD_A);
 		expect(() => replay(deepFreeze([...events]), deepFreeze(cards))).not.toThrow();
-		expect(cards).toStrictEqual([CARD_B, CARD_A]);
+		expect(cards).toStrictEqual(replayCards(CARD_B, CARD_A));
 	});
 
 	it('does not write its counts into EMPTY_CARD_CACHES', () => {
 		const before = structuredClone(EMPTY_CARD_CACHES);
-		const { result } = replay(events, [CARD_A, CARD_B, CARD_C]);
+		const { result } = replay(events, replayCards(CARD_A, CARD_B, CARD_C));
 		expect(EMPTY_CARD_CACHES).toStrictEqual(before);
 		expect(result[CARD_C]).toStrictEqual(EMPTY_CARD_CACHES);
 	});
@@ -223,7 +226,7 @@ describe('replay: purity and determinism', () => {
 	// SPEC-GAP: trace contents are unspecified. Only the `TraceEntry` shape and "a decision was traced"
 	// are asserted (CLAUDE.md rule 17).
 	it('traces its work as entries with a rule', () => {
-		const { trace } = replay(events, [CARD_A]);
+		const { trace } = replay(events, replayCards(CARD_A));
 		expect(trace.length).toBeGreaterThan(0);
 		for (const entry of trace) expect(entry.rule).toEqual(expect.any(String));
 	});
@@ -231,7 +234,9 @@ describe('replay: purity and determinism', () => {
 	it('returns an identical result and trace on a second call', () => {
 		fc.assert(
 			fc.property(arbEvents, (generated) => {
-				expect(replay(generated, CARD_POOL)).toStrictEqual(replay(generated, CARD_POOL));
+				expect(replay(generated, replayCards(...CARD_POOL))).toStrictEqual(
+					replay(generated, replayCards(...CARD_POOL))
+				);
 			}),
 			RUNS
 		);
@@ -245,7 +250,9 @@ describe('replay: purity and determinism', () => {
 		);
 		fc.assert(
 			fc.property(arb, ([generated, shuffled]) => {
-				expect(replay(shuffled, CARD_POOL)).toStrictEqual(replay(generated, CARD_POOL));
+				expect(replay(shuffled, replayCards(...CARD_POOL))).toStrictEqual(
+					replay(generated, replayCards(...CARD_POOL))
+				);
 			}),
 			RUNS
 		);
@@ -258,7 +265,9 @@ describe('replay: purity and determinism', () => {
 		);
 		fc.assert(
 			fc.property(arb, ([generated, cards]) => {
-				expect(replay(generated, cards)).toStrictEqual(replay(generated, CARD_POOL));
+				expect(replay(generated, replayCards(...cards))).toStrictEqual(
+					replay(generated, replayCards(...CARD_POOL))
+				);
 			}),
 			RUNS
 		);

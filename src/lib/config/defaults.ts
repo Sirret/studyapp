@@ -54,9 +54,14 @@ export const FUZZY_EDITS = [
 /** First-letter bank options are within this many characters of the answer's length. */
 export const FIRST_LETTER_LENGTH_DELTA = 3;
 
+/** FSRS's longest interval, in days (ts-fsrs's default). */
+export const FSRS_MAXIMUM_INTERVAL_DAYS = 36500;
+
 export const SECURE_STABILITY_DAYS = 21;
 export const SECURE_AT_EXAM = 0.95;
 export const FRAGILE_CAP_DAYS = 2;
+/** A long-term correct this many study days after the previous review clears cram-fragile. */
+export const FRAGILE_SPACED_GAP_DAYS = 1;
 
 /** Cram spacing: next session gap as a fraction of the days remaining, by exam format. */
 export const ALPHA = { recognition: 0.25, mixed: 0.35, recall: 0.42 } as const;

@@ -9,7 +9,7 @@ import {
 } from './common.ts';
 
 /**
- * The ts-fsrs card state, with dates as epoch ms. The field names are the library's.
+ * The ts-fsrs 6 card state, with dates as epoch ms. The field names are the library's.
  *
  * @see DATA_MODEL §4.5
  */
@@ -17,9 +17,8 @@ export const FsrsCardStateSchema = z.object({
 	due: z.number(),
 	stability: z.number(),
 	difficulty: z.number(),
-	elapsed_days: z.number(),
 	scheduled_days: z.number(),
-	learning_steps: z.number().optional(),
+	learning_steps: z.number(),
 	reps: z.number(),
 	lapses: z.number(),
 	state: z.number(),

@@ -7,6 +7,7 @@ import type {
 	CourseId,
 	DeviceId,
 	EventId,
+	ExerciseKind,
 	MediaId,
 	Meta,
 	NoteId,
@@ -405,3 +406,8 @@ export const arbLabelled: fc.Arbitrary<LabelledRecord> = fc
 		const record = { ...rest, tags: [...tags] };
 		return tombstone ? { ...record, deleted: true as const } : record;
 	});
+
+/** Cards as `replay()` takes them, each with a one-step cloze path. */
+export function replayCards(...ids: readonly CardId[]): { id: CardId; path: ExerciseKind[] }[] {
+	return ids.map((id) => ({ id, path: ['cloze'] }));
+}

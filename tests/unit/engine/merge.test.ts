@@ -36,6 +36,7 @@ import {
 	makeTopic,
 	NUM_RUNS,
 	oneOfEach,
+	replayCards,
 	T1,
 	T2
 } from './fixtures.ts';
@@ -462,10 +463,16 @@ describe('merge: properties', () => {
 		fc.assert(
 			fc.property(arbThreeSides, ([a, b, c]) => {
 				const events = (x: MergeData, y: MergeData) => merge(x, y).result.data.events;
-				const expected = replay(events(merge(a, b).result.data, c), CARD_POOL);
-				expect(replay(events(merge(b, a).result.data, c), CARD_POOL)).toStrictEqual(expected);
-				expect(replay(events(merge(c, b).result.data, a), CARD_POOL)).toStrictEqual(expected);
-				expect(replay(events(a, merge(c, b).result.data), CARD_POOL)).toStrictEqual(expected);
+				const expected = replay(events(merge(a, b).result.data, c), replayCards(...CARD_POOL));
+				expect(replay(events(merge(b, a).result.data, c), replayCards(...CARD_POOL))).toStrictEqual(
+					expected
+				);
+				expect(replay(events(merge(c, b).result.data, a), replayCards(...CARD_POOL))).toStrictEqual(
+					expected
+				);
+				expect(replay(events(a, merge(c, b).result.data), replayCards(...CARD_POOL))).toStrictEqual(
+					expected
+				);
 			}),
 			RUNS
 		);

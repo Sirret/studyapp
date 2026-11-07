@@ -5,11 +5,29 @@ import { CardIdSchema, CourseIdSchema, ModeSchema, SessionIdSchema } from './com
 export const SessionPhaseSchema = z.enum(['warmup', 'new', 'recall', 'discrimination', 'cleanup']);
 export type SessionPhase = z.infer<typeof SessionPhaseSchema>;
 
-/** Queue, per-card counts and attempt numbers, saved after every answer. @see DATA_MODEL §3.7 */
+/** One card's progress inside a session. @see DATA_MODEL §3.7 and BUILD_PLAN §6.3, §6.4 */
+export const SessionCardSchema = z.object({
+	phase: SessionPhaseSchema,
+	required: z.number().int().min(1),
+	count: z.number().int().min(0),
+	lastFull: z.boolean(),
+	failed: z.boolean(),
+	attempt: z.number().int().min(0),
+	done: z.boolean()
+});
+export type SessionCard = z.infer<typeof SessionCardSchema>;
+
+/**
+ * Queue (head = current card), per-card state, the card being cleared by redo-till-right, and
+ * whether cleanup has started. Saved after every answer so a closed tab resumes.
+ *
+ * @see DATA_MODEL §3.7
+ */
 export const SessionSnapshotSchema = z.object({
 	queue: z.array(CardIdSchema),
-	counts: z.record(z.string(), z.number().int().min(0)),
-	attempts: z.record(z.string(), z.number().int().min(0))
+	cards: z.record(z.string(), SessionCardSchema),
+	clearing: CardIdSchema.nullable(),
+	cleanup: z.boolean()
 });
 export type SessionSnapshot = z.infer<typeof SessionSnapshotSchema>;
 
