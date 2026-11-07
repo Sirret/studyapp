@@ -50,6 +50,10 @@
 
 	const companion = $derived(prefs.companion !== 'off');
 	const shown = $derived(view?.item ?? null);
+	/** The pinned action shows only while an exercise waits for its answer, so it never covers feedback. */
+	const checkable = $derived(
+		view !== null && shown !== null && !answer && !view.round && !interstitial && !view.ended
+	);
 
 	async function load(): Promise<void> {
 		try {
@@ -78,8 +82,10 @@
 		accepted = null;
 		presented += 1;
 		if (__DEV_ROUTES__) {
-			(window as unknown as Record<string, unknown>).__snowpackExercise =
-				next.item?.exercise ?? null;
+			// e2e hook: the spec on screen and a counter that moves with every new view.
+			const hook = window as unknown as Record<string, unknown>;
+			hook.__snowpackExercise = next.item?.exercise ?? null;
+			hook.__snowpackStep = presented;
 		}
 	}
 
@@ -139,6 +145,12 @@
 	}
 </script>
 
+{#snippet checkBar()}
+	<Button full size="session" disabled={!response} loading={busy} onclick={submit} data-check>
+		{shown?.exercise.shape === 'selfRate' || shown?.exercise.shape === 'study' ? 'Done' : 'Check'}
+	</Button>
+{/snippet}
+
 <svelte:head><title>Study</title></svelte:head>
 
 {#if failed}
@@ -156,7 +168,7 @@
 		</EmptyState>
 	</Screen>
 {:else}
-	<Screen>
+	<Screen bottom={checkable ? checkBar : undefined}>
 		{#snippet top()}
 			{#if view && !view.ended}<SessionTop {view} {yuki} {companion} />{/if}
 		{/snippet}
@@ -227,14 +239,5 @@
 				</ExerciseCard>
 			{/key}
 		{/if}
-		{#snippet bottom()}
-			{#if view && shown && !answer && !view.round && !interstitial && !view.ended}
-				<Button full size="session" disabled={!response} loading={busy} onclick={submit} data-check>
-					{shown.exercise.shape === 'selfRate' || shown.exercise.shape === 'study'
-						? 'Done'
-						: 'Check'}
-				</Button>
-			{/if}
-		{/snippet}
 	</Screen>
 {/if}

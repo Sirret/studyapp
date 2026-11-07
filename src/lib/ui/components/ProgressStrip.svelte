@@ -49,6 +49,10 @@
 
 		position: relative;
 		padding-top: var(--space-20);
+		padding-right: var(--size-px-6);
+		/* The runner moves in container units and never widens the page (it would scroll sideways). */
+		container-type: inline-size;
+		overflow-x: clip;
 	}
 
 	.track {
@@ -79,14 +83,14 @@
 
 	.moon {
 		position: absolute;
-		right: calc(var(--size-px-6) * -1);
+		right: 0;
 		bottom: calc(var(--size-px-4) * -1);
 	}
 
 	.lane {
 		position: absolute;
-		inset: 0 var(--size-px-20) auto 0;
-		transform: translateX(calc(var(--share) * 100%));
+		inset: 0 auto auto 0;
+		transform: translateX(calc(var(--share) * (100cqw - var(--size-px-20))));
 		transition: transform var(--dur-trot) var(--ease-out);
 	}
 
@@ -94,6 +98,5 @@
 		position: absolute;
 		top: calc(var(--size-px-10) * -1);
 		left: 0;
-		transform: translateX(-50%);
 	}
 </style>
