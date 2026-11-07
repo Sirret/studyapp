@@ -4,7 +4,7 @@ The working notes passed from one phase to the next. Unlike `PROGRESS.md` (a his
 
 ## Current state
 
-- **Done:** Phases 0–4, including the scoped Phase 4 `reviewer` pass (PASS; its should-fix items were fixed). **Next:** Phase 5 (design system and exercise UI). No reviewer run is planned again unless something big or repeated fails.
+- **Done:** Phases 0–4, including the scoped Phase 4 `reviewer` pass (PASS; its should-fix items were fixed). **Next:** Phase 5 (design system and exercise UI). The `reviewer` (Sonnet, diff-only) runs once at the end of each of Phases 7, 8 and 9, and again only if it found blockers.
 - **Exists:** tooling, CI, logger, Dexie schema, zod schemas, repositories, event log, `merge()`, the import pipeline and `/import`, `cardgen`, `answers`, grading, distractors, and now the engine core: `time`, `exercise-kinds`, `fsrs`, `criterion`, `queue`, `session`, `status`, and full `replay()` (FSRS, criterion, status, fragile, weak, `pathStep`, accuracy). Services: `SessionService` and `ReplayService` (with `kvReplayConfig` and `rebuildCards`). First sim scenario: `tests/sim/session-lags-status.test.ts`.
 - **Not wired yet:** no screen uses `SessionService`. Phase 5 builds the session screen on it and wires grading (`answerEntries`, `confusionCounts`) into it. Nothing chooses which cards go into a session or sets `credited: false` yet (modes, Phase 7). The FSRS optimiser (`FSRS_OPTIMISE_MIN_REVIEWS`) isn't built. `kv.schemaVersion` isn't written. Screens are unstyled until Phase 5, which must also restyle `/import` and add `ImportPreviewPanel` to `/dev/ui`.
 

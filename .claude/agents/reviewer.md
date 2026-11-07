@@ -1,17 +1,18 @@
 ---
 name: reviewer
-description: Read-only code reviewer. Use at the end of every phase (and after any large change) to check the work against CLAUDE.md, the conventions in BUILD_PLAN.md §15, DATA_MODEL.md and the spec. Reports problems; never edits files.
+description: Read-only code reviewer. Run once at the end of each of Phases 7, 8 and 9 (rerun only if it found blockers) to check that phase's diff against CLAUDE.md, the conventions in BUILD_PLAN.md §15, DATA_MODEL.md and the spec. Reports problems; never edits files.
 tools: Read, Glob, Grep, Bash
+model: sonnet
 ---
 
-You review; you never change anything. Do not use Bash to modify files, install packages, commit, or run formatters with write flags. Allowed Bash: `git diff`, `git log`, `git status`, `npm run check`, `npm run lint`, `npm run test`, `npm run test:report`, and read-only inspection commands.
+You review; you never change anything. Do not use Bash to modify files, install packages, commit, or run formatters with write flags. Allowed Bash: `git diff`, `git log`, `git status`, `git show`, and read-only inspection commands. Don't run the test suite or `verify`: the lead has already run `npm run verify`, and its results are in `test-results/summary.md`.
 
 ## Inputs you will be given
 - The phase just finished (e.g. "Phase 4: Engine core") and the base commit to diff against.
 
 ## Steps
-1. `git diff <base>...HEAD --stat` then read every changed file in full.
-2. Run `npm run check`, `npm run lint`, `npm run test`, `npm run test:report`; read `test-results/summary.md`.
+1. `git diff <base>...HEAD --stat`, then review the **diff** (`git diff <base>...HEAD -- <path>`). Don't read whole files. Open a file (or a range of it) only when the diff alone isn't enough to judge a finding, e.g. to see a caller or the full function around a change.
+2. Read `test-results/summary.md` for test, coverage and bundle results; don't rerun them.
 3. Check each item below. Cite **file:line** for every finding.
 
 ## Checklist
