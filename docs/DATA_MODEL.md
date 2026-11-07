@@ -222,6 +222,7 @@ Common to all events:
 | `chosen` | `string` | — | The option picked / text typed (normalised) |
 | `chosenFromCardId` | `ID` | — | If the wrong pick was another card's answer → confusion pair |
 | `credited` | `boolean` | ✓ | `false` for same-day acquisition chunk-quiz answers (no FSRS/criterion credit) |
+| `required` | `number` | — | ≥ 1. The card's criterion count in this session after this answer (plan §6.3); replay derives it when absent |
 
 `type: 'pretest'`:
 
@@ -265,7 +266,7 @@ Indexes: `id, ts, cardId, sessionId, type, [cardId+ts]`. **Order for replay:** `
 | `startedAt` / `endedAt` | `number` | ✓ / — | |
 | `plannedMinutes` | `number` | ✓ | From the planner |
 | `phase` | `'warmup' \| 'new' \| 'recall' \| 'discrimination' \| 'cleanup'` | ✓ | Current phase |
-| `snapshot` | `{ queue: CardId[]; cards: Record<CardId, SessionCard>; clearing: CardId \| null; cleanup: boolean }` | ✓ | Queue (head = current card), per-card state, the card being cleared by redo-till-right, and whether cleanup has started — saved after every answer so a closed tab resumes |
+| `snapshot` | `{ queue: CardId[]; backlog: CardId[]; cards: Record<CardId, SessionCard>; clearing: CardId \| null; cleanup: boolean; round: SessionRound; studySince: number }` | ✓ | The round's cards in play (head = current card), cards not yet in play, per-card state, the card being cleared by redo-till-right, whether cleanup has started, the current round, and when study started or the last break ended — saved after every answer so a closed tab resumes |
 
 `SessionCard` (plan §6.3, §6.4):
 
@@ -278,6 +279,17 @@ Indexes: `id, ts, cardId, sessionId, type, [cardId+ts]`. **Order for replay:** `
 | `failed` | `boolean` | Had a wrong counting answer this session |
 | `attempt` | `number` | Presentations so far; seeds derive from `(cardId, sessionId, attempt)` |
 | `done` | `boolean` | Criterion met (or warm-up shown) |
+| `firstEver` | `boolean` | Its next answer is its first attempt ever, with no pretest (known-on-first-try can still apply) |
+
+`SessionRound` (plan §6.4):
+
+| Field | Type | Meaning |
+|---|---|---|
+| `index` | `number` | 1-based round number |
+| `startedAt` | `number` | Epoch ms the round started |
+| `answers` | `number` | Answers given this round |
+| `cards` | `CardId[]` | Cards in play when the round started |
+| `ended` | `boolean` | Round over; waiting for Continue, Take a break or Stop here |
 
 Not exported (events keep `sessionId` for grouping).
 

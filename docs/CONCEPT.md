@@ -102,7 +102,7 @@ _\* Choose-type answers can help a card climb while accuracy is low, but the fin
 
 # 5. Scoring — the “3 corrects” rule
 
-**Successive relearning.** A card needs 3 correct recalls in its first session, then 1 correct in each of about three later spaced sessions. In a real course this lifted grades by roughly a letter.
+**Successive relearning.** A card needs 3 correct recalls in its first session, then 1 correct in each of about three later spaced sessions. In a real course this lifted grades by roughly a letter. The first session asks for only 2 when enough relearning will follow (long-term mode, or at least 3 relearning sessions planned before the exam), because later relearning overrides most of the benefit of a higher first criterion, and when the card was right on its very first try with no pretest. Each card shows its progress toward the criterion as dots (●●○).
 
 **Recall-weighted.** Choose-type (MC) answers can advance a card while its accuracy is below ~75%, but at least the final correct must be Recall or Arrange. Matching, hotspot, pretests and warm-ups never count.
 
@@ -131,6 +131,8 @@ So a session runs in phases, not a shuffle:
 4.  Discrimination: compare, scenario and pick-the-principle, with confusable topics interleaved.
 
 5.  Cleanup: the weakest cards, lowest predicted recall first.
+
+The session runs in **rounds** of at most 8 cards in play. A round ends when they're all done, or after 40 answers or 8 minutes; unfinished cards carry over. Between rounds a short summary offers Continue, Take a break or Stop here, and after about 25 minutes it suggests a 5-minute break. Breaks are suggested, never forced.
 
 # 7. Long-term and cram modes
 

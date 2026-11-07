@@ -31,6 +31,18 @@ export const CRITERION_FIRST = 3;
 export const CRITERION_LATER = 1;
 /** First cut when a plan is infeasible. */
 export const CRITERION_FIRST_DEGRADED = 2;
+/** First-session criterion when relearning will follow or the card was known on first try. */
+export const CRITERION_FIRST_REDUCED = 2;
+/** Planned relearning sessions before the exam at which the reduced first criterion applies. */
+export const RELEARN_OVERRIDE_SESSIONS = 3;
+
+/** Session rounds: cards in play at once, and the answers or minutes after which a round ends. */
+export const ROUND_WORKING_SET = 8;
+export const ROUND_MAX_ANSWERS = 40;
+export const ROUND_MAX_MINUTES = 8;
+/** Minutes of study after which the round summary suggests a break, and its suggested length. */
+export const BREAK_SUGGEST_AFTER_MIN = 25;
+export const BREAK_MIN = 5;
 
 /** Reinsertion lags (in cards) after a correct answer on a new card. */
 export const LAGS = [5, 10, 20] as const;
