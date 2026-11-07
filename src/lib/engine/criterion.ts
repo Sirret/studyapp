@@ -1,3 +1,4 @@
+import { CRITERION_FIRST, CRITERION_LATER } from '#lib/config/defaults.ts';
 import type { Weight } from '#lib/db/schemas/common.ts';
 import type { Traced } from './trace.ts';
 
@@ -27,8 +28,7 @@ export interface CriterionState {
  * @see BUILD_PLAN §6.3 and Decisions log (counting event)
  */
 export function isCounting(answer: Omit<CountableAnswer, 'correct'>): boolean {
-	void answer;
-	throw new Error('not implemented');
+	return answer.firstAttempt && answer.credited && answer.weight !== 'none';
 }
 
 /**
@@ -38,14 +38,12 @@ export function isCounting(answer: Omit<CountableAnswer, 'correct'>): boolean {
  * @see BUILD_PLAN §6.3 and Decisions log (required corrects)
  */
 export function requiredCorrects(hasMetCriterion: boolean): number {
-	void hasMetCriterion;
-	throw new Error('not implemented');
+	return hasMetCriterion ? CRITERION_LATER : CRITERION_FIRST;
 }
 
 /** A card's state at the start of a session. @see BUILD_PLAN §6.3 */
 export function startCriterion(required: number): CriterionState {
-	void required;
-	throw new Error('not implemented');
+	return { required, count: 0, lastFull: false, failed: false };
 }
 
 /**
@@ -55,9 +53,9 @@ export function startCriterion(required: number): CriterionState {
  * @see BUILD_PLAN §6.3
  */
 export function stepCriterion(state: CriterionState, answer: CountableAnswer): CriterionState {
-	void state;
-	void answer;
-	throw new Error('not implemented');
+	if (!isCounting(answer)) return state;
+	if (!answer.correct) return { ...state, count: 0, lastFull: false, failed: true };
+	return { ...state, count: state.count + 1, lastFull: answer.weight === 'full' };
 }
 
 /**
@@ -66,8 +64,7 @@ export function stepCriterion(state: CriterionState, answer: CountableAnswer): C
  * @see BUILD_PLAN §6.3 (recall-weighted)
  */
 export function isCriterionMet(state: CriterionState): boolean {
-	void state;
-	throw new Error('not implemented');
+	return state.count >= state.required && state.lastFull;
 }
 
 /**
@@ -80,7 +77,37 @@ export function criterionForSession(
 	answers: readonly CountableAnswer[],
 	required: number
 ): Traced<CriterionState & { met: boolean }> {
-	void answers;
-	void required;
-	throw new Error('not implemented');
+	let state = startCriterion(required);
+	let met = false;
+	for (const answer of answers) {
+		state = stepCriterion(state, answer);
+		met ||= isCriterionMet(state);
+	}
+	return {
+		result: { ...state, met },
+		trace: [{ rule: 'criterion.session', required, count: state.count, met }]
+	};
+}
+
+/**
+ * Whether a card has met its criterion in some credited session, from its answers in replay
+ * order. Each session needs `requiredCorrects` of what came before it, exactly as replay counts.
+ *
+ * @see BUILD_PLAN §6.3 and Decisions log (required corrects)
+ */
+export function hasMetCriterion(
+	answers: readonly (CountableAnswer & { sessionId: string })[]
+): boolean {
+	const bySession = new Map<string, CountableAnswer[]>();
+	for (const answer of answers) {
+		if (!isCounting(answer)) continue;
+		const list = bySession.get(answer.sessionId);
+		if (list) list.push(answer);
+		else bySession.set(answer.sessionId, [answer]);
+	}
+	let met = false;
+	for (const sessionAnswers of bySession.values()) {
+		met ||= criterionForSession(sessionAnswers, requiredCorrects(met)).result.met;
+	}
+	return met;
 }

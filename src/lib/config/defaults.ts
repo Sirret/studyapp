@@ -58,6 +58,8 @@ export const FIRST_LETTER_LENGTH_DELTA = 3;
 export const FSRS_MAXIMUM_INTERVAL_DAYS = 36500;
 
 export const SECURE_STABILITY_DAYS = 21;
+/** Distinct days correct (since the last lapse) for `exam-ready`. @see BUILD_PLAN §6.5 */
+export const EXAM_READY_DAYS = 2;
 export const SECURE_AT_EXAM = 0.95;
 export const FRAGILE_CAP_DAYS = 2;
 /** A long-term correct this many study days after the previous review clears cram-fragile. */

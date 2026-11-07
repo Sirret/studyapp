@@ -1,6 +1,16 @@
+import {
+	createEmptyCard,
+	fsrs,
+	generatorParameters,
+	Rating,
+	type Card,
+	type FSRS,
+	type Grade
+} from 'ts-fsrs';
 import { FSRS_MAXIMUM_INTERVAL_DAYS, RETENTION } from '#lib/config/defaults.ts';
 import type { FsrsCardState } from '#lib/db/schemas/card.ts';
 import type { Weight } from '#lib/db/schemas/common.ts';
+import { MS_PER_DAY } from './time.ts';
 import type { Traced } from './trace.ts';
 
 /** The auto-assigned ratings. `Easy` is never auto-assigned in v1. @see BUILD_PLAN §6.2 */
@@ -20,6 +30,64 @@ export const DEFAULT_FSRS_CONFIG: FsrsConfig = {
 	maximumIntervalDays: FSRS_MAXIMUM_INTERVAL_DAYS
 };
 
+const GRADE: Readonly<Record<FsrsRating, Grade>> = {
+	again: Rating.Again,
+	hard: Rating.Hard,
+	good: Rating.Good
+};
+
+/**
+ * One scheduler per config object. ts-fsrs 6's `fsrs()` facade is deprecated but synchronous and
+ * FSRS-6; this file is the only place that touches the library.
+ *
+ * @see Decisions log (ts-fsrs 6)
+ */
+const schedulers = new WeakMap<FsrsConfig, FSRS>();
+
+function schedulerFor(config: FsrsConfig): FSRS {
+	const cached = schedulers.get(config);
+	if (cached) return cached;
+	const scheduler = fsrs(
+		generatorParameters({
+			request_retention: config.retention,
+			maximum_interval: config.maximumIntervalDays,
+			enable_fuzz: false,
+			enable_short_term: false,
+			...(config.weights ? { w: config.weights } : {})
+		})
+	);
+	schedulers.set(config, scheduler);
+	return scheduler;
+}
+
+function toCard(state: FsrsCardState): Card {
+	return {
+		due: new Date(state.due),
+		stability: state.stability,
+		difficulty: state.difficulty,
+		scheduled_days: state.scheduled_days,
+		learning_steps: state.learning_steps,
+		reps: state.reps,
+		lapses: state.lapses,
+		state: state.state as Card['state'],
+		...(state.last_review === undefined ? {} : { last_review: new Date(state.last_review) })
+	};
+}
+
+function fromCard(card: Card): FsrsCardState {
+	return {
+		due: card.due.getTime(),
+		stability: card.stability,
+		difficulty: card.difficulty,
+		scheduled_days: card.scheduled_days,
+		learning_steps: card.learning_steps,
+		reps: card.reps,
+		lapses: card.lapses,
+		state: card.state,
+		...(card.last_review === undefined ? {} : { last_review: card.last_review.getTime() })
+	};
+}
+
 /**
  * The rating for a first-attempt answer: full-weight correct → good, recognition correct → hard,
  * wrong → again. `none`-weight answers never reach FSRS (null).
@@ -27,9 +95,9 @@ export const DEFAULT_FSRS_CONFIG: FsrsConfig = {
  * @see BUILD_PLAN §6.2
  */
 export function ratingFor(weight: Weight, correct: boolean): FsrsRating | null {
-	void weight;
-	void correct;
-	throw new Error('not implemented');
+	if (weight === 'none') return null;
+	if (!correct) return 'again';
+	return weight === 'full' ? 'good' : 'hard';
 }
 
 /**
@@ -43,11 +111,19 @@ export function reviewFsrs(
 	rating: FsrsRating,
 	config: FsrsConfig = DEFAULT_FSRS_CONFIG
 ): Traced<FsrsCardState> {
-	void state;
-	void ts;
-	void rating;
-	void config;
-	throw new Error('not implemented');
+	const card = state ? toCard(state) : createEmptyCard(new Date(ts));
+	const next = fromCard(schedulerFor(config).next(card, new Date(ts), GRADE[rating]).card);
+	return {
+		result: next,
+		trace: [
+			{
+				rule: 'fsrs.review',
+				rating,
+				stability: next.stability,
+				scheduledDays: next.scheduled_days
+			}
+		]
+	};
 }
 
 /**
@@ -57,9 +133,15 @@ export function reviewFsrs(
  * @see Decisions log (massed modes and fragile)
  */
 export function capStability(state: FsrsCardState, bound: number): FsrsCardState {
-	void state;
-	void bound;
-	throw new Error('not implemented');
+	if (state.stability <= bound) return state;
+	const scheduledDays = Math.min(state.scheduled_days, Math.max(1, Math.round(bound)));
+	const reviewedAt = state.last_review ?? state.due - state.scheduled_days * MS_PER_DAY;
+	return {
+		...state,
+		stability: bound,
+		scheduled_days: scheduledDays,
+		due: reviewedAt + scheduledDays * MS_PER_DAY
+	};
 }
 
 /**
@@ -72,8 +154,6 @@ export function retrievabilityAt(
 	t: number,
 	config: FsrsConfig = DEFAULT_FSRS_CONFIG
 ): number {
-	void state;
-	void t;
-	void config;
-	throw new Error('not implemented');
+	if (state === null) return 0;
+	return schedulerFor(config).retrievability(toCard(state), new Date(t));
 }

@@ -1,8 +1,9 @@
-import { EMPTY_CARD_CACHES, type CardCaches } from '#lib/db/schemas/card.ts';
+import type { CardCaches } from '#lib/db/schemas/card.ts';
 import type { CardId, DeviceId, ExerciseKind } from '#lib/db/schemas/common.ts';
 import type { StudyEvent } from '#lib/db/schemas/event.ts';
 import { DEFAULT_FSRS_CONFIG, type FsrsConfig } from './fsrs.ts';
-import type { Traced } from './trace.ts';
+import { replayCard } from './replay-card.ts';
+import type { Traced, TraceEntry } from './trace.ts';
 
 /** What replay needs of a card: its ID and its format path (for `pathStep`). */
 export interface ReplayCard {
@@ -48,8 +49,29 @@ export function sortEvents<T extends EventOrderKey & { id: string }>(events: rea
 	return [...events].sort((a, b) => compareEvents(a, b) || compareText(a.id, b.id));
 }
 
-function countsTowardAccuracy(event: StudyEvent): event is Extract<StudyEvent, { type: 'review' }> {
-	return event.type === 'review' && event.firstAttempt && event.weight !== 'none';
+/** The card an event belongs to, if any. */
+function cardOfEvent(event: StudyEvent): CardId | undefined {
+	return event.type === 'acceptAdded' ? undefined : event.cardId;
+}
+
+/** Each card's events, in replay order. */
+function eventsByCard(events: readonly StudyEvent[]): Map<CardId, StudyEvent[]> {
+	const byCard = new Map<CardId, StudyEvent[]>();
+	for (const event of sortEvents(events)) {
+		const cardId = cardOfEvent(event);
+		if (cardId === undefined) continue;
+		const list = byCard.get(cardId);
+		if (list) list.push(event);
+		else byCard.set(cardId, [event]);
+	}
+	return byCard;
+}
+
+/** The first entry for each card ID, ordered by ID so the output never depends on input order. */
+function uniqueCards(cards: readonly ReplayCard[]): ReplayCard[] {
+	const byId = new Map<CardId, ReplayCard>();
+	for (const card of cards) if (!byId.has(card.id)) byId.set(card.id, card);
+	return [...byId.values()].sort((a, b) => compareText(a.id, b.id));
 }
 
 /**
@@ -65,20 +87,21 @@ export function replay(
 	cards: readonly ReplayCard[],
 	config: ReplayConfig = DEFAULT_REPLAY_CONFIG
 ): Traced<Record<CardId, CardCaches>> {
-	void config;
-	const accuracy = new Map<string, CardCaches['accuracy']>();
-	for (const event of sortEvents(events)) {
-		if (!countsTowardAccuracy(event)) continue;
-		const { n, correct } = accuracy.get(event.cardId) ?? EMPTY_CARD_CACHES.accuracy;
-		accuracy.set(event.cardId, { n: n + 1, correct: correct + (event.correct ? 1 : 0) });
-	}
-
+	const byCard = eventsByCard(events);
 	const result = {} as Record<CardId, CardCaches>;
-	const cardIds = cards.map((card) => card.id);
-	const trace = [...new Set(cardIds)].sort(compareText).map((cardId) => {
-		const cardAccuracy = accuracy.get(cardId) ?? { ...EMPTY_CARD_CACHES.accuracy };
-		result[cardId] = { ...EMPTY_CARD_CACHES, accuracy: cardAccuracy };
-		return { rule: 'replay.card', cardId, ...cardAccuracy };
-	});
+	const trace: TraceEntry[] = [];
+	for (const card of uniqueCards(cards)) {
+		const input = { path: card.path, fsrs: config.fsrs, tzOffsetMin: config.tzOffsetMin };
+		const replayed = replayCard(byCard.get(card.id) ?? [], input);
+		result[card.id] = replayed.result;
+		const { status, daysCorrect, accuracy } = replayed.result;
+		trace.push(...replayed.trace, {
+			rule: 'replay.card',
+			cardId: card.id,
+			status,
+			daysCorrect,
+			...accuracy
+		});
+	}
 	return { result, trace };
 }
