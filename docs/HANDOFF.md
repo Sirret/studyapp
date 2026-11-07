@@ -4,10 +4,9 @@ The working notes passed from one phase to the next. Unlike `PROGRESS.md` (a his
 
 ## Current state
 
-- **Done:** Phases 0–3. **Next:** Phase 4 (Engine core), then the scoped `reviewer` pass CLAUDE.md asks for at its end.
-- **Exists:** tooling, CI, logger, Dexie schema, zod schemas for every entity, repositories, event log, `merge()`, `replay()`, the import pipeline, `engine/cardgen.ts`, the `/import` screen, and Phase 3's `rng`, `answers`, `grading`, `grading-shapes` and `distractors`.
-- **Partial on purpose:** `replay()` only derives `accuracy`; Phase 4 adds FSRS, criterion, status and fragile. Grading and distractors are pure functions nothing calls yet; the Phase 4/5 session runner wires them (building `AnswerEntry` lists with `answerEntries`, confusions with `confusionCounts`). Occlusion notes import with no boxes and so no cards, until the Phase 6 editor adds boxes.
-- **Not wired yet:** `kv.schemaVersion` isn't written. Screens are unstyled and not in a style guide, because tokens and `/dev/ui` arrive in Phase 5, which must restyle `/import` (notebook paper, per `DESIGN` Import) and add `ImportPreviewPanel` to the guide.
+- **Done:** Phases 0–4, including the scoped Phase 4 `reviewer` pass (PASS; its should-fix items were fixed). **Next:** Phase 5 (design system and exercise UI). No reviewer run is planned again unless something big or repeated fails.
+- **Exists:** tooling, CI, logger, Dexie schema, zod schemas, repositories, event log, `merge()`, the import pipeline and `/import`, `cardgen`, `answers`, grading, distractors, and now the engine core: `time`, `exercise-kinds`, `fsrs`, `criterion`, `queue`, `session`, `status`, and full `replay()` (FSRS, criterion, status, fragile, weak, `pathStep`, accuracy). Services: `SessionService` and `ReplayService` (with `kvReplayConfig` and `rebuildCards`). First sim scenario: `tests/sim/session-lags-status.test.ts`.
+- **Not wired yet:** no screen uses `SessionService`. Phase 5 builds the session screen on it and wires grading (`answerEntries`, `confusionCounts`) into it. Nothing chooses which cards go into a session or sets `credited: false` yet (modes, Phase 7). The FSRS optimiser (`FSRS_OPTIMISE_MIN_REVIEWS`) isn't built. `kv.schemaVersion` isn't written. Screens are unstyled until Phase 5, which must also restyle `/import` and add `ImportPreviewPanel` to `/dev/ui`.
 
 ## How data works here (reuse this; don't reinvent it)
 
@@ -15,10 +14,14 @@ The working notes passed from one phase to the next. Unlike `PROGRESS.md` (a his
 | --- | --- | --- |
 | Create or change content | `CourseRepo`, `TopicRepo`, `ChunkRepo`, `NoteRepo`, `CardRepo`, `MediaRepo` in `db/repos/content-repos.ts`, built on `ContentRepo` | Touch a Dexie table directly |
 | Delete content | `repo.softDelete(id)`; reads already hide tombstones | Hard delete, except archive or replace import |
-| Record study history | `EventRepo.append(fields)`; it adds `id`, `ts`, `deviceId`, `seq` | Update or delete an event |
-| Update card scheduling | Extend `replay()`; `ReplayService.rebuildAll()` stores the result via `CardRepo.applyReplay` | Write `fsrs`, `due`, `status`, `fragile`, `weak`, `daysCorrect`, `pathStep` or `accuracy` anywhere else |
+| Record study history | `EventRepo.append(fields)`; it adds `id`, `ts`, `deviceId`, `seq`. An answer plus its session snapshot: `appendWithSession` (one transaction) | Update or delete an event |
+| Update card scheduling | Extend `replayCard()` in `engine/replay-card.ts`; `ReplayService.rebuildAll()` or `rebuildCards(ids)` stores the result via `CardRepo.applyReplay`. Criterion counting in both replay and planning goes through `recordCriterion` | Write `fsrs`, `due`, `status`, `fragile`, `weak`, `daysCorrect`, `pathStep` or `accuracy` anywhere else |
 | Read or write settings | `KvRepo.get/set`, validated against `KV_SCHEMAS` | Touch `db.kv` directly |
 | Write across several tables, all or nothing | Build records with `repo.draft` and `repo.draftChange`, then `ContentStore.writeBatch`, which is one transaction | Open a Dexie transaction around repository calls |
+| Run a study session | `SessionService.start({ mode, courseIds, plannedMinutes, cards, confusionEvents })` with `cards` from `toPlanCard(card, noteType, cardEvents)`; show `view.item` (its `attempt` seeds `rngFor`, and `firstAttempt: false` means redo-till-right); call `answer(id, { kind, correct, responseMs, credited, chosen?, chosenFromCardId? })`; `resume(id)` after a reload | Keep queue state in a component, or append review events yourself |
+| Know what kind a card shows, and its weight | `currentKind(path, pathStep, accuracy)` (MC gating) and `weightOf(kind)` in `engine/exercise-kinds.ts` | Re-derive §3.3 groups or weights |
+| Ask FSRS something | `retrievabilityAt(card.fsrs, t, config.fsrs)`; config from `kvReplayConfig(kv, tzOffset)` | Import `ts-fsrs` outside `engine/fsrs.ts` |
+| Work out study days | `dayIndex` / `daysBetween` with the device's `tzOffsetMin` (minutes east of UTC) | `new Date().getHours()` in the engine |
 | Get cards for a note | `generateCards(note).result` in `engine/cardgen.ts` | Hard-code variants or paths |
 | Know what a card asks for | `cardAnswer(note, variant)` / `answerEntries(cards, notesById)` in `engine/answers.ts` | Derive answers from payloads in a screen |
 | Judge a typed answer | `gradeTyped({ cardId, typed, answer, accepted, others })`; log `result.normalized` as `chosen` and `chosenFromCardId` when set. "I was right" → `checkAccept`, append `acceptAdded`, re-log as correct only if `passesGuard` | Compare strings yourself or skip the collision guard |
@@ -33,7 +36,7 @@ The working notes passed from one phase to the next. Unlike `PROGRESS.md` (a his
 
 **Import direction:** UI → services → engine and repos → schemas and config. `src/lib/import` is pure like the engine (it may use the engine, schemas and config), and only services call it. Lint fails on violations. A UI import path with a segment named exactly `import` trips that rule, which is why the components live in `ui/import-screen/`.
 
-**Test pattern:** `import 'fake-indexeddb/auto'` plus a unique database name per test. Property tests use `fast-check`; shared generators are in `tests/unit/engine/fixtures.ts`. Golden files are in `tests/golden/import/` (hand-written, never generated from output) and run from `tests/unit/services/import-service.test.ts`.
+**Test pattern:** `import 'fake-indexeddb/auto'` plus a unique database name per test (create it in each test's setup; `afterEach` deletes it). Sim scenarios live in `tests/sim/` and report through `writeSimReport` in `tests/sim/harness.ts`. Session fixtures are in `tests/unit/engine/session-fixtures.ts`. Property tests use `fast-check`; shared generators are in `tests/unit/engine/fixtures.ts`. Golden files are in `tests/golden/import/` (hand-written, never generated from output) and run from `tests/unit/services/import-service.test.ts`.
 
 ## What each phase reads
 

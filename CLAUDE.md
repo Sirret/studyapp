@@ -22,6 +22,8 @@ The docs, for reference:
 - **ESLint import bans must use `regex`:** a `#lib` glob pattern is read as a comment and silently does nothing. `tests/unit/lint/boundaries.test.ts` guards this.
 - **Preview:** `npm run preview` serves `build/`; Kit's own preview breaks the service worker.
 - **Dexie transactions:** awaiting an async helper inside `db.transaction` can silently drop the transaction ("Transaction committed too early", or writes that don't roll back). For writes across tables, use `ContentStore.writeBatch`.
+- **Boundary lint matches file names too:** an engine module named after a banned folder (`exercises.ts`, `ui.ts`, `log.ts`…) trips the engine import rule. Name it differently (e.g. `exercise-kinds.ts`).
+- **ts-fsrs 6 declares Node ≥ 24:** under the local Node 23, npm quietly installs 5.x. Pin `ts-fsrs@^6`; only `engine/fsrs.ts` imports it (the legacy sync `fsrs()` facade).
 - **Pre-commit runs `vitest --changed`**, which includes untracked test files. While `spec-test-writer`'s tests are still failing (workflow step 2), commit the implementation together with them rather than committing other files first.
 - **Output:** pipe long commands through `tail` or `grep`, and read `test-results/summary.md`. Tests are scripts, so running them costs little; reading their full output doesn't.
 
