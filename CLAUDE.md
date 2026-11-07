@@ -36,13 +36,13 @@ An offline-first study app (SvelteKit PWA) for CS/IS students. Read before worki
 ## Workflow for every phase (use the agents in `.claude/agents/`)
 
 1. **Interface first.** Write the module's types and exported function/class signatures (bodies: `throw new Error('not implemented')`) and the zod schemas it needs. Commit.
-2. **Tests from the spec.** Call the `spec-test-writer` agent with the module path and the spec sections it implements. It writes tests from the docs without seeing your implementation. Read its report; resolve every `SPEC-GAP` (decide, record in the Decisions log, and have the test updated by the agent if needed).
+2. **Tests from the spec.** For risky logic (scheduling, merge/replay, planning, grading), call the `spec-test-writer` agent with the module path and the exact spec sections to read; it reads only those. Read its report; resolve every `SPEC-GAP` (decide, record in the Decisions log, and have the test updated by the agent if needed). Plumbing (repos, schemas, simple services) gets tests written directly, with no agent.
 3. **Implement** until those tests pass. Do not edit the agent's tests to make them pass; if a test contradicts the spec, fix the spec reading and re-run the agent on that test.
 4. **Verify.** `npm run verify` must pass.
-5. **Review.** Call the `reviewer` agent with the phase name and the base commit. Fix every `blocker` and `should-fix`, re-run `verify`, and call the reviewer again until the verdict is `PASS`.
-6. **Log.** Append the phase entry to `docs/PROGRESS.md`, including the reviewer's verdict and any findings deliberately left as `nit`.
+5. **Review.** Self-review as you go. Call the `reviewer` agent once at the end of Phase 5, before the hard logic of Phases 6–8, or earlier on a huge error or an error that repeats. Scope it to named files and sections. Fix its `blocker` and `should-fix` findings.
+6. **Log.** Append the phase entry to `docs/PROGRESS.md`, with any reviewer verdict and any findings deliberately left as `nit`.
 
-Steps 1–3 repeat per module inside a phase; steps 4–6 run once at the end of the phase. UI-only work (screens, styling) skips step 2 but still gets e2e tests and the review.
+Agents are helpers giving a different point of view, not supervisors: give them the specifics they need so they don't read everything. Steps 1–3 repeat per module inside a phase; steps 4–6 run once at the end of the phase. UI-only work (screens, styling) skips step 2 but still gets e2e tests.
 
 ## Commands (set up in Phase 0)
 
