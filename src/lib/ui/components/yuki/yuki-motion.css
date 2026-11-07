@@ -1,0 +1,121 @@
+/* Yuki's keyframes (DESIGN §7.3, docs/design/wolf-preview.html): transform and opacity only. */
+@keyframes yuki-sway {
+	0%,
+	100% {
+		transform: rotate(-4deg);
+	}
+
+	50% {
+		transform: rotate(5deg);
+	}
+}
+
+@keyframes yuki-breathe {
+	0%,
+	100% {
+		transform: scaleY(1);
+	}
+
+	50% {
+		transform: scaleY(1.025);
+	}
+}
+
+@keyframes yuki-blink {
+	0%,
+	92%,
+	100% {
+		transform: scaleY(1);
+	}
+
+	95% {
+		transform: scaleY(0.1);
+	}
+}
+
+@keyframes yuki-hop {
+	0%,
+	60%,
+	100% {
+		transform: translateY(0);
+	}
+
+	25% {
+		transform: translateY(-14px);
+	}
+}
+
+@keyframes yuki-trot {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+
+	50% {
+		transform: translateY(-3px);
+	}
+}
+
+@keyframes yuki-droop-l {
+	0%,
+	100% {
+		transform: rotate(0);
+	}
+
+	35%,
+	65% {
+		transform: rotate(-22deg);
+	}
+}
+
+@keyframes yuki-droop-r {
+	0%,
+	100% {
+		transform: rotate(0);
+	}
+
+	35%,
+	65% {
+		transform: rotate(22deg);
+	}
+}
+
+@keyframes yuki-tilt {
+	0%,
+	100% {
+		transform: rotate(0);
+	}
+
+	35%,
+	65% {
+		transform: rotate(-6deg);
+	}
+}
+
+@keyframes yuki-think {
+	0%,
+	100% {
+		transform: rotate(0);
+	}
+
+	40%,
+	70% {
+		transform: rotate(8deg);
+	}
+}
+
+@keyframes yuki-twitch {
+	0%,
+	60%,
+	100% {
+		transform: rotate(0);
+	}
+
+	65% {
+		transform: rotate(-12deg);
+	}
+
+	70% {
+		transform: rotate(4deg);
+	}
+}

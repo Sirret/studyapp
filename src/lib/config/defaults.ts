@@ -145,6 +145,11 @@ export const IMAGE_WEBP_QUALITY = 0.8;
 export const DEFAULT_EXAM_FORMAT = 'mixed';
 export const BACKUP_REMINDER_DAYS = 7;
 
+/** Haptic tick on a first-attempt correct, in ms (DESIGN §11.2). */
+export const HAPTIC_TICK_MS = 12;
+/** First-attempt corrects in a row that bring a snow flurry and Yuki's sparkle (DESIGN §7.3, §11.2). */
+export const STREAK_FOR_FLURRY = 3;
+
 /** How long a phase interstitial stays before it leaves by itself (DESIGN §7.3). */
 export const PHASE_INTERSTITIAL_MS = 1200;
 

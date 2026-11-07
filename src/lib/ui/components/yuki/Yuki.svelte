@@ -7,6 +7,7 @@
 -->
 <script lang="ts">
 	import type { YukiState } from './yuki.ts';
+	import './yuki-motion.css';
 	import YukiProps from './YukiProps.svelte';
 
 	let {
@@ -206,61 +207,61 @@
 	/* Idle: breathing, a blink every ~5 s, tail sway. */
 	.s-idle #tail,
 	.s-read #tail {
-		animation: sway var(--dur-yuki-sway) ease-in-out infinite;
+		animation: yuki-sway var(--dur-yuki-sway) ease-in-out infinite;
 	}
 
 	.s-idle #body,
 	.s-idle #head,
 	.s-read #body {
-		animation: breathe var(--dur-yuki-breathe) ease-in-out infinite;
+		animation: yuki-breathe var(--dur-yuki-breathe) ease-in-out infinite;
 	}
 
 	.s-idle #eyes,
 	.s-read #eyes {
-		animation: blink var(--dur-yuki-blink) infinite;
+		animation: yuki-blink var(--dur-yuki-blink) infinite;
 	}
 
 	.s-trot {
-		animation: trot var(--dur-trot) ease-in-out infinite;
+		animation: yuki-trot var(--dur-trot) ease-in-out infinite;
 	}
 
 	.s-hop {
-		animation: hop var(--dur-yuki-hop) var(--ease-bounce) 1;
+		animation: yuki-hop var(--dur-yuki-hop) var(--ease-bounce) 1;
 	}
 
 	.s-sparkle {
-		animation: hop var(--dur-yuki-sparkle) var(--ease-bounce) 1;
+		animation: yuki-hop var(--dur-yuki-sparkle) var(--ease-bounce) 1;
 	}
 
 	.s-celebrate {
-		animation: hop var(--dur-yuki-celebrate) var(--ease-bounce) 3;
+		animation: yuki-hop var(--dur-yuki-celebrate) var(--ease-bounce) 3;
 	}
 
 	.s-oops #ear-l {
-		animation: droop-l var(--dur-yuki-oops) ease-in-out 1;
+		animation: yuki-droop-l var(--dur-yuki-oops) ease-in-out 1;
 	}
 
 	.s-oops #ear-r {
-		animation: droop-r var(--dur-yuki-oops) ease-in-out 1;
+		animation: yuki-droop-r var(--dur-yuki-oops) ease-in-out 1;
 	}
 
 	.s-oops #head {
 		transform-origin: 50% 90%;
-		animation: tilt var(--dur-yuki-oops) ease-in-out 1;
+		animation: yuki-tilt var(--dur-yuki-oops) ease-in-out 1;
 	}
 
 	.s-think #head {
 		transform-origin: 50% 90%;
-		animation: think var(--dur-yuki-think) ease-in-out infinite;
+		animation: yuki-think var(--dur-yuki-think) ease-in-out infinite;
 	}
 
 	.s-think #ear-r {
-		animation: twitch var(--dur-yuki-think) ease-in-out infinite;
+		animation: yuki-twitch var(--dur-yuki-think) ease-in-out infinite;
 	}
 
 	.s-sleepy #body,
 	.s-sleepy #head {
-		animation: breathe var(--dur-yuki-sleepy) ease-in-out infinite;
+		animation: yuki-breathe var(--dur-yuki-sleepy) ease-in-out infinite;
 	}
 
 	.s-worried-kind #ear-l {
@@ -277,7 +278,7 @@
 	}
 
 	.s-sniff #tail {
-		animation: sway var(--dur-yuki-wag) ease-in-out infinite;
+		animation: yuki-sway var(--dur-yuki-wag) ease-in-out infinite;
 	}
 
 	.still,
@@ -287,126 +288,5 @@
 
 	.still.s-idle :global(*) {
 		animation: none;
-	}
-
-	@keyframes sway {
-		0%,
-		100% {
-			transform: rotate(-4deg);
-		}
-
-		50% {
-			transform: rotate(5deg);
-		}
-	}
-
-	@keyframes breathe {
-		0%,
-		100% {
-			transform: scaleY(1);
-		}
-
-		50% {
-			transform: scaleY(1.025);
-		}
-	}
-
-	@keyframes blink {
-		0%,
-		92%,
-		100% {
-			transform: scaleY(1);
-		}
-
-		95% {
-			transform: scaleY(0.1);
-		}
-	}
-
-	@keyframes hop {
-		0%,
-		60%,
-		100% {
-			transform: translateY(0);
-		}
-
-		25% {
-			transform: translateY(-14px);
-		}
-	}
-
-	@keyframes trot {
-		0%,
-		100% {
-			transform: translateY(0);
-		}
-
-		50% {
-			transform: translateY(-3px);
-		}
-	}
-
-	@keyframes droop-l {
-		0%,
-		100% {
-			transform: rotate(0);
-		}
-
-		35%,
-		65% {
-			transform: rotate(-22deg);
-		}
-	}
-
-	@keyframes droop-r {
-		0%,
-		100% {
-			transform: rotate(0);
-		}
-
-		35%,
-		65% {
-			transform: rotate(22deg);
-		}
-	}
-
-	@keyframes tilt {
-		0%,
-		100% {
-			transform: rotate(0);
-		}
-
-		35%,
-		65% {
-			transform: rotate(-6deg);
-		}
-	}
-
-	@keyframes think {
-		0%,
-		100% {
-			transform: rotate(0);
-		}
-
-		40%,
-		70% {
-			transform: rotate(8deg);
-		}
-	}
-
-	@keyframes twitch {
-		0%,
-		60%,
-		100% {
-			transform: rotate(0);
-		}
-
-		65% {
-			transform: rotate(-12deg);
-		}
-
-		70% {
-			transform: rotate(4deg);
-		}
 	}
 </style>
