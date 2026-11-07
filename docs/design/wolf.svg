@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="Yuki the snow wolf">
+  <defs>
+    <style>
+      .ol{stroke:#3B3663;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+      .fur{fill:#FCFBFF}.shade{fill:#E3E8F6}.ice{fill:#D3E3F7}.mask{fill:#DCE5F4}.pink{fill:#F6B9C4}
+    </style>
+  </defs>
+  <g id="tail">
+    <path class="fur ol" d="M124,176 C162,186 192,158 184,120 C180,100 162,92 152,104 C149,110 152,116 158,118 C166,132 162,154 128,158 Z"/>
+    <path class="ice" d="M182,112 C176,98 162,94 154,104 C153,110 155,114 160,116 C168,116 176,120 183,127 Z"/>
+    <path class="ol" fill="none" stroke-width="2" d="M170,150 l6,2 M176,138 l6,0"/>
+  </g>
+  <g id="body">
+    <path class="fur ol" d="M72,122 C64,140 62,168 70,183 L130,183 C138,168 136,140 128,122 Z"/>
+    <path class="shade" d="M74,170 C78,178 122,178 126,170 C126,177 124,181 122,182 L78,182 C76,181 74,177 74,170 Z"/>
+    <path class="ol" fill="none" d="M84,130 L90,142 L95,134 L100,146 L105,134 L110,142 L116,130"/>
+    <ellipse class="shade ol" cx="86" cy="183" rx="13" ry="8"/>
+    <ellipse class="shade ol" cx="114" cy="183" rx="13" ry="8"/>
+    <path class="ol" fill="none" stroke-width="2.2" d="M82,184 L82,188 M90,184 L90,188 M110,184 L110,188 M118,184 L118,188"/>
+  </g>
+  <g id="head">
+    <g id="ear-l"><path class="fur ol" d="M64,66 L55,20 Q57,13 64,17 L96,46 Z"/><path class="pink" d="M67,58 L61,28 L87,48 Z"/></g>
+    <g id="ear-r"><path class="fur ol" d="M136,66 L145,20 Q143,13 136,17 L104,46 Z"/><path class="pink" d="M133,58 L139,28 L113,48 Z"/></g>
+    <path class="fur ol" d="M60,70 C60,48 80,40 100,40 C120,40 140,48 140,70 C146,78 152,86 150,94 L162,100 L148,104 L158,114 L140,116 C132,128 116,131 100,131 C84,131 68,128 60,116 L42,114 L52,104 L38,100 L50,94 C48,86 54,78 60,70 Z"/>
+    <path class="mask" d="M63,70 C63,52 81,43 100,43 C119,43 137,52 137,70 C131,64 121,66 113,74 L100,86 L87,74 C79,66 69,64 63,70 Z"/>
+    <ellipse class="pink" cx="69" cy="109" rx="7" ry="4" opacity=".6"/>
+    <ellipse class="pink" cx="131" cy="109" rx="7" ry="4" opacity=".6"/>
+    <g id="eyes">
+      <g><ellipse cx="80" cy="90" rx="10.5" ry="12.5" fill="#2E3C78"/><ellipse cx="80" cy="94" rx="7" ry="7.5" fill="#4A68B8"/><circle cx="76.5" cy="85.5" r="3.6" fill="#fff"/><circle cx="83.5" cy="96.5" r="1.7" fill="#fff"/></g>
+      <g><ellipse cx="120" cy="90" rx="10.5" ry="12.5" fill="#2E3C78"/><ellipse cx="120" cy="94" rx="7" ry="7.5" fill="#4A68B8"/><circle cx="116.5" cy="85.5" r="3.6" fill="#fff"/><circle cx="123.5" cy="96.5" r="1.7" fill="#fff"/></g>
+    </g>
+    <path fill="none" stroke="#C3CCE4" stroke-width="2" stroke-linecap="round" d="M82,112 C88,123 112,123 118,112"/>
+    <path d="M94.5,104 Q100,100.5 105.5,104 Q103.5,109.5 100,110.5 Q96.5,109.5 94.5,104 Z" fill="#2B2540"/>
+    <path class="ol" fill="none" stroke-width="2.4" d="M92,114 Q96,119 100,114 Q104,119 108,114"/>
+  </g>
+</svg>
