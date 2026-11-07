@@ -1,0 +1,43 @@
+# Everything `npm run verify` runs, on every push and pull request.
+# @see BUILD_PLAN §11.2 and §11.3
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify (check, lint, stub-check, test, build, bundle-check, e2e, report)
+        run: npm run verify
+
+      - name: Publish summary to the run page
+        if: always()
+        run: cat test-results/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-reports
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            test-results/
+            coverage/
+            playwright-report/

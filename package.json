@@ -1,0 +1,70 @@
+{
+	"name": "snowpack-study",
+	"version": "0.0.1",
+	"private": true,
+	"type": "module",
+	"imports": {
+		"#lib": "./src/lib",
+		"#lib/*": "./src/lib/*"
+	},
+	"engines": {
+		"node": ">=22.22.1"
+	},
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"prepare": "svelte-kit sync && (simple-git-hooks || true)",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"lint": "prettier --check . && eslint .",
+		"format": "prettier --write .",
+		"test": "vitest run --coverage",
+		"test:watch": "vitest",
+		"test:e2e": "npm run build && playwright test",
+		"test:e2e:built": "playwright test",
+		"test:report": "node scripts/test-summary.ts",
+		"bundle-check": "node scripts/bundle-check.ts",
+		"stub-check": "node scripts/stub-check.ts",
+		"icons": "node scripts/generate-icons.ts",
+		"verify": "node scripts/verify.ts"
+	},
+	"dependencies": {
+		"dexie": "^4.4.7",
+		"zod": "^4.6.7"
+	},
+	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"@playwright/test": "^1.65.0",
+		"@sveltejs/adapter-static": "^4.0.1",
+		"@sveltejs/kit": "^3.1.1",
+		"@sveltejs/vite-plugin-svelte": "^7.3.1",
+		"@types/node": "^24.0.0",
+		"@vite-pwa/sveltekit": "^2.0.0",
+		"@vitest/coverage-v8": "^5.1.0",
+		"eslint": "^10.14.0",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-svelte": "^3.24.0",
+		"fake-indexeddb": "^6.2.7",
+		"globals": "^17.14.0",
+		"lint-staged": "^17.6.0",
+		"prettier": "^3.9.10",
+		"prettier-plugin-svelte": "^4.1.1",
+		"simple-git-hooks": "^2.14.0",
+		"svelte": "^5.57.3",
+		"svelte-check": "^4.7.8",
+		"typescript": "~6.0.0",
+		"typescript-eslint": "^8.72.1",
+		"vite": "^8.3.6",
+		"vite-plugin-pwa": "^2.0.0",
+		"vitest": "^5.1.0",
+		"workbox-window": "^7.4.1"
+	},
+	"simple-git-hooks": {
+		"pre-commit": "npx lint-staged && npm run check && npx vitest run --changed --passWithNoTests",
+		"pre-push": "npm run test"
+	},
+	"lint-staged": {
+		"*.{ts,js,svelte,json,css,html,yml,yaml}": "prettier --write",
+		"*.{ts,js,svelte}": "eslint --fix"
+	}
+}

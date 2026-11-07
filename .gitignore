@@ -1,0 +1,14 @@
+node_modules/
+.svelte-kit/
+build/
+dist/
+coverage/
+test-results/
+playwright-report/
+.env
+.env.*
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+.claude/settings.local.json
