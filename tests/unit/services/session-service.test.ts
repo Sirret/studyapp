@@ -277,3 +277,69 @@ describe('kvReplayConfig and rebuildCards', () => {
 		expect((await cards.get(b.id))?.accuracy.n).toBe(0);
 	});
 });
+
+describe('SessionService: self-rated and pretest answers (Decisions log, Phase 5)', () => {
+	it('logs a selfRated event with its fields, and the card is done for the session', async () => {
+		const env = setup();
+		const [card] = await makeCards(env.cards, 1);
+		if (!card) throw new Error('fixture');
+		const view = await startWith(env, [card], 'longterm');
+		const after = await env.service.answer(view.session.id, {
+			kind: 'blurt',
+			correct: true,
+			responseMs: 9,
+			credited: true,
+			selfRated: { checked: ['TCP'], missedCardIds: [] }
+		});
+		const logged = await env.events.listByCard(card.id);
+		expect(logged).toHaveLength(1);
+		expect(logged[0]).toMatchObject({
+			type: 'selfRated',
+			noteId: card.noteId,
+			cardId: card.id,
+			kind: 'blurt',
+			checked: ['TCP'],
+			missedCardIds: []
+		});
+		expect(after.session.snapshot.cards[card.id]?.done).toBe(true);
+	});
+
+	it('logs a flip rating', async () => {
+		const env = setup();
+		const [card] = await makeCards(env.cards, 1);
+		if (!card) throw new Error('fixture');
+		const view = await startWith(env, [card], 'longterm');
+		await env.service.answer(view.session.id, {
+			kind: 'flip',
+			correct: true,
+			responseMs: 4,
+			credited: true,
+			selfRated: { rating: 'hard' }
+		});
+		expect((await env.events.listByCard(card.id))[0]).toMatchObject({
+			type: 'selfRated',
+			rating: 'hard'
+		});
+	});
+
+	it('logs a pretest event, not a review', async () => {
+		const env = setup();
+		const [card] = await makeCards(env.cards, 1);
+		if (!card) throw new Error('fixture');
+		const view = await startWith(env, [card], 'longterm');
+		await env.service.answer(view.session.id, {
+			kind: 'pretest',
+			correct: false,
+			responseMs: 7,
+			credited: false
+		});
+		const logged = await env.events.listByCard(card.id);
+		expect(logged).toHaveLength(1);
+		expect(logged[0]).toMatchObject({
+			type: 'pretest',
+			cardId: card.id,
+			skipped: false,
+			responseMs: 7
+		});
+	});
+});

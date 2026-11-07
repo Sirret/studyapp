@@ -48,6 +48,22 @@ export interface AnswerInput {
 	credited: boolean;
 	chosen?: string;
 	chosenFromCardId?: CardId;
+	/** What a self-rated exercise recorded (DATA_MODEL §3.6 `selfRated`). */
+	selfRated?: SelfRatedInput;
+}
+
+/** The self-rated lane's extra fields. */
+export interface SelfRatedInput {
+	checked?: string[];
+	missedCardIds?: CardId[];
+	rating?: 'again' | 'hard' | 'good';
+}
+
+const SELF_RATED_KINDS = ['flip', 'explainIt', 'blurt', 'redraw', 'exampleStudy'] as const;
+type SelfRatedKind = (typeof SELF_RATED_KINDS)[number];
+
+function isSelfRated(kind: ExerciseKind): kind is SelfRatedKind {
+	return (SELF_RATED_KINDS as readonly ExerciseKind[]).includes(kind);
 }
 
 /**
@@ -153,7 +169,7 @@ export class SessionService {
 		const next = this.updated(session, snapshot);
 		const required = snapshot.cards[item.cardId]?.required ?? item.required;
 		await this.deps.events.appendWithSession(
-			this.reviewFields(session, item, input, required),
+			await this.eventFields(session, item, input, required),
 			next
 		);
 		await this.deps.replay.rebuildCards([item.cardId]);
@@ -173,6 +189,42 @@ export class SessionService {
 		await this.deps.sessions.save(next);
 		if (next.endedAt !== undefined) this.deps.logger.info('session', 'ended', { id: next.id });
 		return next;
+	}
+
+	/**
+	 * The event an answer logs: `selfRated` for the self-rated lane, `pretest` for a pretest, else a
+	 * review. All three move the queue the same way (as `none` weight for the first two).
+	 *
+	 * @see DATA_MODEL §3.6 and Decisions log (Phase 5: self-rated and pretest events)
+	 */
+	private async eventFields(
+		session: Session,
+		item: CurrentItem,
+		input: AnswerInput,
+		required: number
+	): Promise<NewStudyEvent> {
+		const { kind } = input;
+		if (kind === 'pretest') {
+			const { cardId } = item;
+			return {
+				type: 'pretest',
+				cardId,
+				sessionId: session.id,
+				skipped: false,
+				responseMs: input.responseMs
+			};
+		}
+		if (!isSelfRated(kind)) return this.reviewFields(session, item, input, required);
+		const card = await this.deps.cards.get(item.cardId);
+		if (!card) throw new Error(`No card ${item.cardId}`);
+		return {
+			type: 'selfRated',
+			noteId: card.noteId,
+			cardId: item.cardId,
+			sessionId: session.id,
+			kind,
+			...input.selfRated
+		};
 	}
 
 	private reviewFields(

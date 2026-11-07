@@ -15,6 +15,7 @@
 	import Slot from '../components/Slot.svelte';
 	import SpeechBubble from '../components/SpeechBubble.svelte';
 	import StatusBadge from '../components/StatusBadge.svelte';
+	import StepList from '../components/StepList.svelte';
 	import StickyNote from '../components/StickyNote.svelte';
 	import TapChip from '../components/TapChip.svelte';
 	import Button from '../primitives/Button.svelte';
@@ -93,6 +94,14 @@
 				{#snippet actions()}<Button full>Try again</Button>{/snippet}
 			</FeedbackPanel>
 		</div>
+	</GuideRow>
+	<GuideRow label="Step list (worked example)">
+		<StepList
+			steps={[
+				{ subgoal: 'Find the mask', step: '/24 means 255.255.255.0' },
+				{ subgoal: 'Count hosts', step: '254 usable hosts' }
+			]}
+		/>
 	</GuideRow>
 	<GuideRow label="Sticky note, speech bubble, banners">
 		<div class="wide">
