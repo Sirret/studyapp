@@ -91,11 +91,25 @@ export function currentKind(
 	pathStep: number,
 	accuracy: { n: number; correct: number }
 ): ExerciseKind {
+	return path[currentStep(path, pathStep, accuracy)] as ExerciseKind;
+}
+
+/**
+ * The path index `currentKind` shows: `pathStep` clamped, past any gated `mc`/`occlusionBank`
+ * steps. Exercises that depend on where the card is in its path (fade k) read this.
+ *
+ * @see BUILD_PLAN §5 and §5.1 (`fadeStep`)
+ */
+export function currentStep(
+	path: readonly ExerciseKind[],
+	pathStep: number,
+	accuracy: { n: number; correct: number }
+): number {
 	const last = path.length - 1;
 	let step = Math.min(Math.max(pathStep, 0), last);
 	const skipChoose = accuracyRate(accuracy) >= MC_UNTIL_ACCURACY;
 	while (skipChoose && step < last && MC_GATED.has(path[step] as ExerciseKind)) step += 1;
-	return path[step] as ExerciseKind;
+	return step;
 }
 
 /**

@@ -4,6 +4,7 @@ import { ExerciseKindSchema, type ExerciseKind } from '#lib/db/schemas/common.ts
 import {
 	advancePathStep,
 	currentKind,
+	currentStep,
 	EXERCISES,
 	groupOf,
 	PHASE_KIND_ORDER,
@@ -70,6 +71,19 @@ describe('currentKind', () => {
 
 	it('clamps an out-of-range step to the path', () => {
 		expect(currentKind(mcThenCloze, 5, NONE)).toBe('cloze');
+	});
+});
+
+describe('currentStep', () => {
+	it('is the index currentKind reads, past gated choose steps', () => {
+		expect(currentStep(['mc', 'cloze'], 0, NONE)).toBe(0);
+		expect(currentStep(['mc', 'cloze'], 0, AT_THRESHOLD)).toBe(1);
+		expect(currentStep(['exampleStudy', 'fadeStep', 'fadeStep'], 2, NONE)).toBe(2);
+	});
+
+	it('clamps below 0 and past the end', () => {
+		expect(currentStep(['mc', 'cloze'], -3, NONE)).toBe(0);
+		expect(currentStep(['mc', 'cloze'], 9, NONE)).toBe(1);
 	});
 });
 

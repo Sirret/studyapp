@@ -54,6 +54,18 @@ export const MC_UNTIL_ACCURACY = 0.75;
 export const MC_OPTIONS = 4;
 /** Options in first-letter and occlusion word banks. */
 export const BANK_SIZE = 4;
+
+/** Exercise content (BUILD_PLAN §5.1). Parsons: extra steps that don't belong. */
+export const PARSONS_EXTRAS = 2;
+/** Matching: pairs shown, the card's own included. */
+export const MATCHING_PAIRS = 4;
+/** Multiple-select and odd-one-out: rows of one item used. */
+export const ITEM_ROWS_SHOWN = 3;
+/** Blurt: characters of a note's text used as its title when it has no name or term. */
+export const BLURT_TITLE_CHARS = 60;
+
+/** Cards in a Phase 5 practice session of one course, until the modes (Phase 7) choose them. */
+export const PRACTICE_SESSION_CARDS = 20;
 /**
  * Typed-answer tolerance: the edits allowed for an answer whose normalised length is at most
  * `upTo` characters, checked in order. @see BUILD_PLAN §6.10

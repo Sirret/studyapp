@@ -407,6 +407,55 @@ Here are my notes:
 
 `mc`/`occlusionBank` steps are offered only while the card's accuracy is below `MC_UNTIL_ACCURACY` (0.75); above it the path jumps to the recall step.
 
+### 5.1 What each exercise shows and how it is graded (`exercise-spec.ts`, `exercise-check.ts`)
+
+The engine turns the current card into an **exercise spec** (what to show, already shuffled with `rngFor(cardId, sessionId, attempt)`) and grades the student's **response** against it. Exercise components only render a spec and return a response; they never grade (DESIGN §13.2, layer 9). Diagram and occlusion notes, and the kinds that need a drawn diagram or image (`occlusionType`, `occlusionDrag`, `occlusionBank`, `hotspot`, `structureRebuild`, `layerOrder`, `nodeCloze`, `edgeCloze`, `redraw`), are built in Phase 6.
+
+**Shapes.** Every spec has `kind`, `cardId`, `prompt` (the question text) and `instruction` (one short line, e.g. "Type the term"). Its `shape` is one of:
+
+| Shape | Kinds | Spec carries | Response | Correct when |
+|---|---|---|---|---|
+| `type` | `cloze`, `firstLetterType`, `fadeStep`, `newInstance` | `answer`, `accepted`, `others` (the course's other answers, for the collision guard), `letter` (the first letter for `firstLetterType`, else null), `context` (lines shown above the prompt; `fadeStep` only) | `typed` | `gradeTyped` says correct (§6.10) |
+| `choose` | `mc`, `pretest`, `whichOne`, `scenario`, `oddOneOut`, `pickPrinciple`, `firstLetterBank` | `options` (`text`; plus `cardId` and `answers` — the prompt of the card it is the answer of — when it came from another card), `correctIndex`, `letter` (`firstLetterBank` only, else null) | `index` | `index === correctIndex` |
+| `chooseMany` | `multiSelect` | `options`, `correct` (indexes, ascending) | `indexes` | the set equals `correct` |
+| `order` | `sequence`, `parsons` | `items` (shuffled texts), `correctOrder` (item indexes in the right order), `extras` (item indexes that don't belong; empty except for `parsons`) | `order` (item indexes as placed; extras left out) | `order` equals `correctOrder` exactly, so placing an extra is wrong |
+| `pair` | `matching`, `subgoalMatch`, `tableRow` | `left` (fixed order), `right` (shuffled), `pairs` (the right index for each left) | `matches` (right index per left; −1 = none) | every match equals `pairs` |
+| `sort` | `categorize` | `buckets`, `items` (shuffled), `bucketOf` (bucket index per item) | `placed` (bucket index per item; −1 = none) | every placement equals `bucketOf` |
+| `selfRate` | `flip`, `explainIt`, `blurt` | `answer` (the text revealed), `checklist` (`text`, and for `blurt` the `cardId` each stands for) | `rating` (`again` / `hard` / `good`; `flip` only), `checked` (checklist indexes) | never graded; logged as a `selfRated` event |
+| `study` | `exampleStudy` | `steps` (`subgoal`, `step`) | none | never graded; logged as a `selfRated` event |
+
+**Prompts** (`promptFor(note, variant, rng)`): keyterm `fwd` → the meaning; fact `fwd` → the term, `rev` → the definition; cloze `cN` → the text with span N as a blank (`_____`) and the other spans filled in; `step:i` → `<name>: what comes after "<step i>"?`; `cell:r:c` → `<item c> — <attribute r>`; scenario `fwd` → the situation; `seq` → `Put the steps of <name> in order`; `row:r` → `<attribute r>: match each to its value`; `which:r` → `Which one has <attribute r>: <value>?` for one item chosen by the seeded RNG; `ex` → the example's name.
+
+**Per kind.** When a kind can't be built for a card, the spec falls back as listed. Its `kind` is then the fallback kind, so the event logs what was really shown, and the trace says why.
+
+| Kind | Built for and content | Fallback |
+|---|---|---|
+| `cloze` | Any card with a text answer (`cardAnswer`): the answer, the note's `accept[variant]`, and the other answers of the course as `others` | `flip` (no text answer) |
+| `firstLetterType` | As `cloze`, plus the answer's first letter | as `cloze` |
+| `firstLetterBank` | As `cloze`: `firstLetterBank`'s letter, and its bank as the options | `firstLetterType` when the bank is null |
+| `mc`, `pretest` | As `cloze`: `pickDistractors` options | `cloze` with no distractor (`pretest` → `flip`) |
+| `whichOne` | `step:i`: the other steps as options (`pickDistractors`). `which:r`: the note's items as options; the answer is the item the prompt chose | `mc` for other cards |
+| `scenario` | Scenario `fwd`: `pickDistractors`. `which:r`: as `whichOne`, with the instruction "Pick the one that fits" | `mc` |
+| `oddOneOut` | Compare `cell:r:c` in a note with ≥ 3 rows: item c's values in 3 rows (row r and the next two, wrapping) plus item (c+1 mod items)'s value in row r; the odd one is correct. It must differ from all three after normalising, and the three must be distinct | `mc` |
+| `multiSelect` | Compare `cell:r:c`: "Which of these describe <item c>?" Item c's values in up to 3 rows (row r, then the following rows, wrapping) are correct; the other items' values in those rows are wrong. Duplicates after normalising are dropped, and a wrong option equal to a correct one is dropped | `mc` when no wrong option is left |
+| `pickPrinciple` | Compare `row:r`: the prompt lists each item's value in row r; options are the note's attribute names, correct = attribute r, at most `MC_OPTIONS` in total, the others taken in row order after r (wrapping) | `tableRow` when the note has one row |
+| `tableRow` | Compare `row:r`: left = items, right = row r's values | — |
+| `categorize` | Any compare card: buckets = items; items = every value except one that appears (after normalising) under more than one item | `tableRow` on the card's own row (`row:r`, or row 0 for other variants) when fewer than 2 values are left |
+| `sequence` | `seq`: the steps | — |
+| `parsons` | `seq`, and `ex` (its steps): the steps plus up to `PARSONS_EXTRAS` (2) steps of other `sequence` or `example` notes of the course, in course card order, never equal to a real step after normalising | `sequence` when no extra is available |
+| `subgoalMatch` | `ex`: left = the steps, right = the subgoals | — |
+| `fadeStep` | `ex`: fade k (k = the number of `fadeStep` entries in the path up to and including the shown step) shows steps `0…n−k−1` with their subgoals as `context`, and asks for step `n−k` with its subgoal in the prompt; later steps are hidden. Answer = that step; `others` = the note's other steps | — |
+| `newInstance` | `ex`: asks for the step of one subgoal chosen by the seeded RNG; answer = that step; `others` = the other steps | — |
+| `exampleStudy` | `ex`: every step with its subgoal | — |
+| `matching` | Keyterm or fact: left = terms, right = their meanings or definitions: the card's own pair first, then up to 3 other keyterm or fact notes of the same topic in note order, then of the course | `mc` when there is no other pair |
+| `flip` | Any card: `answer` = its text answer; for `seq` and `ex` the steps joined in order; for `row:r` one `<item>: <value>` line per item | — |
+| `explainIt` | Cloze notes: prompt = the text with every span blanked; checklist = the spans | `flip` |
+| `blurt` | Any card: prompt `Recall everything you can about <title>` (the note's term, name, situation, or its first 60 characters); checklist = the text answers of the note's cards, with their `cardId` | `flip` when the checklist is empty |
+
+**Choosing the kind** (`exerciseKindFor`): the kind is `currentKind` for the card, except that a `cloze` step becomes `firstLetterBank` when the setting `spellingMode` is `firstLetter`, or when the card's previous review in this session was a wrong answer of a `type`-shape kind (§6.10 first-letter mode). A redo-till-right attempt uses the same rule with its new `attempt`, so the options reshuffle.
+
+**Feedback** (`checkResponse(spec, response)` → `{ correct, reveal, chosen?, chosenFromCardId?, contrast?, marks }`): `reveal` is the right answer as text, one line per part for shapes with several parts. `chosen` is the normalised typed text, or the text of the chosen option(s). `chosenFromCardId` is set when a wrong choice, or a typed collision, is another card's answer, and then `contrast` is `{ chosen, answers }` for "You chose _X_ — that's the answer to _Y_" (§6.4). `marks` lists the wrong parts: misplaced item indexes (`gradeSequence`) plus any placed extras, wrong left indexes, wrong item indexes, or wrong option indexes. Self-rated and study shapes return `correct: true` and are never logged as reviews.
+
 ---
 
 ## 6. Engine specifications
@@ -933,3 +982,10 @@ Choices this plan makes where the concept was silent. Add new ones here.
 | Rounds and adaptive-criterion `spec-test-writer` gaps, settled as tested: only `checkRoundEnd` ends a round, and ending changes only `round.ended` (unfinished cards stay in `queue` until `startRound`); after an answer the order is `applyAnswer` → `checkRoundEnd` → `startCleanup` once queue and backlog are empty; an empty plan's round 1 isn't `ended` (the service ends the session through cleanup); round and break limits use ≥; `breakMinutes` is always `BREAK_MIN`; `roundSummary.finished` counts the round's cards no longer in play; cleanup restarts a card at count 0 needing `CRITERION_LATER`; `pretested` counts only a pretest before the first review; a card with only self-rated events is still `firstEver`; an event's `required` always wins over the first-try drop | Literal readings of the rows above; none changes a rule |
 | The Phase 5 design addendum is merged as DESIGN §11–13 (wolf motifs and delight, control looks, UI layers). Motifs (`Paw`, `Snowflake`, `Moon`) keep the `src/lib/ui/motifs/` folder of §11.1 and count as layer 5; Yuki lives in `src/lib/ui/components/yuki/`. Raw colours in the addendum became tokens (`--moon`, `--paw-press`, `--paw-trail`, `--lip`, `--lip-secondary`, `--tape`) | §11.1 and §13.2 named different folders; components may not use raw values |
 | `Settings.haptics` is a required `boolean` (default `true` in `DEFAULT_SETTINGS`), with no zod `.default()` | Nothing stores `settings` yet. A zod default would also fill in `Course.settingsOverride` (a `.partial()` of the schema) and override the global setting |
+| Phase 5: exercises are split into a pure **spec** (`buildExercise` in `engine/exercise-spec.ts`: what to show, seeded) and a **check** (`checkResponse` in `engine/exercise-check.ts`). Components take `{ spec, onAnswer }` rather than `{ card, seed, onAnswer }`; `StudyService` builds specs and re-exports the types to the UI | UI may not import the engine (lint), and grading must stay in the pure, tested layer; the seed is already applied inside the spec |
+| Phase 5: diagram and occlusion notes, and the kinds that need a drawn diagram or image (`occlusionType`, `occlusionDrag`, `occlusionBank`, `hotspot`, `structureRebuild`, `layerOrder`, `nodeCloze`, `edgeCloze`, `redraw`), are built in Phase 6 with the diagram view; Phase 5's practice sessions leave those notes out | §10 lists "Svelte Flow editor + exercises" under Phase 6; these kinds can't be shown without the drawn diagram |
+| Phase 5: kinds with no import content get a defined stand-in (§5.1): `newInstance` asks for the step of a subgoal (the format has no fresh problems), `pickPrinciple` asks which attribute a row's differences are about (no principle text), `scenario` on `which:r` reuses the attribute and value | The import format has no fields for new problems or principles; a real stand-in beats an exercise that can't appear. Revisit if the format grows |
+| Phase 5: "I was right" logs `acceptAdded` (with `reviewEventId` only when the string passes the collision guard) and adds the string to `note.accept[variant]` through `NoteRepo`. Replay treats a review event as correct when an `acceptAdded` names it in `reviewEventId`, whatever order they arrive in. The live session keeps the wrong answer (the redo now accepts the string) | Events are append-only, so the review is re-judged rather than re-logged; DATA_MODEL already defines `reviewEventId` as "the review re-judged as correct" |
+| Phase 5: `SessionService.answer` logs a `selfRated` event for self-rated kinds and a `pretest` event for `pretest`, instead of a review; the queue applies both as `none` weight (the card is done for this session) | DATA_MODEL §3.6 keeps the self-rated lane and pretests out of review events |
+| Phase 5: until the modes exist (Phase 7), `StudyService.startCourse` starts a `longterm` practice session of a course: up to `PRACTICE_SESSION_CARDS` (20) live cards in topic, note and card order, leaving out diagram and occlusion notes. A dev-only option forces a kind per card, for the e2e harness | Phase 5 must run real sessions end to end; choosing cards is Phase 7's job |
+| Phase 5: visual regression (`toHaveScreenshot` of `/dev/ui`) runs locally with Windows baselines; CI sets `ignoreSnapshots` until Linux baselines are generated | Font rendering differs by OS, so Windows baselines would fail on the Ubuntu runner |
