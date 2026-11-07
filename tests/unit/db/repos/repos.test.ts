@@ -362,7 +362,15 @@ describe('repositories', () => {
 				startedAt: START,
 				plannedMinutes: 20,
 				phase: 'recall' as const,
-				snapshot: { queue: [cardId], cards: {}, clearing: null, cleanup: false }
+				snapshot: {
+					queue: [cardId],
+					backlog: [],
+					cards: {},
+					clearing: null,
+					cleanup: false,
+					round: { index: 1, startedAt: 0, answers: 0, cards: [cardId], ended: false },
+					studySince: 0
+				}
 			};
 			await repo.save(session);
 			await repo.save({ ...session, snapshot: { ...session.snapshot, queue: [] } });

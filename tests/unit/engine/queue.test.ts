@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CRITERION_FIRST, CRITERION_LATER, ERROR_LAG, LAGS } from '#lib/config/defaults.ts';
+import {
+	CRITERION_FIRST,
+	CRITERION_FIRST_REDUCED,
+	CRITERION_LATER,
+	ERROR_LAG,
+	LAGS
+} from '#lib/config/defaults.ts';
 import type { CardId } from '#lib/db/schemas/common.ts';
 import type { SessionSnapshot } from '#lib/db/schemas/session.ts';
 import { SessionSnapshotSchema } from '#lib/db/schemas/session.ts';
@@ -87,7 +93,26 @@ describe('currentItem', () => {
 	it('returns the head card with its attempt and phase, as a first attempt', () => {
 		const state = makeSnapshot([N, cardId(2)], { [N]: { phase: 'new', attempt: 2 } });
 		// SPEC-GAP: is `attempt` the stored presentations-so-far (read here) or that plus one?
-		expect(currentItem(state)).toEqual({ cardId: N, attempt: 2, firstAttempt: true, phase: 'new' });
+		expect(currentItem(state)).toEqual({
+			cardId: N,
+			attempt: 2,
+			firstAttempt: true,
+			phase: 'new',
+			count: 0,
+			required: 1
+		});
+	});
+
+	it('carries the card count and required for the progress dots', () => {
+		const state = makeSnapshot([N], {
+			[N]: { required: CRITERION_FIRST, count: 2, lastFull: true }
+		});
+		expect(currentItem(state)).toMatchObject({ count: 2, required: CRITERION_FIRST });
+	});
+
+	it('returns null once the round has ended, even with cards left in the queue', () => {
+		const state = makeSnapshot([N, cardId(2)], {}, { round: { ended: true } });
+		expect(currentItem(state)).toBeNull();
 	});
 
 	it('marks the head as not a first attempt while it is being cleared', () => {
@@ -250,6 +275,115 @@ describe('applyAnswer: none-weight answers', () => {
 	});
 });
 
+/** @see BUILD_PLAN §6.3 and Decisions log (known on first try) */
+describe('applyAnswer: first answer ever (firstEver)', () => {
+	const firstEver = (extra = {}) => newCardQueue(OTHERS, { firstEver: true, ...extra });
+
+	it('drops required to CRITERION_FIRST_REDUCED after a correct full first answer', () => {
+		const next = apply(firstEver(), qa(N, true));
+		expect(cardOf(next, N)).toMatchObject({
+			required: Math.min(CRITERION_FIRST, CRITERION_FIRST_REDUCED),
+			count: 1,
+			firstEver: false
+		});
+	});
+
+	it('drops required after a correct recognition first answer too', () => {
+		const next = apply(firstEver(), qa(N, true, 'recognition'));
+		expect(cardOf(next, N)).toMatchObject({ required: CRITERION_FIRST_REDUCED, firstEver: false });
+	});
+
+	it('still reinserts an unfinished card at lagAfterCorrect(1) after the drop', () => {
+		const next = apply(firstEver(), qa(N, true));
+		expect(next.queue.indexOf(N)).toBe(lagAfterCorrect(1));
+	});
+
+	it('drops required before the criterion check, so the reduced count can finish the card', () => {
+		// Count preset so the drop alone decides whether this correct finishes the card.
+		const state = firstEver({ count: CRITERION_FIRST_REDUCED - 1, lastFull: true });
+		const next = apply(state, qa(N, true));
+		expect(cardOf(next, N)).toMatchObject({
+			done: true,
+			count: CRITERION_FIRST_REDUCED,
+			required: CRITERION_FIRST_REDUCED
+		});
+		expect(next.queue).not.toContain(N);
+	});
+
+	it('does not drop required after a wrong first answer, and firstEver is false afterwards', () => {
+		const next = apply(firstEver(), qa(N, false));
+		expect(cardOf(next, N)).toMatchObject({ required: CRITERION_FIRST, firstEver: false });
+		expect(next.clearing).toBe(N);
+	});
+
+	it('does not drop required after a none-weight first answer, and firstEver is false afterwards', () => {
+		const next = apply(firstEver(), qa(N, true, 'none'));
+		expect(cardOf(next, N)).toMatchObject({ required: CRITERION_FIRST, firstEver: false });
+	});
+
+	it('does not drop required for a card whose first answer ever is not this one', () => {
+		const next = apply(newCardQueue(), qa(N, true));
+		expect(cardOf(next, N)).toMatchObject({ required: CRITERION_FIRST, firstEver: false });
+	});
+
+	it('only the first answer can drop it: a later correct after a wrong first answer does not', () => {
+		let state = apply(firstEver(), qa(N, false));
+		state = apply(state, qa(N, true));
+		for (let i = 0; i < ERROR_LAG; i++) state = apply(state, qa(at(state.queue, 0), true));
+		state = apply(state, qa(N, true));
+		expect(cardOf(state, N)).toMatchObject({ required: CRITERION_FIRST, count: 1, done: false });
+	});
+
+	it('leaves a required already at or below CRITERION_FIRST_REDUCED unchanged', () => {
+		const state = makeSnapshot([N, ...OTHERS], {
+			[N]: { required: CRITERION_LATER, firstEver: true }
+		});
+		const next = apply(state, qa(N, true));
+		expect(cardOf(next, N)).toMatchObject({
+			required: CRITERION_LATER,
+			done: true,
+			firstEver: false
+		});
+	});
+});
+
+/** @see BUILD_PLAN §6.4 (rounds) and DATA_MODEL §3.7 */
+describe('applyAnswer: round answers', () => {
+	const cases: [string, SessionSnapshot, QueueAnswer][] = [
+		['a correct', newCardQueue(), qa(N, true)],
+		['a wrong', newCardQueue(), qa(N, false)],
+		['a none-weight answer', newCardQueue(), qa(N, true, 'none')],
+		[
+			'a redo',
+			makeSnapshot([N, ...OTHERS], { [N]: { failed: true } }, { clearing: N }),
+			qa(N, false)
+		]
+	];
+
+	for (const [label, state, answer] of cases) {
+		it(`increments round.answers by one after ${label}`, () => {
+			const before = { ...state, round: { ...state.round, answers: 7 } };
+			expect(apply(before, answer).round.answers).toBe(8);
+		});
+	}
+
+	it('counts every answer of a sequence, redo attempts included', () => {
+		let state = newCardQueue();
+		state = apply(state, qa(N, false));
+		state = apply(state, qa(N, false));
+		state = apply(state, qa(N, true));
+		state = apply(state, qa(at(state.queue, 0), true));
+		expect(state.round.answers).toBe(4);
+	});
+
+	it('does not end the round itself (checkRoundEnd does)', () => {
+		// SPEC-GAP: applyAnswer's JSDoc lists no round ending and checkRoundEnd owns it; read as
+		// applyAnswer never setting round.ended, even when its answer finishes the round's last card.
+		const state = makeSnapshot([N], {}, { round: { answers: 0 } });
+		expect(apply(state, qa(N, true)).round.ended).toBe(false);
+	});
+});
+
 /** @see BUILD_PLAN §6.4 (caller bugs) */
 describe('applyAnswer: guards', () => {
 	it('throws for a card that is not at the head of the queue', () => {
@@ -258,6 +392,11 @@ describe('applyAnswer: guards', () => {
 
 	it('throws for a card not in the session at all', () => {
 		expect(() => applyAnswer(newCardQueue(), qa(cardId(9999), true))).toThrow();
+	});
+
+	it('throws once the round has ended', () => {
+		const state = makeSnapshot([N, ...OTHERS], {}, { round: { ended: true } });
+		expect(() => applyAnswer(state, qa(N, true))).toThrow();
 	});
 
 	it('throws when the queue is empty', () => {
@@ -279,6 +418,12 @@ describe('applyAnswer: purity, shape and determinism', () => {
 		[
 			'a clearing correct',
 			makeSnapshot([N, ...OTHERS], { [N]: { failed: true } }, { clearing: N }),
+			qa(N, true)
+		],
+		['a first-ever correct', newCardQueue(OTHERS, { firstEver: true }), qa(N, true)],
+		[
+			'an answer with a backlog waiting',
+			makeSnapshot([N, ...cardRange(100, 3)], {}, { backlog: cardRange(200, 4) }),
 			qa(N, true)
 		]
 	];

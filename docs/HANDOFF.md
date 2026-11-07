@@ -4,9 +4,9 @@ The working notes passed from one phase to the next. Unlike `PROGRESS.md` (a his
 
 ## Current state
 
-- **Done:** Phases 0–4, including the scoped Phase 4 `reviewer` pass (PASS; its should-fix items were fixed). **Next:** Phase 5 (design system and exercise UI). The `reviewer` (Sonnet, diff-only) runs once at the end of each of Phases 7, 8 and 9, and again only if it found blockers.
+- **Done:** Phases 0–4 plus the pre-Phase-5 spec change (rounds, adaptive first-session criterion, progress-dot data), including the scoped Phase 4 `reviewer` pass (PASS; its should-fix items were fixed). **Next:** Phase 5 (design system and exercise UI). The `reviewer` (Sonnet, diff-only) runs once at the end of each of Phases 7, 8 and 9, and again only if it found blockers.
 - **Exists:** tooling, CI, logger, Dexie schema, zod schemas, repositories, event log, `merge()`, the import pipeline and `/import`, `cardgen`, `answers`, grading, distractors, and now the engine core: `time`, `exercise-kinds`, `fsrs`, `criterion`, `queue`, `session`, `status`, and full `replay()` (FSRS, criterion, status, fragile, weak, `pathStep`, accuracy). Services: `SessionService` and `ReplayService` (with `kvReplayConfig` and `rebuildCards`). First sim scenario: `tests/sim/session-lags-status.test.ts`.
-- **Not wired yet:** no screen uses `SessionService`. Phase 5 builds the session screen on it and wires grading (`answerEntries`, `confusionCounts`) into it. Nothing chooses which cards go into a session or sets `credited: false` yet (modes, Phase 7). The FSRS optimiser (`FSRS_OPTIMISE_MIN_REVIEWS`) isn't built. `kv.schemaVersion` isn't written. Screens are unstyled until Phase 5, which must also restyle `/import` and add `ImportPreviewPanel` to `/dev/ui`.
+- **Not wired yet:** no screen uses `SessionService`. Phase 5 builds `ProgressDots` (from `item.count`/`item.required`) and `RoundSummary` (from `view.round`: Continue → `continueRound(id, { afterBreak: false })`, Take a break → a `BREAK_MIN` countdown, then `continueRound(id, { afterBreak: true })`, Stop here → `stop(id)`). Nothing computes `relearningSessionsAhead` yet (planner, Phase 8), so callers pass 0. Phase 5 builds the session screen on it and wires grading (`answerEntries`, `confusionCounts`) into it. Nothing chooses which cards go into a session or sets `credited: false` yet (modes, Phase 7). The FSRS optimiser (`FSRS_OPTIMISE_MIN_REVIEWS`) isn't built. `kv.schemaVersion` isn't written. Screens are unstyled until Phase 5, which must also restyle `/import` and add `ImportPreviewPanel` to `/dev/ui`.
 
 ## How data works here (reuse this; don't reinvent it)
 
@@ -15,10 +15,10 @@ The working notes passed from one phase to the next. Unlike `PROGRESS.md` (a his
 | Create or change content | `CourseRepo`, `TopicRepo`, `ChunkRepo`, `NoteRepo`, `CardRepo`, `MediaRepo` in `db/repos/content-repos.ts`, built on `ContentRepo` | Touch a Dexie table directly |
 | Delete content | `repo.softDelete(id)`; reads already hide tombstones | Hard delete, except archive or replace import |
 | Record study history | `EventRepo.append(fields)`; it adds `id`, `ts`, `deviceId`, `seq`. An answer plus its session snapshot: `appendWithSession` (one transaction) | Update or delete an event |
-| Update card scheduling | Extend `replayCard()` in `engine/replay-card.ts`; `ReplayService.rebuildAll()` or `rebuildCards(ids)` stores the result via `CardRepo.applyReplay`. Criterion counting in both replay and planning goes through `recordCriterion` | Write `fsrs`, `due`, `status`, `fragile`, `weak`, `daysCorrect`, `pathStep` or `accuracy` anywhere else |
+| Update card scheduling | Extend `replayCard()` in `engine/replay-card.ts`; `ReplayService.rebuildAll()` or `rebuildCards(ids)` stores the result via `CardRepo.applyReplay`. Criterion counting in both replay and planning goes through `recordCriterion` / `criterionHistory` in `engine/criterion-history.ts` (uses each event's `required`; derives it when absent) | Write `fsrs`, `due`, `status`, `fragile`, `weak`, `daysCorrect`, `pathStep` or `accuracy` anywhere else |
 | Read or write settings | `KvRepo.get/set`, validated against `KV_SCHEMAS` | Touch `db.kv` directly |
 | Write across several tables, all or nothing | Build records with `repo.draft` and `repo.draftChange`, then `ContentStore.writeBatch`, which is one transaction | Open a Dexie transaction around repository calls |
-| Run a study session | `SessionService.start({ mode, courseIds, plannedMinutes, cards, confusionEvents })` with `cards` from `toPlanCard(card, noteType, cardEvents)`; show `view.item` (its `attempt` seeds `rngFor`, and `firstAttempt: false` means redo-till-right); call `answer(id, { kind, correct, responseMs, credited, chosen?, chosenFromCardId? })`; `resume(id)` after a reload | Keep queue state in a component, or append review events yourself |
+| Run a study session | `SessionService.start({ mode, courseIds, plannedMinutes, cards, confusionEvents })` with `cards` from `toPlanCard(card, noteType, cardEvents, { mode, relearningSessionsAhead })`; show `view.item` (`attempt` seeds `rngFor`, `firstAttempt: false` means redo-till-right, `count`/`required` feed the progress dots); `answer(id, { kind, correct, responseMs, credited, chosen?, chosenFromCardId? })` logs `required` on the event; when `view.round` is set the round ended: `continueRound(id, { afterBreak })` or `stop(id)`; `resume(id)` after a reload | Keep queue or round state in a component, append review events yourself, or force a break |
 | Know what kind a card shows, and its weight | `currentKind(path, pathStep, accuracy)` (MC gating) and `weightOf(kind)` in `engine/exercise-kinds.ts` | Re-derive §3.3 groups or weights |
 | Ask FSRS something | `retrievabilityAt(card.fsrs, t, config.fsrs)`; config from `kvReplayConfig(kv, tzOffset)` | Import `ts-fsrs` outside `engine/fsrs.ts` |
 | Work out study days | `dayIndex` / `daysBetween` with the device's `tzOffsetMin` (minutes east of UTC) | `new Date().getHours()` in the engine |
@@ -56,10 +56,12 @@ Read these sections, plus this file and the Decisions log. Open anything else on
 
 ## End-of-phase handoff (what every phase leaves behind)
 
-Before finishing a phase, update this file:
+Each phase should be startable in a new chat from CLAUDE.md, this file and the Decisions log alone. While a phase is in progress, `docs/WIP.md` is the live checkpoint (CLAUDE.md rule 21; `npm run wip` shows it). Before finishing a phase, update this file:
 
 1. **Current state:** what's done, what's next, what's partial or not wired.
 2. **How data works:** add any new service, repo method or pattern that later phases must reuse, and correct anything you changed. **If you improved how something works, say here what to do now and what to stop doing.**
 3. **Traps:** anything that cost real time goes in the toolchain traps in `CLAUDE.md`.
+
+4. **WIP:** move anything still useful from `docs/WIP.md` here or into the Decisions log, then delete `WIP.md` in the phase's last commit.
 
 Then append the `PROGRESS.md` entry and add decisions to the Decisions log. Write for someone with no memory of this session: name files and functions, and state rules rather than history.

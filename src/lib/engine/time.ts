@@ -8,7 +8,8 @@ import { DAY_ROLLOVER_HOUR } from '#lib/config/defaults.ts';
  * @see BUILD_PLAN §6.1 and Decisions log (time-zone offset)
  */
 
-const MS_PER_MINUTE = 60_000;
+/** Milliseconds in a minute. */
+export const MS_PER_MINUTE = 60_000;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
 /** Milliseconds in a day, for converting FSRS day counts to timestamps. */
 export const MS_PER_DAY = 24 * MS_PER_HOUR;

@@ -2,6 +2,8 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import {
 	CRITERION_FIRST,
+	CRITERION_FIRST_REDUCED,
+	CRITERION_LATER,
 	DAY_ROLLOVER_HOUR,
 	FRAGILE_CAP_DAYS,
 	FRAGILE_SPACED_GAP_DAYS,
@@ -398,12 +400,15 @@ describe('replay status over days (§6.5, Decisions log: status, daysCorrect and
 
 	it('is provisional after a cram session whose last counting correct was recognition', () => {
 		const h = history();
+		// The pretest keeps the first-session criterion at CRITERION_FIRST (no known-on-first-try).
+		h.pretest(at(0, 17));
 		h.session('cram', at(0), [ok, ok, mc(true)]);
 		expect(cachesOf(h.events).status).toBe('provisional');
 	});
 
 	it('is provisional after a new card cram session short of CRITERION_FIRST', () => {
 		const h = history();
+		h.pretest(at(0, 17));
 		h.session(
 			'cram',
 			at(0),
@@ -594,7 +599,7 @@ describe('replay weak (Decisions log: weak, §6.4 failed relearn)', () => {
 		return cachesOf(h.events).weak;
 	};
 
-	it('is weak after a relearn session (CRITERION_LATER) with a wrong counting event', () => {
+	it('is weak after a relearning session (criterion met before it) with a wrong counting event', () => {
 		expect(
 			weakOf((h) => {
 				h.session('longterm', at(0), OK3);
@@ -621,7 +626,7 @@ describe('replay weak (Decisions log: weak, §6.4 failed relearn)', () => {
 		).toBe(false);
 	});
 
-	it('is not weak after errors in a first session (it needed CRITERION_FIRST)', () => {
+	it('is not weak after errors in a first session (not a relearning session)', () => {
 		expect(weakOf((h) => h.session('longterm', at(0), [no, { firstAttempt: false }, ...OK3]))).toBe(
 			false
 		);
@@ -630,7 +635,9 @@ describe('replay weak (Decisions log: weak, §6.4 failed relearn)', () => {
 	it('is not weak when an abandoned first session left the card still needing CRITERION_FIRST', () => {
 		expect(
 			weakOf((h) => {
-				h.session('longterm', at(0), [ok, ok]);
+				// Cram after a pretest needs CRITERION_FIRST, so two corrects leave it unmet.
+				h.pretest(at(0, 17));
+				h.session('cram', at(0), [ok, ok]);
 				h.session('longterm', at(1), [no, { firstAttempt: false }, ...OK3]);
 			})
 		).toBe(false);
@@ -839,5 +846,229 @@ describe('replay caches: validity and determinism (§6.12)', () => {
 			if (caches.fsrs === null) expect(caches.due).toBeUndefined();
 			else expect(caches.due).toBe(caches.fsrs.due);
 		}
+	});
+});
+
+/** Status after the history `build` makes; a lone cram session is exam-ready only if it met its criterion. */
+const statusOf = (build: (h: ReturnType<typeof history>) => void) => {
+	const h = history();
+	build(h);
+	return cachesOf(h.events).status;
+};
+
+/**
+ * Whether the card had met its criterion after `build`: a failed session on a later study day makes
+ * it weak only if that session was a relearning session (Decisions log: weak).
+ */
+const metBeforeProbe = (build: (h: ReturnType<typeof history>) => void, probeDay = 1): boolean => {
+	const h = history();
+	build(h);
+	h.session('longterm', at(probeDay, 20), [no, { firstAttempt: false }, ok]);
+	return cachesOf(h.events).weak;
+};
+
+const oks = (n: number): Answer[] => Array.from({ length: n }, () => ok);
+
+describe('replay criterion count from event `required` (§6.3, Decisions log: review events carry required)', () => {
+	it('uses the event required over the derived count: a first cram session with required 2 is met after 2', () => {
+		const build = (required?: number) => (h: ReturnType<typeof history>) => {
+			h.pretest(at(0, 17));
+			h.session('cram', at(0), [ok, ok], required === undefined ? {} : { required });
+		};
+		expect(statusOf(build(CRITERION_FIRST_REDUCED))).toBe('exam-ready');
+		expect(metBeforeProbe(build(CRITERION_FIRST_REDUCED))).toBe(true);
+		// Without `required`, cram after a pretest derives CRITERION_FIRST: two corrects fall short.
+		expect(statusOf(build())).toBe('provisional');
+		expect(metBeforeProbe(build())).toBe(false);
+	});
+
+	it('uses an event required of CRITERION_FIRST even where derivation would reduce it', () => {
+		// Known on first try would derive CRITERION_FIRST_REDUCED; the event says what the session asked.
+		expect(statusOf((h) => h.session('cram', at(0), [ok, ok], { required: CRITERION_FIRST }))).toBe(
+			'provisional'
+		);
+	});
+
+	it('uses required 1 on a relearning session', () => {
+		expect(
+			statusOf((h) => {
+				h.session('longterm', at(0, 9), OK3);
+				h.session('cram', at(0, 20), [ok], { required: CRITERION_LATER });
+			})
+		).toBe('exam-ready');
+	});
+
+	it('uses an event required above CRITERION_LATER on a relearning session', () => {
+		// Same study day, so daysCorrect stays 1: exam-ready would need the cram criterion met.
+		expect(
+			statusOf((h) => {
+				h.session('longterm', at(0, 9), OK3);
+				h.session('cram', at(0, 20), [ok], { required: CRITERION_FIRST_REDUCED });
+			})
+		).toBe('provisional');
+	});
+});
+
+describe('replay criterion count derived without `required` (§6.3 adaptive first session, Decisions log)', () => {
+	it('reduces a longterm first session to CRITERION_FIRST_REDUCED', () => {
+		const longterm = (answers: readonly Answer[]) => (h: ReturnType<typeof history>) => {
+			h.pretest(at(0, 17));
+			h.session('longterm', at(0), answers);
+		};
+		expect(metBeforeProbe(longterm(oks(CRITERION_FIRST_REDUCED)))).toBe(true);
+		expect(metBeforeProbe(longterm(oks(CRITERION_FIRST_REDUCED - 1)))).toBe(false);
+	});
+
+	it('keeps CRITERION_FIRST for a cram first session when no reduction applies', () => {
+		const cram = (answers: readonly Answer[]) => (h: ReturnType<typeof history>) => {
+			h.pretest(at(0, 17));
+			h.session('cram', at(0), answers);
+		};
+		expect(statusOf(cram(oks(CRITERION_FIRST - 1)))).toBe('provisional');
+		expect(statusOf(cram(oks(CRITERION_FIRST)))).toBe('exam-ready');
+		expect(metBeforeProbe(cram(oks(CRITERION_FIRST - 1)))).toBe(false);
+	});
+
+	it('reduces to CRITERION_FIRST_REDUCED when the first try ever is a correct full answer', () => {
+		expect(statusOf((h) => h.session('cram', at(0), oks(CRITERION_FIRST_REDUCED)))).toBe(
+			'exam-ready'
+		);
+	});
+
+	it('reduces when the first try ever is a correct recognition answer (the final correct is full)', () => {
+		expect(statusOf((h) => h.session('cram', at(0), [mc(true), ok]))).toBe('exam-ready');
+	});
+
+	it('counts a correct first try in an earlier uncredited acquisition session as known on first try', () => {
+		expect(
+			statusOf((h) => {
+				h.session('acquisition', at(0), [ok]);
+				h.session('cram', at(1), [ok, ok]);
+			})
+		).toBe('exam-ready');
+		expect(
+			statusOf((h) => {
+				h.session('acquisition', at(0), [no, { firstAttempt: false }]);
+				h.session('cram', at(1), [ok, ok]);
+			})
+		).toBe('provisional');
+	});
+
+	it('does not count a first try as known when a pretest came before it', () => {
+		expect(
+			statusOf((h) => {
+				h.pretest(at(0, 17));
+				h.session('cram', at(0), [ok, ok]);
+			})
+		).toBe('provisional');
+	});
+
+	it('still counts the first try as known when the pretest came only after it', () => {
+		expect(
+			statusOf((h) => {
+				h.session('acquisition', at(0, 9), [ok]);
+				h.pretest(at(0, 12));
+				h.session('cram', at(1), [ok, ok]);
+			})
+		).toBe('exam-ready');
+	});
+
+	it('does not count a none-weight first review as known on first try', () => {
+		expect(statusOf((h) => h.session('cram', at(0), [{ kind: 'matching' }, ok, ok]))).toBe(
+			'provisional'
+		);
+		expect(statusOf((h) => h.session('cram', at(0), [{ kind: 'matching' }, ...OK3]))).toBe(
+			'exam-ready'
+		);
+	});
+
+	it('does not count a wrong first try as known on first try', () => {
+		expect(statusOf((h) => h.session('cram', at(0), [no, { firstAttempt: false }, ok, ok]))).toBe(
+			'provisional'
+		);
+		expect(statusOf((h) => h.session('cram', at(0), [no, { firstAttempt: false }, ...OK3]))).toBe(
+			'exam-ready'
+		);
+	});
+
+	it('drops the session count right after a first-ever correct that comes mid-session', () => {
+		// Card B is answered first, so card A's first try ever happens inside a running session.
+		const h = history();
+		h.session('cram', at(0), [{ cardId: CARD_B }, ok, { cardId: CARD_B }, ok]);
+		const { result } = replay(
+			h.events,
+			[
+				{ id: CARD_A, path: ONE_STEP },
+				{ id: CARD_B, path: ONE_STEP }
+			],
+			UTC
+		);
+		expect(result[CARD_A]?.status).toBe('exam-ready');
+		expect(result[CARD_B]?.status).toBe('exam-ready');
+	});
+});
+
+describe('replay weak with the adaptive criterion (Decisions log: weak = failed relearning session)', () => {
+	const weakOf = (build: (h: ReturnType<typeof history>) => void): boolean => {
+		const h = history();
+		build(h);
+		return cachesOf(h.events).weak;
+	};
+
+	it('treats the session after a longterm first session met at CRITERION_FIRST_REDUCED as a relearn', () => {
+		expect(
+			weakOf((h) => {
+				h.pretest(at(0, 17));
+				h.session('longterm', at(0), [ok, ok]);
+				h.session('longterm', at(1), [no, { firstAttempt: false }, ok]);
+			})
+		).toBe(true);
+	});
+
+	it('is not weak from a cleanup event with required 1 in a first session', () => {
+		const first = { required: CRITERION_FIRST_REDUCED };
+		const cleanup = { required: CRITERION_LATER };
+		const main: Answer[] = [
+			{ ...no, ...first },
+			{ firstAttempt: false, ...first },
+			{ ...ok, ...first },
+			{ ...ok, ...first }
+		];
+		expect(weakOf((h) => h.session('longterm', at(0), [...main, { ...ok, ...cleanup }]))).toBe(
+			false
+		);
+		expect(
+			weakOf((h) =>
+				h.session('longterm', at(0), [
+					...main,
+					{ ...no, ...cleanup },
+					{ firstAttempt: false, ...cleanup }
+				])
+			)
+		).toBe(false);
+	});
+
+	it('is weak after a failed relearning session whose events carry required 1', () => {
+		const later = { required: CRITERION_LATER };
+		expect(
+			weakOf((h) => {
+				h.session('longterm', at(0), OK3);
+				h.session('longterm', at(1), [
+					{ ...no, ...later },
+					{ firstAttempt: false, ...later },
+					{ ...ok, ...later }
+				]);
+			})
+		).toBe(true);
+	});
+
+	it('treats a session after a first session met through its event required as a relearn', () => {
+		expect(
+			weakOf((h) => {
+				h.pretest(at(0, 17));
+				h.session('cram', at(0), [ok, ok], { required: CRITERION_FIRST_REDUCED });
+				h.session('longterm', at(1), [no, { firstAttempt: false }, ok]);
+			})
+		).toBe(true);
 	});
 });

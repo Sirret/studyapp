@@ -35,7 +35,9 @@ export const StudyEventSchema = z.discriminatedUnion('type', [
 		responseMs: z.number().min(0),
 		chosen: z.string().optional(),
 		chosenFromCardId: CardIdSchema.optional(),
-		credited: z.boolean()
+		credited: z.boolean(),
+		/** The card's criterion count in this session after this answer (BUILD_PLAN §6.3). */
+		required: z.number().int().min(1).optional()
 	}),
 	EventBaseSchema.extend({
 		type: z.literal('pretest'),

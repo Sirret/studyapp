@@ -1,9 +1,15 @@
 import type { CardId, ExerciseKind, Weight } from '#lib/db/schemas/common.ts';
-import type { SessionCard, SessionSnapshot } from '#lib/db/schemas/session.ts';
+import type { SessionCard, SessionRound, SessionSnapshot } from '#lib/db/schemas/session.ts';
 import type { CountableAnswer } from '#lib/engine/criterion.ts';
 import type { QueueAnswer } from '#lib/engine/queue.ts';
 import type { PlanCard } from '#lib/engine/session.ts';
+import { MS_PER_DAY } from '#lib/engine/time.ts';
 import { cardId, noteId } from './fixtures.ts';
+
+/** When fixture sessions and their first round start. */
+export const T0 = 1_700_000_000_000;
+/** One minute in ms, derived from the engine's day length. */
+export const MINUTE = MS_PER_DAY / (24 * 60);
 
 /** A fresh session card in `recall`, needing one counting correct. */
 export function makeSessionCard(overrides: Partial<SessionCard> = {}): SessionCard {
@@ -15,23 +21,41 @@ export function makeSessionCard(overrides: Partial<SessionCard> = {}): SessionCa
 		failed: false,
 		attempt: 0,
 		done: false,
+		firstEver: false,
 		...overrides
 	};
 }
 
+/** Extra snapshot fields for `makeSnapshot`; `round` is merged into the default round. */
+export type SnapshotRest = Partial<Omit<SessionSnapshot, 'queue' | 'cards' | 'round'>> & {
+	round?: Partial<SessionRound>;
+};
+
 /**
- * A snapshot whose queue is `queue`; every queued card gets `makeSessionCard()` unless `cards`
- * overrides it. Extra entries in `cards` (e.g. done cards) are kept.
+ * A snapshot whose round queue is `queue`; every queued or backlog card gets `makeSessionCard()`
+ * unless `cards` overrides it. Extra entries in `cards` (e.g. done cards) are kept. The round is
+ * round 1, started at `T0` with no answers, holding `queue`; `studySince` is `T0`.
  */
 export function makeSnapshot(
 	queue: readonly CardId[],
 	cards: Readonly<Record<string, Partial<SessionCard>>> = {},
-	rest: Partial<Pick<SessionSnapshot, 'clearing' | 'cleanup'>> = {}
+	rest: SnapshotRest = {}
 ): SessionSnapshot {
+	const { round, ...others } = rest;
+	const backlog = others.backlog ?? [];
 	const all: Record<string, SessionCard> = {};
-	for (const id of queue) all[id] = makeSessionCard(cards[id]);
+	for (const id of [...queue, ...backlog]) all[id] ??= makeSessionCard(cards[id]);
 	for (const [id, card] of Object.entries(cards)) all[id] ??= makeSessionCard(card);
-	return { queue: [...queue], cards: all, clearing: null, cleanup: false, ...rest };
+	return {
+		clearing: null,
+		cleanup: false,
+		studySince: T0,
+		...others,
+		queue: [...queue],
+		backlog: [...backlog],
+		cards: all,
+		round: { index: 1, startedAt: T0, answers: 0, cards: [...queue], ended: false, ...round }
+	};
 }
 
 /** `count` card IDs starting at `from`, e.g. the "other" cards of a queue. */
@@ -49,7 +73,7 @@ export function ca(overrides: Partial<CountableAnswer> = {}): CountableAnswer {
 	return { firstAttempt: true, credited: true, weight: 'full', correct: true, ...overrides };
 }
 
-/** A plan card: card `n` of note `n`, a keyterm, not new, needing one correct. */
+/** A plan card: card `n` of note `n`, a keyterm, not new, not first-ever, needing one correct. */
 export function planCard(
 	n: number,
 	kind: ExerciseKind,
@@ -62,6 +86,7 @@ export function planCard(
 		kind,
 		isNew: false,
 		required: 1,
+		firstEver: false,
 		...overrides
 	};
 }

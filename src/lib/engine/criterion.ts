@@ -1,5 +1,10 @@
-import { CRITERION_FIRST, CRITERION_LATER } from '#lib/config/defaults.ts';
-import type { Weight } from '#lib/db/schemas/common.ts';
+import {
+	CRITERION_FIRST,
+	CRITERION_FIRST_REDUCED,
+	CRITERION_LATER,
+	RELEARN_OVERRIDE_SESSIONS
+} from '#lib/config/defaults.ts';
+import type { Mode, Weight } from '#lib/db/schemas/common.ts';
 import type { Traced } from './trace.ts';
 
 /** The parts of a review answer the criterion looks at. */
@@ -31,14 +36,30 @@ export function isCounting(answer: Omit<CountableAnswer, 'correct'>): boolean {
 	return answer.firstAttempt && answer.credited && answer.weight !== 'none';
 }
 
+/** What decides how many corrects a card needs at the start of a session. */
+export interface CriterionContext {
+	/** The card has met its criterion in some earlier credited session. */
+	hasMetCriterion: boolean;
+	/** The card's first attempt ever was a correct counting-kind answer, with no pretest before. */
+	knownOnFirstTry: boolean;
+	mode: Mode;
+	/** Relearning sessions the plan has for the card before the exam (0 when unknown). */
+	relearningSessionsAhead: number;
+}
+
 /**
- * Corrects a card needs in a session: `CRITERION_FIRST` until it has met the criterion in some
- * credited session, then `CRITERION_LATER`.
+ * Corrects a card needs in a session. Later sessions (criterion met before): `CRITERION_LATER`.
+ * First session: `CRITERION_FIRST_REDUCED` when the mode is `longterm`, at least
+ * `RELEARN_OVERRIDE_SESSIONS` relearning sessions are planned, or the card was known on first
+ * try; otherwise `CRITERION_FIRST`.
  *
- * @see BUILD_PLAN §6.3 and Decisions log (required corrects)
+ * @see BUILD_PLAN §6.3 and Decisions log (adaptive first-session criterion)
  */
-export function requiredCorrects(hasMetCriterion: boolean): number {
-	return hasMetCriterion ? CRITERION_LATER : CRITERION_FIRST;
+export function requiredCorrects(context: CriterionContext): number {
+	if (context.hasMetCriterion) return CRITERION_LATER;
+	const relearningFollows =
+		context.mode === 'longterm' || context.relearningSessionsAhead >= RELEARN_OVERRIDE_SESSIONS;
+	return relearningFollows || context.knownOnFirstTry ? CRITERION_FIRST_REDUCED : CRITERION_FIRST;
 }
 
 /** A card's state at the start of a session. @see BUILD_PLAN §6.3 */
@@ -87,59 +108,4 @@ export function criterionForSession(
 		result: { ...state, met },
 		trace: [{ rule: 'criterion.session', required, count: state.count, met }]
 	};
-}
-
-/** One session's criterion progress inside a card's history. */
-export interface SessionCriterion {
-	criterion: CriterionState;
-	/** The criterion was met at some point in this session. */
-	met: boolean;
-}
-
-/** A card's criterion progress across its sessions, folded one counting event at a time. */
-export interface CriterionHistory {
-	metEver: boolean;
-	sessions: Map<string, SessionCriterion>;
-}
-
-/** No sessions yet. */
-export function emptyCriterionHistory(): CriterionHistory {
-	return { metEver: false, sessions: new Map() };
-}
-
-/**
- * Folds one counting answer into the card's history (mutating it) and returns its session. A
- * session's `required` is fixed at its first counting answer from whether the card had met the
- * criterion by then, so interleaved sessions count the same way in replay and in planning.
- *
- * @see BUILD_PLAN §6.3 and Decisions log (required corrects)
- */
-export function recordCriterion(
-	history: CriterionHistory,
-	answer: CountableAnswer & { sessionId: string }
-): { session: SessionCriterion; isFirstOfSession: boolean } {
-	let session = history.sessions.get(answer.sessionId);
-	const isFirstOfSession = session === undefined;
-	if (!session) {
-		session = { criterion: startCriterion(requiredCorrects(history.metEver)), met: false };
-		history.sessions.set(answer.sessionId, session);
-	}
-	session.criterion = stepCriterion(session.criterion, answer);
-	session.met ||= isCriterionMet(session.criterion);
-	history.metEver ||= session.met;
-	return { session, isFirstOfSession };
-}
-
-/**
- * Whether a card has met its criterion in some credited session, from its answers in replay
- * order, counted exactly as replay counts them (`recordCriterion`).
- *
- * @see BUILD_PLAN §6.3 and Decisions log (required corrects)
- */
-export function hasMetCriterion(
-	answers: readonly (CountableAnswer & { sessionId: string })[]
-): boolean {
-	const history = emptyCriterionHistory();
-	for (const answer of answers) if (isCounting(answer)) recordCriterion(history, answer);
-	return history.metEver;
 }

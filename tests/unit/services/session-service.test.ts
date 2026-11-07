@@ -1,7 +1,14 @@
 import 'fake-indexeddb/auto';
 import { randomUUID } from 'node:crypto';
 import { afterEach, describe, expect, it } from 'vitest';
-import { CRITERION_FIRST, CRITERION_LATER, RETENTION_MAX } from '#lib/config/defaults.ts';
+import {
+	BREAK_MIN,
+	BREAK_SUGGEST_AFTER_MIN,
+	CRITERION_FIRST_REDUCED,
+	CRITERION_LATER,
+	RETENTION_MAX,
+	ROUND_WORKING_SET
+} from '#lib/config/defaults.ts';
 import { CardRepo } from '#lib/db/repos/content-repos.ts';
 import { DeviceRepo } from '#lib/db/repos/device-repo.ts';
 import { EventRepo } from '#lib/db/repos/event-repo.ts';
@@ -72,121 +79,165 @@ async function makeCards(repo: CardRepo, n: number): Promise<Card[]> {
 
 const right: AnswerInput = { kind: 'cloze', correct: true, responseMs: 5, credited: true };
 const wrong: AnswerInput = { ...right, correct: false };
+const MINUTE = 60_000;
+
+type Mode = 'longterm' | 'cram';
+type Setup = ReturnType<typeof setup>;
+
+/** Plans the cards as `toPlanCard` would, optionally forcing a criterion count. */
+function planFor(made: readonly Card[], mode: Mode, required?: number) {
+	return made.map((card) => ({
+		...toPlanCard(card, 'cloze', [], { mode, relearningSessionsAhead: 0 }),
+		...(required === undefined ? {} : { required })
+	}));
+}
+
+async function startWith(env: Setup, made: readonly Card[], mode: Mode, required?: number) {
+	return env.service.start({
+		mode,
+		courseIds: [],
+		plannedMinutes: 10,
+		cards: planFor(made, mode, required),
+		confusionEvents: []
+	});
+}
+
+/** Every event shares the fixed clock, so order a card's events by the per-device seq. */
+async function reviewsOf(events: EventRepo, cardId: Card['id']): Promise<ReviewEvent[]> {
+	const logged = (await events.listByCard(cardId)) as ReviewEvent[];
+	return logged.sort((a, b) => a.seq - b.seq);
+}
 
 describe('SessionService', () => {
-	it('drills a card to the criterion, logging events and replaying caches', async () => {
-		const { service, cards, events } = setup();
-		const [card] = await makeCards(cards, 1);
+	it('drills a new long-term card to the reduced criterion, logging required on each event', async () => {
+		const env = setup();
+		const [card] = await makeCards(env.cards, 1);
 		if (!card) throw new Error('no card');
-		const plan = [toPlanCard(card, 'cloze', [])];
-		let view = await service.start({
-			mode: 'longterm',
-			courseIds: [],
-			plannedMinutes: 10,
-			cards: plan,
-			confusionEvents: []
+		let view = await startWith(env, [card], 'longterm');
+		expect(view.item).toMatchObject({
+			cardId: card.id,
+			firstAttempt: true,
+			attempt: 0,
+			count: 0,
+			required: CRITERION_FIRST_REDUCED
 		});
-		expect(view.item).toMatchObject({ cardId: card.id, firstAttempt: true, attempt: 0 });
 
-		for (let i = 0; i < CRITERION_FIRST; i += 1)
-			view = await service.answer(view.session.id, right);
+		for (let i = 0; i < CRITERION_FIRST_REDUCED; i += 1)
+			view = await env.service.answer(view.session.id, right);
 
 		expect(view.item).toBeNull();
 		expect(view.session.endedAt).toBe(now);
-		const logged = (await events.listByCard(card.id)) as ReviewEvent[];
-		expect(logged).toHaveLength(CRITERION_FIRST);
-		expect(logged.every((event) => event.weight === 'full' && event.firstAttempt)).toBe(true);
-		const stored = await cards.get(card.id);
-		expect(stored?.accuracy).toEqual({ n: CRITERION_FIRST, correct: CRITERION_FIRST });
+		const logged = await reviewsOf(env.events, card.id);
+		expect(logged).toHaveLength(CRITERION_FIRST_REDUCED);
+		expect(logged.every((event) => event.required === CRITERION_FIRST_REDUCED)).toBe(true);
+		const stored = await env.cards.get(card.id);
+		expect(stored?.accuracy).toEqual({
+			n: CRITERION_FIRST_REDUCED,
+			correct: CRITERION_FIRST_REDUCED
+		});
 		expect(stored?.status).toBe('provisional');
 		expect(stored?.fsrs).not.toBeNull();
 	});
 
-	it('logs redo attempts as not first, then cleans up the failed card', async () => {
-		const { service, cards, events } = setup();
-		const made = await makeCards(cards, 2);
-		const plan = made.map((card) => ({
-			...toPlanCard(card, 'cloze', []),
-			required: CRITERION_LATER
-		}));
-		let view = await service.start({
-			mode: 'cram',
-			courseIds: [],
-			plannedMinutes: 5,
-			cards: plan,
-			confusionEvents: []
-		});
+	it('logs redo attempts as not first, then cleans up the failed card in its own round', async () => {
+		const env = setup();
+		const made = await makeCards(env.cards, 2);
+		let view = await startWith(env, made, 'cram', CRITERION_LATER);
 		const failedId = view.item?.cardId;
+		if (!failedId) throw new Error('no current card');
 
-		view = await service.answer(view.session.id, wrong);
+		view = await env.service.answer(view.session.id, wrong);
 		expect(view.item).toMatchObject({ cardId: failedId, firstAttempt: false, attempt: 1 });
-		view = await service.answer(view.session.id, right);
-		while (view.item && view.session.phase !== 'cleanup')
-			view = await service.answer(view.session.id, right);
+		while (view.item) view = await env.service.answer(view.session.id, right);
 
+		expect(view.round).toMatchObject({ index: 1, finished: 2, carried: 0, remaining: 1 });
+		view = await env.service.continueRound(view.session.id, { afterBreak: false });
 		expect(view.session.phase).toBe('cleanup');
 		expect(view.item?.cardId).toBe(failedId);
-		view = await service.answer(view.session.id, right);
+		view = await env.service.answer(view.session.id, right);
 		expect(view.item).toBeNull();
 		expect(view.session.endedAt).toBeDefined();
-		// Every event shares the fixed clock, so order by the per-device seq.
-		const logged = (await events.listByCard(failedId!)) as ReviewEvent[];
-		const firstAttempts = logged.sort((a, b) => a.seq - b.seq).map((e) => e.firstAttempt);
+		const firstAttempts = (await reviewsOf(env.events, failedId)).map((e) => e.firstAttempt);
 		expect(firstAttempts.slice(0, 2)).toEqual([true, false]);
 	});
 
-	it('resumes a closed session exactly where it stopped', async () => {
-		const { service, cards } = setup();
-		const made = await makeCards(cards, 3);
-		const plan = made.map((card) => toPlanCard(card, 'cloze', []));
-		const started = await service.start({
-			mode: 'longterm',
-			courseIds: [],
-			plannedMinutes: 10,
-			cards: plan,
-			confusionEvents: []
-		});
-		const after = await service.answer(started.session.id, wrong);
+	it('runs at most ROUND_WORKING_SET cards per round and refuses answers between rounds', async () => {
+		const env = setup();
+		const made = await makeCards(env.cards, ROUND_WORKING_SET + 1);
+		let view = await startWith(env, made, 'cram', CRITERION_LATER);
+		for (let i = 0; i < ROUND_WORKING_SET; i += 1)
+			view = await env.service.answer(view.session.id, right);
 
-		const resumed = await service.resume(started.session.id);
-		expect(resumed).toStrictEqual(after);
-		expect(await service.resume(randomUUID() as never)).toBeUndefined();
+		expect(view.item).toBeNull();
+		expect(view.round).toMatchObject({ index: 1, finished: ROUND_WORKING_SET, remaining: 1 });
+		await expect(env.service.answer(view.session.id, right)).rejects.toThrow('no current card');
+		view = await env.service.continueRound(view.session.id, { afterBreak: false });
+		expect(view.round).toBeNull();
+		expect(view.session.snapshot.round.index).toBe(2);
+		expect(view.item?.cardId).toBe(made[ROUND_WORKING_SET]?.id);
 	});
 
-	it('refuses an answer when the session has nothing left', async () => {
-		const { service } = setup();
-		const view = await service.start({
-			mode: 'longterm',
-			courseIds: [],
-			plannedMinutes: 1,
-			cards: [],
-			confusionEvents: []
-		});
+	it('suggests a break after BREAK_SUGGEST_AFTER_MIN, and a break restarts the timer', async () => {
+		const env = setup();
+		const made = await makeCards(env.cards, ROUND_WORKING_SET + 1);
+		let view = await startWith(env, made, 'cram', CRITERION_LATER);
+		for (let i = 0; i < ROUND_WORKING_SET - 1; i += 1)
+			view = await env.service.answer(view.session.id, right);
+		// Study time passes inside the round; its last answer ends it.
+		now += BREAK_SUGGEST_AFTER_MIN * MINUTE;
+		view = await env.service.answer(view.session.id, right);
+		expect(view.round).toMatchObject({ suggestBreak: true, breakMinutes: BREAK_MIN });
+
+		now += BREAK_MIN * MINUTE;
+		view = await env.service.continueRound(view.session.id, { afterBreak: true });
+		expect(view.session.snapshot.studySince).toBe(now);
+	});
+
+	it('stops here at any time, keeping every answer', async () => {
+		const env = setup();
+		const made = await makeCards(env.cards, 3);
+		let view = await startWith(env, made, 'cram');
+		const cardId = view.item?.cardId;
+		if (!cardId) throw new Error('no current card');
+		view = await env.service.answer(view.session.id, right);
+
+		view = await env.service.stop(view.session.id);
 		expect(view.session.endedAt).toBe(now);
-		await expect(service.answer(view.session.id, right)).rejects.toThrow('no current card');
+		expect(view.item).toBeNull();
+		expect(view.round).toBeNull();
+		expect(await reviewsOf(env.events, cardId)).toHaveLength(1);
+		await expect(env.service.answer(view.session.id, right)).rejects.toThrow('no current card');
+	});
+
+	it('resumes a closed session exactly where it stopped', async () => {
+		const env = setup();
+		const made = await makeCards(env.cards, 3);
+		const started = await startWith(env, made, 'longterm');
+		const after = await env.service.answer(started.session.id, wrong);
+
+		const resumed = await env.service.resume(started.session.id);
+		expect(resumed).toStrictEqual(after);
+		expect(await env.service.resume(randomUUID() as never)).toBeUndefined();
+	});
+
+	it('ends an empty session at once and refuses answers', async () => {
+		const env = setup();
+		const view = await startWith(env, [], 'longterm');
+		expect(view.session.endedAt).toBe(now);
+		await expect(env.service.answer(view.session.id, right)).rejects.toThrow('no current card');
 	});
 
 	it('answers one at a time, so a double tap answers the current card only once', async () => {
-		const { service, cards, events } = setup();
-		const made = await makeCards(cards, 2);
-		const plan = made.map((card) => ({
-			...toPlanCard(card, 'cloze', []),
-			required: CRITERION_LATER
-		}));
-		const view = await service.start({
-			mode: 'longterm',
-			courseIds: [],
-			plannedMinutes: 5,
-			cards: plan,
-			confusionEvents: []
-		});
+		const env = setup();
+		const made = await makeCards(env.cards, 2);
+		const view = await startWith(env, made, 'longterm', CRITERION_LATER);
 		const [first, second] = await Promise.all([
-			service.answer(view.session.id, right),
-			service.answer(view.session.id, right)
+			env.service.answer(view.session.id, right),
+			env.service.answer(view.session.id, right)
 		]);
 		expect(first.item?.cardId).not.toBe(view.item?.cardId);
 		expect(second.item).toBeNull();
-		const logged = await Promise.all(made.map((card) => events.listByCard(card.id)));
+		const logged = await Promise.all(made.map((card) => env.events.listByCard(card.id)));
 		expect(logged.map((list) => list.length)).toEqual([1, 1]);
 	});
 });

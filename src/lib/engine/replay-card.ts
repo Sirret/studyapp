@@ -1,18 +1,13 @@
-import {
-	CRITERION_LATER,
-	FRAGILE_CAP_DAYS,
-	FRAGILE_SPACED_GAP_DAYS
-} from '#lib/config/defaults.ts';
+import { FRAGILE_CAP_DAYS, FRAGILE_SPACED_GAP_DAYS } from '#lib/config/defaults.ts';
 import type { CardCaches, FsrsCardState } from '#lib/db/schemas/card.ts';
 import type { ExerciseKind, Mode, SessionId } from '#lib/db/schemas/common.ts';
 import type { ReviewEvent, StudyEvent } from '#lib/db/schemas/event.ts';
 import {
 	emptyCriterionHistory,
-	isCounting,
 	recordCriterion,
 	type CriterionHistory,
 	type SessionCriterion
-} from './criterion.ts';
+} from './criterion-history.ts';
 import { advancePathStep } from './exercise-kinds.ts';
 import { capStability, ratingFor, reviewFsrs, type FsrsConfig } from './fsrs.ts';
 import { deriveStatus, EMPTY_DAY_TALLY, tallyDay, type DayTally } from './status.ts';
@@ -105,8 +100,13 @@ function applyFsrs(fold: CardFold, event: ReviewEvent, input: ReplayCardInput): 
 }
 
 /** A counting event: criterion, the session's first FSRS review, study days and status facts. */
-function foldCounting(fold: CardFold, event: ReviewEvent, input: ReplayCardInput): void {
-	const { session, isFirstOfSession } = recordCriterion(fold.criteria, event);
+function foldCounting(
+	fold: CardFold,
+	event: ReviewEvent,
+	recorded: { session: SessionCriterion; isFirstOfSession: boolean },
+	input: ReplayCardInput
+): void {
+	const { session, isFirstOfSession } = recorded;
 	if (isFirstOfSession) {
 		fold.modes.set(event.sessionId, event.mode);
 		applyFsrs(fold, event, input);
@@ -130,11 +130,13 @@ function foldReview(fold: CardFold, event: ReviewEvent, input: ReplayCardInput):
 	if (event.firstAttempt && (event.correct || event.weight === 'none')) {
 		fold.pathStep = advancePathStep(input.path, fold.pathStep, event.kind);
 	}
-	if (isCounting(event)) foldCounting(fold, event, input);
+	const recorded = recordCriterion(fold.criteria, event);
+	if (recorded) foldCounting(fold, event, recorded, input);
 }
 
 function foldEvent(fold: CardFold, event: StudyEvent, input: ReplayCardInput): void {
 	if (event.type === 'review') foldReview(fold, event, input);
+	else if (event.type === 'pretest') recordCriterion(fold.criteria, event);
 	else if (event.type === 'selfRated') {
 		fold.pathStep = advancePathStep(input.path, fold.pathStep, event.kind);
 	}
@@ -157,7 +159,7 @@ function cachesOf(fold: CardFold): Traced<CardCaches> {
 		...(fold.fsrs ? { due: fold.fsrs.due } : {}),
 		status: status.result,
 		fragile: fold.fragile,
-		weak: last !== null && last.criterion.required === CRITERION_LATER && last.criterion.failed,
+		weak: last !== null && last.relearn && last.criterion.failed,
 		daysCorrect: fold.tally.countedDays.length,
 		pathStep: fold.pathStep,
 		accuracy: fold.accuracy

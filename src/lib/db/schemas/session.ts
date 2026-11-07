@@ -13,21 +13,37 @@ export const SessionCardSchema = z.object({
 	lastFull: z.boolean(),
 	failed: z.boolean(),
 	attempt: z.number().int().min(0),
-	done: z.boolean()
+	done: z.boolean(),
+	/** Its next answer is its first attempt ever, with no pretest (known-on-first-try can apply). */
+	firstEver: z.boolean()
 });
 export type SessionCard = z.infer<typeof SessionCardSchema>;
 
+/** The current round of at most `ROUND_WORKING_SET` cards. @see DATA_MODEL §3.7, BUILD_PLAN §6.4 */
+export const SessionRoundSchema = z.object({
+	index: z.number().int().min(1),
+	startedAt: z.number(),
+	answers: z.number().int().min(0),
+	cards: z.array(CardIdSchema),
+	ended: z.boolean()
+});
+export type SessionRound = z.infer<typeof SessionRoundSchema>;
+
 /**
- * Queue (head = current card), per-card state, the card being cleared by redo-till-right, and
- * whether cleanup has started. Saved after every answer so a closed tab resumes.
+ * The round's cards in play (head = current card), cards not yet in play, per-card state, the
+ * card being cleared by redo-till-right, whether cleanup has started, the current round, and when
+ * study started or the last break ended. Saved after every answer so a closed tab resumes.
  *
  * @see DATA_MODEL §3.7
  */
 export const SessionSnapshotSchema = z.object({
 	queue: z.array(CardIdSchema),
+	backlog: z.array(CardIdSchema),
 	cards: z.record(CardIdSchema, SessionCardSchema),
 	clearing: CardIdSchema.nullable(),
-	cleanup: z.boolean()
+	cleanup: z.boolean(),
+	round: SessionRoundSchema,
+	studySince: z.number()
 });
 export type SessionSnapshot = z.infer<typeof SessionSnapshotSchema>;
 

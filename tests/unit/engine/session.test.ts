@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { CRITERION_FIRST, CRITERION_LATER } from '#lib/config/defaults.ts';
+import { CRITERION_FIRST, CRITERION_LATER, ROUND_WORKING_SET } from '#lib/config/defaults.ts';
 import type { ExerciseKind } from '#lib/db/schemas/common.ts';
 import type { SessionPhase, SessionSnapshot } from '#lib/db/schemas/session.ts';
 import { SessionSnapshotSchema } from '#lib/db/schemas/session.ts';
 import { applyAnswer, currentItem } from '#lib/engine/queue.ts';
+import { checkRoundEnd, startRound } from '#lib/engine/round.ts';
 import type { PlanCard, PlanInput } from '#lib/engine/session.ts';
 import {
 	isSessionComplete,
@@ -13,10 +14,19 @@ import {
 	startCleanup
 } from '#lib/engine/session.ts';
 import { cardId, deepFreeze, noteId } from './fixtures.ts';
-import { at, cardOf, makeSnapshot, planCard, qa } from './session-fixtures.ts';
+import {
+	at,
+	cardOf,
+	cardRange,
+	makeSnapshot,
+	MINUTE,
+	planCard,
+	qa,
+	T0
+} from './session-fixtures.ts';
 
 const plan = (cards: readonly PlanCard[], confusionEvents: PlanInput['confusionEvents'] = []) =>
-	planSession({ cards, confusionEvents }).result;
+	planSession({ cards, confusionEvents, now: T0 }).result;
 const ids = (...ns: number[]) => ns.map(cardId);
 
 /** BUILD_PLAN §3.3, by group, for a card that is not new. */
@@ -106,9 +116,19 @@ describe('planSession: phases and card state', () => {
 			lastFull: false,
 			failed: false,
 			attempt: 0,
-			done: false
+			done: false,
+			firstEver: false
 		});
 		expect(cardOf(result, cardId(2))).toMatchObject({ phase: 'new', required: CRITERION_FIRST });
+	});
+
+	it('copies firstEver from the plan card', () => {
+		const result = plan([
+			planCard(1, 'cloze', { isNew: true, firstEver: true }),
+			planCard(2, 'cloze', { isNew: true })
+		]);
+		expect(cardOf(result, cardId(1)).firstEver).toBe(true);
+		expect(cardOf(result, cardId(2)).firstEver).toBe(false);
 	});
 
 	it('starts with nothing being cleared and cleanup not started', () => {
@@ -118,7 +138,16 @@ describe('planSession: phases and card state', () => {
 	});
 
 	it('plans an empty session as an empty queue', () => {
-		expect(plan([])).toEqual({ queue: [], cards: {}, clearing: null, cleanup: false });
+		// SPEC-GAP: is an empty plan's round 1 already `ended`? Not asserted.
+		expect(plan([])).toMatchObject({
+			queue: [],
+			backlog: [],
+			cards: {},
+			clearing: null,
+			cleanup: false,
+			studySince: T0,
+			round: { index: 1, startedAt: T0, answers: 0, cards: [] }
+		});
 	});
 
 	it('keeps the first entry of a repeated card ID', () => {
@@ -248,6 +277,69 @@ describe('planSession: confusables adjacent in discrimination', () => {
 	});
 });
 
+/** @see BUILD_PLAN §6.4 (rounds), DATA_MODEL §3.7 and Decisions log (rounds) */
+describe('planSession: round 1 and the backlog', () => {
+	const many = (n: number) => Array.from({ length: n }, (_, i) => planCard(i + 1, 'cloze'));
+
+	it('puts the first ROUND_WORKING_SET cards in plan order in round 1, the rest in the backlog', () => {
+		const result = plan(many(ROUND_WORKING_SET + 3));
+		const all = cardRange(1, ROUND_WORKING_SET + 3);
+		expect(result.queue).toEqual(all.slice(0, ROUND_WORKING_SET));
+		expect(result.backlog).toEqual(all.slice(ROUND_WORKING_SET));
+	});
+
+	it('cuts round 1 after phase ordering, so phases flow across rounds', () => {
+		const recall = Array.from({ length: ROUND_WORKING_SET }, (_, i) => planCard(i + 1, 'cloze'));
+		const warmup = planCard(100, 'matching');
+		const discrimination = planCard(101, 'whichOne');
+		const result = plan([discrimination, ...recall, warmup]);
+		expect(result.queue).toEqual([
+			cardId(100),
+			...recall.slice(0, ROUND_WORKING_SET - 1).map((c) => c.id)
+		]);
+		expect(result.backlog).toEqual([at(recall, ROUND_WORKING_SET - 1).id, cardId(101)]);
+	});
+
+	it('leaves the backlog empty with exactly ROUND_WORKING_SET cards', () => {
+		const result = plan(many(ROUND_WORKING_SET));
+		expect(result.queue).toHaveLength(ROUND_WORKING_SET);
+		expect(result.backlog).toEqual([]);
+	});
+
+	it('puts every card in round 1 when there are fewer than ROUND_WORKING_SET', () => {
+		const result = plan(many(3));
+		expect(result.queue).toEqual(ids(1, 2, 3));
+		expect(result.backlog).toEqual([]);
+	});
+
+	it('gives backlog cards their SessionCard too', () => {
+		const result = plan(many(ROUND_WORKING_SET + 2));
+		expect(Object.keys(result.cards)).toHaveLength(ROUND_WORKING_SET + 2);
+		expect(cardOf(result, cardId(ROUND_WORKING_SET + 2))).toMatchObject({ count: 0, done: false });
+	});
+
+	it('starts round 1 at now with no answers, recording its cards, and studySince at now', () => {
+		const now = T0 + 7 * MINUTE;
+		const cards = many(ROUND_WORKING_SET + 1);
+		const result = planSession({ cards, confusionEvents: [], now }).result;
+		expect(result.round).toEqual({
+			index: 1,
+			startedAt: now,
+			answers: 0,
+			cards: cardRange(1, ROUND_WORKING_SET),
+			ended: false
+		});
+		expect(result.studySince).toBe(now);
+	});
+
+	it('does not count a repeated card ID toward the working set', () => {
+		const cards = [planCard(1, 'cloze'), ...many(ROUND_WORKING_SET)];
+		const result = plan(cards);
+		expect(result.queue).toEqual(cardRange(1, ROUND_WORKING_SET));
+		expect(result.backlog).toEqual([]);
+	});
+});
+
 /** @see DATA_MODEL §3.7, BUILD_PLAN §11.5 */
 describe('planSession: purity, shape and determinism', () => {
 	const input: PlanInput = {
@@ -259,11 +351,18 @@ describe('planSession: purity, shape and determinism', () => {
 			planCard(5, 'whichOne', { noteType: 'compare', noteId: noteId(10) }),
 			planCard(6, 'whichOne')
 		],
-		confusionEvents: [{ cardId: cardId(6), chosenFromCardId: cardId(2) }]
+		confusionEvents: [{ cardId: cardId(6), chosenFromCardId: cardId(2) }],
+		now: T0
 	};
 
 	it('returns a snapshot that parses with SessionSnapshotSchema', () => {
 		expect(() => SessionSnapshotSchema.parse(planSession(input).result)).not.toThrow();
+	});
+
+	it('returns a snapshot that parses when cards spill into the backlog', () => {
+		const cards = Array.from({ length: ROUND_WORKING_SET + 4 }, (_, i) => planCard(i + 1, 'mc'));
+		const result = planSession({ cards, confusionEvents: [], now: T0 }).result;
+		expect(() => SessionSnapshotSchema.parse(result)).not.toThrow();
 	});
 
 	it('does not mutate its input', () => {
@@ -283,37 +382,47 @@ describe('startCleanup', () => {
 	/** Main queue finished: 1, 3, 4 failed; 2 didn't. */
 	function finished(): SessionSnapshot {
 		const done = { done: true, count: CRITERION_FIRST, required: CRITERION_FIRST, lastFull: true };
-		return makeSnapshot([], {
-			[cardId(1)]: { ...done, failed: true, attempt: 6 },
-			[cardId(2)]: { ...done, attempt: 3 },
-			[cardId(3)]: { ...done, failed: true, attempt: 5 },
-			[cardId(4)]: { ...done, failed: true, attempt: 7 }
-		});
+		return makeSnapshot(
+			[],
+			{
+				[cardId(1)]: { ...done, failed: true, attempt: 6 },
+				[cardId(2)]: { ...done, attempt: 3 },
+				[cardId(3)]: { ...done, failed: true, attempt: 5 },
+				[cardId(4)]: { ...done, failed: true, attempt: 7 }
+			},
+			{ round: { cards: ids(1, 2, 3, 4), answers: 12, ended: true } }
+		);
 	}
 	const R = { [cardId(1)]: 0.5, [cardId(2)]: 0.1, [cardId(3)]: 0.2, [cardId(4)]: 0.5 };
+	/** Cleanup started and its round opened (Continue, no break). */
+	const opened = () =>
+		startRound(startCleanup(finished(), R).result, T0, { afterBreak: false }).result;
 
-	it('brings back every failed card, lowest retrievability first, ties by card ID', () => {
+	it('brings back every failed card into the backlog, lowest retrievability first, ties by ID', () => {
 		const { result } = startCleanup(finished(), R);
-		expect(result.queue).toEqual(ids(3, 1, 4));
+		expect(result.backlog).toEqual(ids(3, 1, 4));
+		expect(result.queue).toEqual([]);
 		expect(result.cleanup).toBe(true);
 	});
 
 	it('does not bring back cards that never failed', () => {
-		expect(startCleanup(finished(), R).result.queue).not.toContain(cardId(2));
+		expect(startCleanup(finished(), R).result.backlog).not.toContain(cardId(2));
 	});
 
 	it('marks the returned cards not done and in the cleanup phase', () => {
 		const { result } = startCleanup(finished(), R);
 		for (const id of ids(1, 3, 4)) expect(cardOf(result, id).done).toBe(false);
+		expect(sessionPhase(result)).toBe('cleanup');
+		const round = opened();
 		// SPEC-GAP: should returned cards get phase 'cleanup'? Read as yes, so sessionPhase and
 		// currentItem report the cleanup phase while it runs.
-		expect(sessionPhase(result)).toBe('cleanup');
-		expect(currentItem(result)?.phase).toBe('cleanup');
-		expect(currentItem(result)?.firstAttempt).toBe(true);
+		expect(sessionPhase(round)).toBe('cleanup');
+		expect(currentItem(round)?.phase).toBe('cleanup');
+		expect(currentItem(round)?.firstAttempt).toBe(true);
 	});
 
 	it('needs exactly one more counting full correct per returned card', () => {
-		let state = startCleanup(finished(), R).result;
+		let state = opened();
 		for (const id of ids(3, 1, 4)) {
 			expect(state.queue[0]).toBe(id);
 			state = applyAnswer(state, qa(id, true)).result;
@@ -332,6 +441,7 @@ describe('startCleanup', () => {
 		const state = makeSnapshot([], { [cardId(2)]: { done: true, count: 1 } });
 		const { result } = startCleanup(state, R);
 		expect(result.queue).toEqual([]);
+		expect(result.backlog).toEqual([]);
 		expect(result.cleanup).toBe(true);
 		expect(isSessionComplete(result)).toBe(true);
 	});
@@ -341,13 +451,22 @@ describe('startCleanup', () => {
 		expect(startCleanup(state, R).result).toEqual(state);
 	});
 
+	it('returns the state unchanged while the backlog is not empty', () => {
+		const state = makeSnapshot(
+			[],
+			{ [cardId(1)]: { done: true, failed: true } },
+			{ backlog: [cardId(2)], round: { ended: true } }
+		);
+		expect(startCleanup(state, R).result).toEqual(state);
+	});
+
 	it('returns the state unchanged once cleanup has already run', () => {
 		const state = { ...finished(), cleanup: true };
 		expect(startCleanup(state, R).result).toEqual(state);
 	});
 
 	it('runs once: after the cleanup pass, calling it again changes nothing', () => {
-		let state = startCleanup(finished(), R).result;
+		let state = opened();
 		while (state.queue.length > 0) state = applyAnswer(state, qa(at(state.queue, 0), true)).result;
 		expect(startCleanup(state, R).result).toEqual(state);
 	});
@@ -378,6 +497,15 @@ describe('sessionPhase', () => {
 		expect(sessionPhase(makeSnapshot([], {}, { cleanup: true }))).toBe('cleanup');
 	});
 
+	it('is the phase of the next backlog card between rounds', () => {
+		const state = makeSnapshot(
+			[],
+			{ [cardId(1)]: { phase: 'recall', done: true }, [cardId(2)]: { phase: 'discrimination' } },
+			{ backlog: [cardId(2)], round: { cards: [cardId(1)], ended: true } }
+		);
+		expect(sessionPhase(state)).toBe('discrimination');
+	});
+
 	it('follows the queue across a planned session', () => {
 		const state = plan([planCard(1, 'cloze'), planCard(2, 'matching')]);
 		expect(sessionPhase(state)).toBe('warmup');
@@ -390,11 +518,16 @@ describe('isSessionComplete', () => {
 		expect(isSessionComplete(makeSnapshot([cardId(1)], {}, { cleanup: true }))).toBe(false);
 	});
 
+	it('is false while cards wait in the backlog, even after cleanup started', () => {
+		const state = makeSnapshot([], {}, { backlog: [cardId(1)], cleanup: true });
+		expect(isSessionComplete(state)).toBe(false);
+	});
+
 	it('is false when the main queue is empty but cleanup has not run', () => {
 		expect(isSessionComplete(makeSnapshot([]))).toBe(false);
 	});
 
-	it('is true when the queue is empty and cleanup has run', () => {
+	it('is true when the queue and backlog are empty and cleanup has run', () => {
 		expect(isSessionComplete(makeSnapshot([], {}, { cleanup: true }))).toBe(true);
 	});
 });
@@ -414,10 +547,15 @@ describe('a short session from plan to completion', () => {
 		s = applyAnswer(s, qa(cardId(1), true)).result;
 		expect(s.queue).toEqual([]);
 		expect(isSessionComplete(s)).toBe(false);
+		s = checkRoundEnd(s, T0).result;
+		expect(s.round.ended).toBe(true);
 
 		s = startCleanup(s, { [cardId(1)]: 0.3, [cardId(2)]: 0.9 }).result;
-		expect(s.queue).toEqual(ids(1));
+		expect(s.backlog).toEqual(ids(1));
 		expect(sessionPhase(s)).toBe('cleanup');
+		s = startRound(s, T0, { afterBreak: false }).result;
+		expect(s.queue).toEqual(ids(1));
+		expect(s.round.index).toBe(2);
 
 		s = applyAnswer(s, qa(cardId(1), true)).result;
 		expect(isSessionComplete(s)).toBe(true);
