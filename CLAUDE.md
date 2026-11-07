@@ -4,7 +4,7 @@
 
 An offline-first study app (SvelteKit PWA) for CS/IS students. Web in a laptop or phone browser is the priority; Android install is future work.
 
-**Starting a session:** read the last entry of `docs/PROGRESS.md` and the Decisions log at the bottom of `BUILD_PLAN.md`, which overrides older text. Then read only the sections the current phase names (`BUILD_PLAN.md` §10 lists phases). Don't read every doc in full; open others when a question needs them. The code and tests show what already exists.
+**Starting a session:** read `docs/HANDOFF.md` (current state, how data works here, and which sections each phase reads), then the Decisions log at the bottom of `BUILD_PLAN.md`, which overrides older text. Then read only the sections listed for the current phase. Don't read every doc in full; open others when a question needs them. The code and tests show what already exists.
 
 The docs, for reference:
 
@@ -53,7 +53,7 @@ The docs, for reference:
 3. **Implement** until those tests pass. Do not edit the agent's tests to make them pass; if a test contradicts the spec, fix the spec reading and re-run the agent on that test.
 4. **Verify.** `npm run verify` must pass.
 5. **Review.** Self-review as you go. Call the `reviewer` agent once at the end of Phase 4, scoped to that phase's engine files and the spec sections they implement, not the whole project. Otherwise call it only on a huge error or an error that repeats, again scoped to what's needed. Fix its `blocker` and `should-fix` findings.
-6. **Log.** Append the phase entry to `docs/PROGRESS.md`, with any reviewer verdict and any findings deliberately left as `nit`.
+6. **Hand off and log.** Update `docs/HANDOFF.md` as its last section describes, so the next session starts correct. Append the phase entry to `docs/PROGRESS.md`, with any reviewer verdict and any findings deliberately left as `nit`.
 
 Agents are helpers giving a different point of view, not supervisors: give them the specifics they need so they don't read everything. Steps 1–3 repeat per module inside a phase; steps 4–6 run once at the end of the phase. UI-only work (screens, styling) skips step 2 but still gets e2e tests.
 
