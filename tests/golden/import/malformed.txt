@@ -1,0 +1,47 @@
+stray line before any block
+@fact
+orphan :: fact
+@deck
+@deck Errors
+@unknown thing
+ignored by unknown
+@priority urgent
+@fact extra
+skipped :: line
+@fact
+good :: fact
+no separator here
+:: no term
+@cloze
+no answer here
+empty {{ }} answer
+open {{answer
+valid {{answer}}
+@sequence
+lost step
+@sequence Short
+only step
+@compare
+| | A | B |
+| x | 1 |
+not a row
+@scenario
+no answer
+@example Broken
+one :: two
+three
+@diagram
+@diagram tree X
+@diagram flow Arrows
+A -> B
+C to D
+@diagram stack Stack
+Same
+Same
+@occlusion
+@occlusion missing.png
+@read
+@tag
+@deck Errors
+text under deck
+@coverage

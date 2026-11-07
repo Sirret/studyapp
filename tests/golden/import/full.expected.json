@@ -1,0 +1,246 @@
+{
+	"errors": [],
+	"coverage": ["Transport", "Databases"],
+	"topics": [
+		{
+			"name": "Networking",
+			"order": 0,
+			"placement": "unread",
+			"priority": "high",
+			"chunks": [
+				{
+					"order": 0,
+					"text": "TCP sets up a connection before sending and guarantees ordered,\nreliable delivery.",
+					"words": 12,
+					"source": "notes"
+				}
+			],
+			"notes": [
+				{
+					"type": "keyterm",
+					"chunk": 0,
+					"payload": { "term": "TCP", "meaning": "Transmission Control Protocol" },
+					"priority": "high",
+					"tags": ["osi"],
+					"generated": false,
+					"check": false,
+					"accept": {},
+					"cards": [{ "variant": "fwd", "path": ["mc", "cloze"] }]
+				},
+				{
+					"type": "fact",
+					"chunk": 0,
+					"payload": { "term": "TCP", "definition": "connection-oriented, reliable delivery" },
+					"priority": "high",
+					"tags": ["osi"],
+					"generated": false,
+					"check": false,
+					"accept": {},
+					"cards": [
+						{ "variant": "fwd", "path": ["mc", "cloze"] },
+						{ "variant": "rev", "path": ["mc", "cloze"] }
+					]
+				},
+				{
+					"type": "fact",
+					"chunk": 0,
+					"payload": { "term": "UDP", "definition": "connectionless" },
+					"priority": "high",
+					"tags": ["osi"],
+					"generated": false,
+					"check": true,
+					"accept": {},
+					"cards": [
+						{ "variant": "fwd", "path": ["mc", "cloze"] },
+						{ "variant": "rev", "path": ["mc", "cloze"] }
+					]
+				},
+				{
+					"type": "cloze",
+					"chunk": 0,
+					"payload": { "text": "A {{2NF}} table removes {{partial dependencies}}." },
+					"priority": "high",
+					"tags": ["osi"],
+					"generated": false,
+					"check": false,
+					"accept": {},
+					"cards": [
+						{ "variant": "c1", "path": ["cloze"] },
+						{ "variant": "c2", "path": ["cloze"] }
+					]
+				},
+				{
+					"type": "sequence",
+					"chunk": 0,
+					"payload": { "name": "Normalization", "steps": ["1NF", "2NF", "3NF"] },
+					"priority": "high",
+					"tags": ["osi"],
+					"generated": false,
+					"check": false,
+					"accept": {},
+					"cards": [
+						{ "variant": "seq", "path": ["sequence", "parsons"] },
+						{ "variant": "step:0", "path": ["whichOne", "cloze"] },
+						{ "variant": "step:1", "path": ["whichOne", "cloze"] }
+					]
+				},
+				{
+					"type": "compare",
+					"chunk": 0,
+					"payload": {
+						"items": ["TCP", "UDP"],
+						"rows": [
+							{ "attribute": "connection", "values": ["connection-oriented", "connectionless"] }
+						]
+					},
+					"priority": "high",
+					"tags": ["osi"],
+					"generated": false,
+					"check": false,
+					"accept": {},
+					"cards": [
+						{ "variant": "row:0", "path": ["tableRow"] },
+						{ "variant": "cell:0:0", "path": ["cloze"] },
+						{ "variant": "cell:0:1", "path": ["cloze"] },
+						{ "variant": "which:0", "path": ["whichOne", "scenario"] }
+					]
+				},
+				{
+					"type": "scenario",
+					"chunk": 0,
+					"payload": { "situation": "A video call needs low latency", "answer": "UDP" },
+					"priority": "high",
+					"tags": ["osi"],
+					"generated": false,
+					"check": false,
+					"accept": {},
+					"cards": [{ "variant": "fwd", "path": ["scenario"] }]
+				},
+				{
+					"type": "diagram",
+					"chunk": 0,
+					"payload": {
+						"kind": "stack",
+						"name": "OSI",
+						"nodes": [
+							{ "id": "id1", "label": "Application" },
+							{ "id": "id2", "label": "Transport", "role": "end-to-end delivery" }
+						],
+						"edges": []
+					},
+					"priority": "normal",
+					"tags": ["layers"],
+					"generated": false,
+					"check": false,
+					"accept": {},
+					"cards": [
+						{ "variant": "layers", "path": ["layerOrder"] },
+						{ "variant": "layer:id1", "path": ["nodeCloze"] },
+						{ "variant": "layer:id2", "path": ["nodeCloze"] }
+					]
+				},
+				{
+					"type": "diagram",
+					"chunk": 0,
+					"payload": {
+						"kind": "flow",
+						"name": "Query processing",
+						"nodes": [
+							{ "id": "id1", "label": "SQL query" },
+							{ "id": "id2", "label": "Parser" },
+							{ "id": "id3", "label": "Optimizer" }
+						],
+						"edges": [
+							{ "id": "id4", "from": "id1", "to": "id2", "label": "parsed into" },
+							{ "id": "id5", "from": "id2", "to": "id3" }
+						]
+					},
+					"priority": "normal",
+					"tags": ["layers"],
+					"generated": false,
+					"check": false,
+					"accept": {},
+					"cards": [
+						{ "variant": "node:id1", "path": ["nodeCloze"] },
+						{ "variant": "node:id2", "path": ["nodeCloze"] },
+						{ "variant": "node:id3", "path": ["nodeCloze"] },
+						{ "variant": "edge:id4", "path": ["edgeCloze"] },
+						{ "variant": "edge:id5", "path": ["edgeCloze"] },
+						{ "variant": "rebuild", "path": ["structureRebuild"] }
+					]
+				},
+				{
+					"type": "occlusion",
+					"chunk": 0,
+					"payload": { "mediaId": "media:slide12.png", "boxes": [] },
+					"priority": "normal",
+					"tags": ["layers"],
+					"generated": false,
+					"check": false,
+					"accept": {},
+					"cards": []
+				},
+				{
+					"type": "example",
+					"chunk": 0,
+					"payload": {
+						"name": "Dijkstra",
+						"steps": [
+							{ "subgoal": "initialise distances", "step": "set source to 0" },
+							{ "subgoal": "relax edges", "step": "update each neighbour" }
+						]
+					},
+					"priority": "normal",
+					"tags": ["layers"],
+					"generated": false,
+					"check": false,
+					"accept": {},
+					"cards": [
+						{
+							"variant": "ex",
+							"path": ["exampleStudy", "fadeStep", "fadeStep", "newInstance", "subgoalMatch"]
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Databases",
+			"order": 1,
+			"placement": "unread",
+			"priority": "normal",
+			"chunks": [
+				{ "order": 0, "text": "A key identifies one row.", "words": 5, "source": "generated" }
+			],
+			"notes": [
+				{
+					"type": "fact",
+					"payload": { "term": "Key", "definition": "identifies a row" },
+					"priority": "normal",
+					"tags": [],
+					"generated": false,
+					"check": false,
+					"accept": {},
+					"cards": [
+						{ "variant": "fwd", "path": ["mc", "cloze"] },
+						{ "variant": "rev", "path": ["mc", "cloze"] }
+					]
+				},
+				{
+					"type": "fact",
+					"chunk": 0,
+					"payload": { "term": "Foreign key", "definition": "points at a key elsewhere" },
+					"priority": "normal",
+					"tags": [],
+					"generated": true,
+					"check": false,
+					"accept": {},
+					"cards": [
+						{ "variant": "fwd", "path": ["mc", "cloze"] },
+						{ "variant": "rev", "path": ["mc", "cloze"] }
+					]
+				}
+			]
+		}
+	]
+}

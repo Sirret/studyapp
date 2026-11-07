@@ -1,0 +1,72 @@
+{
+	"errors": [
+		{ "line": 1, "message": "This line is not under any @ directive." },
+		{ "line": 2, "message": "@fact comes before any @deck, so it was skipped." },
+		{ "line": 4, "message": "@deck needs a name." },
+		{ "line": 6, "message": "Unknown directive @unknown; the lines under it were skipped." },
+		{ "line": 8, "message": "@priority must be high or normal." },
+		{ "line": 9, "message": "@fact takes nothing on its own line, so this block was skipped." },
+		{ "line": 13, "message": "Expected \"term :: definition\"." },
+		{ "line": 14, "message": "Expected \"term :: definition\"." },
+		{ "line": 16, "message": "Needs at least one {{answer}}." },
+		{ "line": 17, "message": "Has an empty {{ }}." },
+		{ "line": 18, "message": "Has an unmatched {{ or }}." },
+		{ "line": 20, "message": "@sequence needs a name, so this block was skipped." },
+		{ "line": 22, "message": "@sequence needs at least 2 steps." },
+		{ "line": 26, "message": "Expected 3 cells, found 2. The @compare block was skipped." },
+		{
+			"line": 27,
+			"message": "Expected a table row starting with |. The @compare block was skipped."
+		},
+		{ "line": 29, "message": "Expected \"situation :: answer\"." },
+		{ "line": 32, "message": "Expected \"subgoal :: step\". The @example block was skipped." },
+		{ "line": 33, "message": "@diagram must be followed by stack or flow, then a name." },
+		{ "line": 34, "message": "@diagram must be followed by stack or flow, then a name." },
+		{
+			"line": 37,
+			"message": "Expected \"A -> B\" or \"A -> B : label\". The @diagram block was skipped."
+		},
+		{ "line": 40, "message": "Layer \"Same\" is listed twice. The @diagram block was skipped." },
+		{ "line": 41, "message": "@occlusion needs a file name." },
+		{ "line": 42, "message": "Image \"missing.png\" is not attached." },
+		{ "line": 43, "message": "@read has no text." },
+		{ "line": 44, "message": "@tag needs a name." },
+		{ "line": 46, "message": "@deck takes no lines under it." },
+		{ "line": 47, "message": "@coverage has no sections." }
+	],
+	"coverage": [],
+	"topics": [
+		{
+			"name": "Errors",
+			"order": 0,
+			"placement": "unread",
+			"priority": "normal",
+			"chunks": [],
+			"notes": [
+				{
+					"type": "fact",
+					"payload": { "term": "good", "definition": "fact" },
+					"priority": "normal",
+					"tags": [],
+					"generated": false,
+					"check": false,
+					"accept": {},
+					"cards": [
+						{ "variant": "fwd", "path": ["mc", "cloze"] },
+						{ "variant": "rev", "path": ["mc", "cloze"] }
+					]
+				},
+				{
+					"type": "cloze",
+					"payload": { "text": "valid {{answer}}" },
+					"priority": "normal",
+					"tags": [],
+					"generated": false,
+					"check": false,
+					"accept": {},
+					"cards": [{ "variant": "c1", "path": ["cloze"] }]
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,45 @@
+@deck Networking
+@tag osi
+@priority high
+@keyterms
+TCP :: Transmission Control Protocol
+@read
+TCP sets up a connection before sending and guarantees ordered,
+reliable delivery.
+@fact
+TCP :: connection-oriented, reliable delivery
+UDP :: connectionless [CHECK]
+@cloze
+A {{2NF}} table removes {{partial dependencies}}.
+@sequence Normalization
+1NF
+2NF
+3NF
+@compare
+| | TCP | UDP |
+|---|---|---|
+| connection | connection-oriented | connectionless |
+@scenario
+A video call needs low latency :: UDP
+@tag layers
+@priority normal
+@diagram stack OSI
+Application
+Transport :: end-to-end delivery
+@diagram flow Query processing
+SQL query -> Parser : parsed into
+Parser -> Optimizer
+@occlusion slide12.png
+@example Dijkstra
+initialise distances :: set source to 0
+relax edges :: update each neighbour
+
+@deck Databases
+@fact
+Key :: identifies a row
+@read
+[GENERATED] A key identifies one row.
+@fact
+Foreign key :: points at a key elsewhere
+@coverage
+Transport, Databases

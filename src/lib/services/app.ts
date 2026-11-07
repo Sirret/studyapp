@@ -5,7 +5,8 @@ import { installErrorCapture } from '#lib/log/error-capture.ts';
 import { Logger } from '#lib/log/logger.ts';
 import { registerServiceWorker } from '#lib/pwa/register-sw.ts';
 
-const db = createDb();
+/** The app's database. Only other service wiring uses this; screens go through services. */
+export const db = createDb();
 
 /** The app-wide logger. */
 export const logger = new Logger({
