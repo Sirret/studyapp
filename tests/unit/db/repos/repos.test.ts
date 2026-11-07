@@ -167,6 +167,7 @@ describe('repositories', () => {
 		const base = () => ({
 			courseId: randomUUID() as CourseId,
 			topicId: randomUUID() as TopicId,
+			order: 0,
 			priority: 'normal' as const,
 			tags: [],
 			generated: false,

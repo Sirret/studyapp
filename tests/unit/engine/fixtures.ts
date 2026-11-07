@@ -95,6 +95,7 @@ export function makeNote(overrides: Partial<Meta> & { id?: NoteId } = {}, meanin
 		deviceId: DEVICE_A,
 		courseId: courseId(1),
 		topicId: topicId(1),
+		order: 0,
 		priority: 'normal',
 		tags: [],
 		generated: false,

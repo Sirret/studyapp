@@ -55,9 +55,9 @@ export class NoteRepo extends ContentRepo<Note, DistributiveOmit<Note, RepoManag
 		super(db.notes, NoteSchema, context);
 	}
 
-	/** Returns a topic's live notes. */
+	/** Returns a topic's live notes, in order. */
 	async listByTopic(topicId: TopicId): Promise<Note[]> {
-		const notes = await this.table.where('topicId').equals(topicId).toArray();
+		const notes = await this.table.where('topicId').equals(topicId).sortBy('order');
 		return notes.filter((note) => !note.deleted);
 	}
 }

@@ -163,6 +163,7 @@ Indexes: `id, topicId, [topicId+order], updatedAt`.
 | `courseId` | `ID` | ✓ | → `courses.id` | Denormalised for queries |
 | `topicId` | `ID` | ✓ | → `topics.id` | Owning topic |
 | `chunkId` | `ID` | — | → `chunks.id` | Set when imported after a `@read` |
+| `order` | `number` | ✓ | integer ≥ 0 | Position within the topic (import order); IDs are random, so this keeps file order |
 | `type` | `NoteType` | ✓ | §4.1 | Decides the payload shape |
 | `payload` | `NotePayload` | ✓ | §4.2, must match `type` | The content |
 | `priority` | `'high' \| 'normal'` | ✓ | from `@priority` | Planner value weight |

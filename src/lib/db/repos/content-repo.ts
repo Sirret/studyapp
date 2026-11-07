@@ -28,17 +28,32 @@ export class ContentRepo<T extends Meta & { id: string }, F> {
 		private readonly initial: () => Partial<T> = () => ({})
 	) {}
 
-	/** Creates a record with a new ID. */
-	async create(fields: F): Promise<T> {
+	/** Builds a valid new record without storing it, for `ContentStore.writeBatch`. */
+	draft(fields: F, deviceId: DeviceId): T {
 		const now = this.context.clock();
-		const record = this.schema.parse({
+		return this.schema.parse({
 			...this.initial(),
 			...fields,
 			id: this.context.newId(),
 			createdAt: now,
 			updatedAt: now,
-			deviceId: await this.context.getDeviceId()
+			deviceId
 		});
+	}
+
+	/** Builds a valid changed record without storing it, for `ContentStore.writeBatch`. */
+	draftChange(existing: T, patch: Partial<F>, deviceId: DeviceId): T {
+		return this.schema.parse({
+			...existing,
+			...patch,
+			updatedAt: this.context.clock(),
+			deviceId
+		});
+	}
+
+	/** Creates a record with a new ID. */
+	async create(fields: F): Promise<T> {
+		const record = this.draft(fields, await this.context.getDeviceId());
 		await this.table.add(record);
 		return record;
 	}
@@ -60,12 +75,7 @@ export class ContentRepo<T extends Meta & { id: string }, F> {
 		return this.table.db.transaction('rw', this.table, async () => {
 			const existing = await this.get(id);
 			if (!existing) throw new Error(`No live record ${id} in ${this.table.name}`);
-			const record = this.schema.parse({
-				...existing,
-				...patch,
-				updatedAt: this.context.clock(),
-				deviceId
-			});
+			const record = this.draftChange(existing, patch, deviceId);
 			await this.table.put(record);
 			return record;
 		});

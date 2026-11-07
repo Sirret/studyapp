@@ -68,6 +68,7 @@ const NoteBaseSchema = MetaSchema.extend({
 	courseId: CourseIdSchema,
 	topicId: TopicIdSchema,
 	chunkId: ChunkIdSchema.optional(),
+	order: z.number().int().min(0),
 	priority: PrioritySchema,
 	tags: z.array(z.string()),
 	generated: z.boolean(),

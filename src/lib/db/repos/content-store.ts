@@ -1,3 +1,7 @@
+import type { Card } from '../schemas/card.ts';
+import type { DeviceId } from '../schemas/common.ts';
+import type { Chunk, Media, Topic } from '../schemas/course.ts';
+import type { Note } from '../schemas/note.ts';
 import type { SnowpackDb } from '../schema.ts';
 import type { RepoContext } from './content-repo.ts';
 import {
@@ -9,8 +13,18 @@ import {
 	TopicRepo
 } from './content-repos.ts';
 
+/** Records to write together, built with each repository's `draft` and `draftChange`. */
+export interface ContentBatch {
+	media: Media[];
+	/** New topics and changed existing ones. */
+	topics: Topic[];
+	chunks: Chunk[];
+	notes: Note[];
+	cards: Card[];
+}
+
 /**
- * The content repositories together, for work that must succeed or fail as a whole.
+ * The content repositories together, for writes that must succeed or fail as a whole.
  *
  * @see BUILD_PLAN §4.1 (commit in one transaction)
  * @see CLAUDE.md rule 6
@@ -25,7 +39,7 @@ export class ContentStore {
 
 	constructor(
 		private readonly db: SnowpackDb,
-		context: RepoContext
+		private readonly context: RepoContext
 	) {
 		this.courses = new CourseRepo(db, context);
 		this.topics = new TopicRepo(db, context);
@@ -35,12 +49,24 @@ export class ContentStore {
 		this.media = new MediaRepo(db, context);
 	}
 
+	/** This device's ID, for building a batch. */
+	getDeviceId(): Promise<DeviceId> {
+		return this.context.getDeviceId();
+	}
+
 	/**
-	 * Runs `work` in one transaction: if it throws, nothing it wrote stays. Inside `work`, await only
-	 * repository calls; waiting on anything else, such as image encoding, ends the transaction.
+	 * Writes a batch in one transaction: if any write fails, nothing stays. Read and validate first,
+	 * then call this. Don't wrap repository calls in your own Dexie transaction: awaiting an async
+	 * helper inside one can silently drop it, and later writes then can't roll back.
 	 */
-	transact<T>(work: () => Promise<T>): Promise<T> {
-		const { courses, topics, chunks, notes, cards, media, kv } = this.db;
-		return this.db.transaction('rw', [courses, topics, chunks, notes, cards, media, kv], work);
+	writeBatch(batch: ContentBatch): Promise<void> {
+		const { media, topics, chunks, notes, cards } = this.db;
+		return this.db.transaction('rw', [media, topics, chunks, notes, cards], async () => {
+			await media.bulkAdd(batch.media);
+			await topics.bulkPut(batch.topics);
+			await chunks.bulkAdd(batch.chunks);
+			await notes.bulkAdd(batch.notes);
+			await cards.bulkAdd(batch.cards);
+		});
 	}
 }
