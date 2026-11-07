@@ -8,11 +8,10 @@ async function waitForServiceWorker(page: Page): Promise<void> {
 }
 
 test.describe('app shell', () => {
-	test('shows the app name at 360 px with no sideways scroll', async ({ page }) => {
+	test('shows the app name with no sideways scroll', async ({ page }) => {
 		await page.goto('/');
 		await expect(page.getByRole('heading', { name: APP_NAME })).toBeVisible();
 		await expect(page).toHaveTitle(APP_NAME);
-		expect(page.viewportSize()?.width).toBe(360);
 		const overflow = await page.evaluate(
 			() => document.documentElement.scrollWidth - document.documentElement.clientWidth
 		);

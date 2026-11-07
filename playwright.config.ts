@@ -27,7 +27,8 @@ export default defineConfig({
 				...devices['Pixel 7'],
 				viewport: { width: 360, height: 740 }
 			}
-		}
+		},
+		{ name: 'laptop', use: { ...devices['Desktop Chrome'] } }
 	],
 	webServer: {
 		command: `npm run preview -- --port ${PORT} --strictPort`,

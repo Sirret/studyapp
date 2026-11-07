@@ -2,13 +2,26 @@
 
 **App name:** "Snowpack: Study & Cram" (full/store name) · "Snowpack" (short name: PWA short_name, home-screen label, header) · brand "Snowpack Study". Companion: **Yuki**, the snow wolf. Never hard-code the name — use `APP_NAME` / `APP_SHORT_NAME` from `config/defaults.ts`.
 
-An offline-first study app (SvelteKit PWA) for CS/IS students. Read before working:
+An offline-first study app (SvelteKit PWA) for CS/IS students. Web in a laptop or phone browser is the priority; Android install is future work.
+
+**Starting a session:** read the last entry of `docs/PROGRESS.md` and the Decisions log at the bottom of `BUILD_PLAN.md`, which overrides older text. Then read only the sections the current phase names (`BUILD_PLAN.md` §10 lists phases). Don't read every doc in full; open others when a question needs them. The code and tests show what already exists.
+
+The docs, for reference:
 
 - `docs/CONCEPT.md` — what the app does and why (the source of truth for behaviour).
 - `docs/BUILD_PLAN.md` — how to build it: stack, data model, engine specs, phases, defaults.
 - `docs/DATA_MODEL.md` — every stored field, the ER diagram and the export format. The source of truth for data.
 - `docs/DESIGN.md` — the look and feel: tokens, components, screens, and Yuki the wolf companion (reference art in `docs/design/`).
 - `docs/PROGRESS.md` — what has been built so far and the latest test results. Read the last entry first.
+
+## Toolchain traps (already solved; don't rediscover them)
+
+- **SvelteKit 3:** import with `#lib/path/file.ts`, extension required; `$lib` is gone. Use `$app/env` (not `$app/environment`) and `@sveltejs/kit/hooks` for hook types. Config lives in `vite.config.ts` inside `withPwa`; there is no `svelte.config.js`.
+- **Installing packages:** npm 11.2 crashes on resolving, so use `npx -y npm@latest install ...`. Installs remove Kit's generated `node_modules/$app`; `npm run check` restores it.
+- **TypeScript stays on 6.0.x.** Scripts run through Node's type stripping, so they import with `.ts` and can't use parameter properties or enums.
+- **ESLint import bans must use `regex`:** a `#lib` glob pattern is read as a comment and silently does nothing. `tests/unit/lint/boundaries.test.ts` guards this.
+- **Preview:** `npm run preview` serves `build/`; Kit's own preview breaks the service worker.
+- **Output:** pipe long commands through `tail` or `grep`, and read `test-results/summary.md`. Tests are scripts, so running them costs little; reading their full output doesn't.
 
 ## Rules
 
@@ -39,7 +52,7 @@ An offline-first study app (SvelteKit PWA) for CS/IS students. Read before worki
 2. **Tests from the spec.** For risky logic (scheduling, merge/replay, planning, grading), call the `spec-test-writer` agent with the module path and the exact spec sections to read; it reads only those. Read its report; resolve every `SPEC-GAP` (decide, record in the Decisions log, and have the test updated by the agent if needed). Plumbing (repos, schemas, simple services) gets tests written directly, with no agent.
 3. **Implement** until those tests pass. Do not edit the agent's tests to make them pass; if a test contradicts the spec, fix the spec reading and re-run the agent on that test.
 4. **Verify.** `npm run verify` must pass.
-5. **Review.** Self-review as you go. Call the `reviewer` agent once at the end of Phase 5, before the hard logic of Phases 6–8, or earlier on a huge error or an error that repeats. Scope it to named files and sections. Fix its `blocker` and `should-fix` findings.
+5. **Review.** Self-review as you go. Call the `reviewer` agent once at the end of Phase 4, scoped to that phase's engine files and the spec sections they implement, not the whole project. Otherwise call it only on a huge error or an error that repeats, again scoped to what's needed. Fix its `blocker` and `should-fix` findings.
 6. **Log.** Append the phase entry to `docs/PROGRESS.md`, with any reviewer verdict and any findings deliberately left as `nit`.
 
 Agents are helpers giving a different point of view, not supervisors: give them the specifics they need so they don't read everything. Steps 1–3 repeat per module inside a phase; steps 4–6 run once at the end of the phase. UI-only work (screens, styling) skips step 2 but still gets e2e tests.
