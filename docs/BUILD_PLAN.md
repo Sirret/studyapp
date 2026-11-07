@@ -74,9 +74,11 @@ src/
       replay.ts               # events -> card caches
       merge.ts                # union events, LWW content
     import/
-      lexer.ts parser.ts      # text -> AST (line-numbered errors)
-      build.ts                # AST -> topics/chunks/notes/cards
+      lexer.ts parser.ts      # text -> AST (line-numbered errors); block-parsers, compare-parser, diagram-parser
+      ast.ts                  # zod schemas for the parsed blocks
+      build.ts                # AST -> topics/chunks/notes/cards, as a plan with no storage
       zip.ts                  # .zip with text + images
+      image-size.ts prompt.ts # resize rule; the chatbot prompt, verbatim
     transfer/
       export.ts import.ts     # scoped zip export/import, replace/merge
     diagrams/
@@ -285,6 +287,15 @@ Plain UTF-8 text, line-based. Blank lines ignored. A line starting with `@` open
 
 Any line ending in `[CHECK]` sets `check: true` (strip the marker). Unknown directives and malformed lines become **errors with line numbers**; the preview screen shows them and lets valid blocks import. Commit runs in one Dexie transaction (all-or-nothing for the valid set).
 
+Details of the grammar (reasons in the Decisions log):
+
+- **Separators:** `::` needs a space on each side and splits on the first one, so `std::vector :: a growable array` works.
+- **`@deck`** resets `@tag` and `@priority`, and closes the current chunk. Naming a deck again in the same file adds to it. Everything except `@coverage` needs a `@deck` before it.
+- **`@keyterms`** attaches to the `@read` that comes next, if only `@tag`, `@priority` or more `@keyterms` come between; otherwise to the current chunk.
+- **Bad lines:** in a one-note-per-line block (`@keyterms`, `@fact`, `@cloze`, `@scenario`) a bad line drops only that line. In a one-note block (`@compare`, `@example`, `@diagram`) it drops the whole note, since a partial table or diagram would teach something wrong.
+- **`@compare`** ignores the first row's corner cell, skips Markdown separator rows, and doesn't need a closing `|`.
+- **`@diagram`** accepts a `source: <file>` line naming the image it was drawn from. A stack's `:: role` is optional.
+
 ### 4.2 Images and zips
 
 The import screen accepts pasted text **plus** attached images (file picker, paste, camera via `<input type="file" accept="image/*" capture>`), or a `.zip` containing one `.txt` and its images. `@occlusion` and diagram source lines reference images by file name. Images are resized to max 1600 px on the long side, re-encoded as WebP, hashed (SHA-256) for de-duplication, and stored in `media`.
@@ -384,11 +395,11 @@ Here are my notes:
 | keyterm       | `fwd`                                              | `mc → cloze` (pre-training)                                                                    |
 | fact          | `fwd` (term→def), `rev` (def→term)                 | `mc → cloze`                                                                                   |
 | cloze         | one per `{{}}`                                     | `cloze` (first-letter fallback after a miss, §6.10)                                            |
-| sequence      | `seq` + `step:i` (what comes after X)              | `sequence → parsons`; step cards `whichOne → cloze`                                            |
-| compare       | `row:r` per row, `cell:r:c` per cell, `which:attr` | `tableRow`, `cloze`, `whichOne → scenario`; `pickPrinciple` fires after a set                  |
+| sequence      | `seq` + `step:i` (what comes after step i, 0-based) | `sequence → parsons`; step cards `whichOne → cloze`                                            |
+| compare       | `row:r` per row, `cell:r:c` per cell, `which:r`    | `tableRow`, `cloze`, `whichOne → scenario`; `pickPrinciple` fires after a set                  |
 | scenario      | `fwd`                                              | `scenario` (options = table items / sibling answers)                                           |
 | example       | `ex`                                               | `exampleStudy → fadeStep(1..n, backward) → newInstance`; `subgoalMatch`; `parsons` as fallback |
-| diagram stack | `layers`, `layer:i`                                | `layerOrder`; `nodeCloze`                                                                      |
+| diagram stack | `layers`, `layer:<id>`                             | `layerOrder`; `nodeCloze`                                                                      |
 | diagram flow  | `node:<id>`, `edge:<id>`, `rebuild`                | `nodeCloze`, `edgeCloze`, `structureRebuild`                                                   |
 | occlusion     | `box:<id>`                                         | `occlusionBank → occlusionType/occlusionDrag`                                                  |
 
@@ -851,3 +862,20 @@ Choices this plan makes where the concept was silent. Add new ones here.
 | Installing on Android is a future item, not a v1 done-when (replaces it in Phases 0 and 10)        | User's call. The PWA manifest and offline support stay, so it needs no rework later      |
 | §14: `fsrs-browser` 6.6 exists (`computeParameters`, 338 KB WASM) and exports a rayon thread pool  | May need cross-origin isolation headers on the host; confirm when building the optimiser |
 | §14: `@xyflow/svelte` 1.7 declares Svelte 5 support; touch use and the tesseract.js worker are unverified | Both need the real code; verify in Phase 6                                     |
+| Phase 2 builds `engine/cardgen.ts`, listed under Phase 3 | Phase 2's golden tests compare exact cards. Phase 3 keeps `grading`, `distractors` and the RNG |
+| `spec-test-writer` skipped for the import parser and builder; golden files and tests hand-written from §4 and §5 first | It isn't on CLAUDE.md's risky-logic list, per the earlier decision to use it sparingly |
+| `@keyterms` attaches to the following `@read`, when only `@tag`, `@priority` or `@keyterms` come between | §4.1 says "current chunk", but the prompt (§4.3) writes `@keyterms` before its `@read`, so "current" would be the previous chunk |
+| `@deck` resets `@tag` and `@priority`; both need a `@deck` first | The concept keeps priority and tags per deck, and a sub-topic tag must not leak into the next topic. An error beats silently dropping an early `@priority` |
+| Topic priority is high if any `@priority high` appears in its deck; re-importing can raise it, never lower it | §3.2 has the field but nothing set it; a smaller later import shouldn't demote a topic |
+| A bad line drops one note in per-line blocks, and the whole note in `@compare`, `@example` and `@diagram` | A partial table, example or diagram would teach something wrong; the errors list says so |
+| Blocks and directives are strict: an argument on `@fact` skips the block, `@Fact` is unknown | Errors with line numbers are cheap to fix; guessing is not. Markdown separator rows in `@compare` are tolerated because chatbots emit them |
+| Added `notes.order` (position within a topic); read with `sortBy`, no new index or migration | IDs are random, so file order was lost, and acquisition ordering depends on note order. No stored data exists yet |
+| Added optional `chunks.check` | "Any line" with `[CHECK]` includes `@read` text, and chunks had nowhere to keep it |
+| `[CHECK]` on `@deck`, `@tag`, `@priority` or `@coverage` is stripped and ignored | Those records have no flag, and none of them is a study item |
+| Diagram images use a `source: <file>` line inside the block; the shipped prompt is unchanged | §4.2 mentions "diagram source lines" with no syntax; the student adds it by hand. Only real use can tell if the prompt should mention it |
+| Image names match by base name, ignoring case; a pasted image is named `pasted-N.<ext>` | Zips hold folders and phones change case; a pasted screenshot has no usable name |
+| Attached images that no block names aren't stored; the preview lists them | Avoids unreachable blobs using up storage |
+| Variants follow DATA_MODEL §4.3: `which:<r>`, `layer:<nodeId>`; `step:i` is 0-based and asks what comes after step i, so n−1 cards | §5 differed (`which:attr`, `layer:i`); row indexes and node IDs stay stable when text is edited. §5 updated |
+| Example path is `exampleStudy`, one `fadeStep` per step, `newInstance`, `subgoalMatch`; occlusion is `occlusionBank`, `occlusionType` | §5 lists these loosely but `path` is a concrete list. `parsons` fallback and `occlusionDrag` are left to the session runner (Phases 4, 5) |
+| Multi-table writes use `ContentStore.writeBatch`: read and validate first, then one bulk transaction | Dexie silently drops a transaction across awaited async helpers (tried and confirmed), so repository calls inside one couldn't roll back |
+| Re-importing the same text adds the notes again; nothing de-duplicates them | The spec doesn't ask for it, and identity between two imports is not defined. Listed in PROGRESS known issues |

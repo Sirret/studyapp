@@ -21,6 +21,7 @@ The docs, for reference:
 - **TypeScript stays on 6.0.x.** Scripts run through Node's type stripping, so they import with `.ts` and can't use parameter properties or enums.
 - **ESLint import bans must use `regex`:** a `#lib` glob pattern is read as a comment and silently does nothing. `tests/unit/lint/boundaries.test.ts` guards this.
 - **Preview:** `npm run preview` serves `build/`; Kit's own preview breaks the service worker.
+- **Dexie transactions:** awaiting an async helper inside `db.transaction` can silently drop the transaction ("Transaction committed too early", or writes that don't roll back). For writes across tables, use `ContentStore.writeBatch`.
 - **Output:** pipe long commands through `tail` or `grep`, and read `test-results/summary.md`. Tests are scripts, so running them costs little; reading their full output doesn't.
 
 ## Rules
