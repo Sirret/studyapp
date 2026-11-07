@@ -10,12 +10,18 @@ export interface StubHit {
 	line: number;
 }
 
+const STUB_MARKER = 'not implemented';
+
 /**
  * Finds every line containing the interface-step stub marker, in the order given.
  *
  * @see BUILD_PLAN §2 (stub-check)
  * @see CLAUDE.md rule 1
  */
-export function findStubs(_files: SourceFile[]): StubHit[] {
-	throw new Error('not implemented');
+export function findStubs(files: SourceFile[]): StubHit[] {
+	return files.flatMap(({ path, content }) =>
+		content
+			.split('\n')
+			.flatMap((text, index) => (text.includes(STUB_MARKER) ? [{ path, line: index + 1 }] : []))
+	);
 }

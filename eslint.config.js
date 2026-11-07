@@ -11,17 +11,20 @@ const sizeRules = (severity) => ({
 	complexity: [severity, 10]
 });
 
-/** Bans importing the named paths, by alias or by relative path, plus any extra packages. */
+/**
+ * Matches an import of the given path under `src/lib`, by alias or by relative path. A regex because
+ * the default gitignore-style patterns read a leading `#` as a comment.
+ */
+const libImport = (paths) => `^(#lib/|.*/)(${paths.join('|')})(/|\\.|$)`;
+
+/** Bans importing the named lib paths and packages. */
 const bannedImports = (message, paths, packages = []) => ({
 	'no-restricted-imports': [
 		'error',
 		{
 			patterns: [
-				{
-					group: paths.flatMap((path) => [`#lib/${path}`, `#lib/${path}/**`, `**/lib/${path}/**`]),
-					message
-				},
-				...(packages.length > 0 ? [{ group: packages, message }] : [])
+				{ regex: libImport(paths), message },
+				...packages.map((name) => ({ regex: `^${name}(/|$)`, message }))
 			]
 		}
 	]
@@ -29,48 +32,18 @@ const bannedImports = (message, paths, packages = []) => ({
 
 const uiBoundary = bannedImports(
 	'UI imports services, never Dexie or repos (BUILD_PLAN §15.1).',
-	['db/schema.ts', 'db/repos'],
-	['dexie', 'dexie/**']
+	['db/schema', 'db/repos'],
+	['dexie']
 );
 
 /** @see BUILD_PLAN §15.1 (import direction) and CLAUDE.md rule 2 (pure engine) */
 const engineRules = {
 	...sizeRules('error'),
-	'no-restricted-imports': [
-		'error',
-		{
-			patterns: [
-				{
-					group: [
-						'#lib/db/schema.ts',
-						'#lib/db/repos',
-						'#lib/db/repos/**',
-						'#lib/services',
-						'#lib/services/**',
-						'#lib/ui',
-						'#lib/ui/**',
-						'#lib/log',
-						'#lib/log/**',
-						'#lib/pwa',
-						'#lib/pwa/**',
-						'**/db/schema',
-						'**/db/schema.ts',
-						'**/db/repos/**',
-						'**/services/**',
-						'**/ui/**',
-						'**/log/**',
-						'**/pwa/**',
-						'$app/*',
-						'dexie',
-						'dexie/**',
-						'svelte',
-						'svelte/**'
-					],
-					message: 'The engine is pure: it imports only config, schemas and engine modules.'
-				}
-			]
-		}
-	],
+	...bannedImports(
+		'The engine is pure: it imports only config, schemas and engine modules.',
+		['db/schema', 'db/repos', 'services', 'ui', 'exercises', 'log', 'pwa'],
+		['dexie', 'svelte', '\\$app']
+	),
 	'no-console': 'error',
 	'no-restricted-globals': [
 		'error',

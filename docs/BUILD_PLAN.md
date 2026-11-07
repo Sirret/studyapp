@@ -832,3 +832,14 @@ Choices this plan makes where the concept was silent. Add new ones here.
 | The next-day retest of an acquisition card is its first credited session (needs 3)                 | Chunk-quiz sessions give no credit, so the 3-correct first session must happen somewhere |
 | Review events carry `credited` (false for same-day acquisition chunk-quiz answers)                 | Makes "no same-day credit" explicit in the data instead of inferred                      |
 | Chunks can be `reported` (hidden until edited)                                                     | Implements the "report wrong" button for generated chunks                                |
+| Imports use `#lib/...` with the file extension, not `$lib`                                         | SvelteKit 3 removed `$lib`; `#lib` is a Node subpath import declared in `package.json`   |
+| SvelteKit config lives in `vite.config.ts` (`withPwa`), with no `svelte.config.js`                 | `@vite-pwa/sveltekit` 2 wraps the `sveltekit()` plugin                                   |
+| TypeScript stays on 6.0.x                                                                          | Kit 3 needs `^6` and typescript-eslint `<6.1`; TS 7 is not usable yet                    |
+| CI runs Node 24 (`.nvmrc`); Vitest 5 does not list Node 23 as supported                            | Node 23 is out of Vitest's engine range; npm 11.2 also crashes resolving a fresh install |
+| `npm run preview` serves `build/` with a small script, not Kit's preview                           | Kit's preview has no `index.html`, so the service worker's precache fails there          |
+| ESLint import boundaries use `regex` patterns, tested in `tests/unit/lint/`                        | Gitignore-style patterns read a leading `#` as a comment, so `#lib` rules did nothing    |
+| Added `scripts/verify.ts` (runs the steps, always writes the summary)                              | `summary.md` must exist whichever step fails                                             |
+| Phase 0 skipped `spec-test-writer`; tests for its tooling and logger were written directly         | User's call for the setup phase; later phases keep the full workflow                     |
+| §14: ts-fsrs 6 names confirmed (`enable_fuzz`, `enable_short_term`, `maximum_interval`, `get_retrievability`) | Read from the package's types; re-check against the installed version in Phase 4 |
+| §14: `fsrs-browser` 6.6 exists (`computeParameters`, 338 KB WASM) and exports a rayon thread pool  | May need cross-origin isolation headers on the host; confirm when building the optimiser |
+| §14: `@xyflow/svelte` 1.7 declares Svelte 5 support; touch use and the tesseract.js worker are unverified | Both need the real code; verify in Phase 6                                     |

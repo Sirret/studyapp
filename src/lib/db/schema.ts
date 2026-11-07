@@ -1,6 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie';
 import { DB_NAME } from '#lib/config/defaults.ts';
-import type { LogEntry } from './schemas/log-entry';
+import type { LogEntry } from './schemas/log-entry.ts';
 
 /** The Dexie database. Entity tables gain their record types as their schemas are added. */
 export type SnowpackDb = Dexie & {
