@@ -54,10 +54,27 @@ function cardOfEvent(event: StudyEvent): CardId | undefined {
 	return event.type === 'acceptAdded' ? undefined : event.cardId;
 }
 
+/**
+ * Reviews re-judged by "I was right": an `acceptAdded` naming a review makes it count as correct,
+ * whatever order the two arrive in.
+ *
+ * @see BUILD_PLAN §6.10 (accept list) and Decisions log (Phase 5: "I was right")
+ */
+function rejudged(events: readonly StudyEvent[]): StudyEvent[] {
+	const ids = new Set<string>();
+	for (const event of events) {
+		if (event.type === 'acceptAdded' && event.reviewEventId) ids.add(event.reviewEventId);
+	}
+	if (ids.size === 0) return [...events];
+	return events.map((event) =>
+		event.type === 'review' && ids.has(event.id) ? { ...event, correct: true } : event
+	);
+}
+
 /** Each card's events, in replay order. */
 function eventsByCard(events: readonly StudyEvent[]): Map<CardId, StudyEvent[]> {
 	const byCard = new Map<CardId, StudyEvent[]>();
-	for (const event of sortEvents(events)) {
+	for (const event of sortEvents(rejudged(events))) {
 		const cardId = cardOfEvent(event);
 		if (cardId === undefined) continue;
 		const list = byCard.get(cardId);
