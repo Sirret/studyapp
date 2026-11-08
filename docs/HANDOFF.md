@@ -42,6 +42,8 @@ The working notes passed from one phase to the next. Unlike `PROGRESS.md` (a his
 
 **Import direction:** UI → services → engine and repos → schemas and config. `src/lib/import` is pure like the engine (it may use the engine, schemas and config), and only services call it. Lint fails on violations. A UI import path with a segment named exactly `import` trips that rule, which is why the components live in `ui/import-screen/`.
 
+**Slow-machine e2e timeouts:** if `verify` fails only because a test ran out of time (and it passes alone), log it in `docs/UNVERIFIED_TESTS.md` per its rule and carry on; wrong values or app errors are bugs to fix. Local e2e runs with 2 workers and no video.
+
 **Test pattern:** `import 'fake-indexeddb/auto'` plus a unique database name per test (create it in each test's setup; `afterEach` deletes it). Sim scenarios live in `tests/sim/` and report through `writeSimReport` in `tests/sim/harness.ts`. Session fixtures are in `tests/unit/engine/session-fixtures.ts`. Property tests use `fast-check`; shared generators are in `tests/unit/engine/fixtures.ts`. Golden files are in `tests/golden/import/` (hand-written, never generated from output) and run from `tests/unit/services/import-service.test.ts`.
 
 ## What each phase reads
