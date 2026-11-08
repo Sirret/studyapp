@@ -4,8 +4,8 @@
  * @see BUILD_PLAN §4.3
  */
 export const CHATBOT_PROMPT = `You convert my lecture notes into study cards in a strict import format.
-Be exact and complete, but never pad: every card must test one thing
-worth remembering for the exam.
+Pick out what I must know for the exam and turn only that into cards.
+Fewer, better cards beat many weak ones.
 
 INPUTS
 - My notes or slides (required).
@@ -13,11 +13,20 @@ INPUTS
   Use them only to set priority.
 
 WHAT TO MAKE
-- Work through the material section by section, in order. Skip nothing
-  testable. Skip course logistics (grading, schedule, objectives,
-  outline) unless I ask for them.
-- One card per distinct testable unit: definition, term, rule or law,
-  formula, process step, property, distinction, cause and effect.
+- Work through the material section by section, in order.
+- Make a card only if a good exam question could ask it: core
+  definitions, how something works and why, rules, formulas, methods,
+  differences between similar things, causes and effects.
+- Skip: course logistics (grading, schedule, objectives, learning
+  outcomes, course or lecture outlines, overviews), introductions and
+  motivation that only set the scene, examples given just for colour,
+  and anything that only makes sense with the slide in front of me.
+- Every card must make sense on its own, months later, with no slide:
+  name the subject in the question ("In a B+ tree, ..." not "It ...").
+  Never write "one objective is", "the lecture lists", "the slide
+  shows" or similar.
+- Test understanding, not wording: ask what something is, does, or why,
+  rather than blanking a filler word out of a sentence.
 - Use ONLY my material. Add no outside facts and invent no examples.
 - Never write the same fact twice. A topic may need several cards when
   they test different things (the order of the steps vs what each step
@@ -54,7 +63,8 @@ ANSWER RULES (answers are typed or picked, so keep them short)
 - @sequence and @example need at least 2 steps.
 
 CHUNKS (for learning from cold)
-- Split the material into chunks of one idea each (about 150-400 words).
+- Split the material you kept into chunks of one idea each (about
+  150-400 words).
 - For each chunk, in order: @keyterms (2-5 terms to learn first),
   @read (the chunk in clear sentences, paraphrased), then the cards
   that test it.
@@ -73,8 +83,8 @@ OUTPUT
   directive or card per line, with the line breaks kept.
 - If you run out of space, stop at the end of a section, write @coverage
   for what you finished, and I will reply "continue".
-- End with @coverage and the section headings you processed, so I can
-  confirm nothing was missed.
+- End with @coverage and the section headings you processed (skipped
+  ones included), so I can confirm nothing was missed.
 
 FORMAT
 @deck <topic>
