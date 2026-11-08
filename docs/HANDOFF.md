@@ -4,7 +4,7 @@ The working notes passed from one phase to the next. Unlike `PROGRESS.md` (a his
 
 ## Current state
 
-- **Phase order (user, 2026-11-08): 5 → 7 → 8 → 6 → 9 → 10.** After Phase 5 comes Phase 7, not 6. Before starting Phase 6, confirm with the user that 5, 7 and 8 are done (the quickest path to a working demo). Phase 6 also owns the import-prompt gaps (Decisions log).
+- **Phase order (user, 2026-11-08): 5 → 7 → 8 → 8.5 → 6 → 9 → 10.** After Phase 5 comes Phase 7, not 6. **When Phase 8 is done, tell the user that Phase 8.5 (Cards & import fixes, BUILD_PLAN §10) is next, before starting anything else.** Before starting Phase 6, confirm with the user that 5, 7, 8 and 8.5 are done. Phase 6 also owns the image/zip import-prompt gaps (Decisions log).
 
 - **Done:** Phases 0–4 plus the pre-Phase-5 spec change (rounds, adaptive first-session criterion, progress-dot data), including the scoped Phase 4 `reviewer` pass (PASS; its should-fix items were fixed). **Next:** Phase 5 (design system and exercise UI). The `reviewer` (Sonnet, diff-only) runs once at the end of each of Phases 7, 8 and 9, and again only if it found blockers.
 - **Exists:** tooling, CI, logger, Dexie schema, zod schemas, repositories, event log, `merge()`, the import pipeline and `/import`, `cardgen`, `answers`, grading, distractors, and now the engine core: `time`, `exercise-kinds`, `fsrs`, `criterion`, `queue`, `session`, `status`, and full `replay()` (FSRS, criterion, status, fragile, weak, `pathStep`, accuracy). Services: `SessionService` and `ReplayService` (with `kvReplayConfig` and `rebuildCards`). First sim scenario: `tests/sim/session-lags-status.test.ts`.
@@ -53,6 +53,7 @@ Read these sections, plus this file and the Decisions log. Open anything else on
 | 6 Diagrams | §7, §14 | `CONCEPT` §13; `DATA_MODEL` §4.2 |
 | 7 Modes | §6.6–§6.8 | `CONCEPT` §7–§9 |
 | 8 Planner | §6.9 | `CONCEPT` §10, §11; `DATA_MODEL` §5 |
+| 8.5 Cards & import fixes | §4, §10 row 8.5, Decisions log rows "import preview" and "Phase 8.5" | `DATA_MODEL` §3.4, §3.5; `DESIGN` §6 Import, §13 |
 | 9 Transfer & offline | §8, §11.5 | `CONCEPT` §18, §19; `DATA_MODEL` §7 |
 | 10 Polish & ship | §10, §11 | `DESIGN` §9 |
 
