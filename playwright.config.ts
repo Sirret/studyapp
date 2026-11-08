@@ -21,7 +21,9 @@ export default defineConfig({
 		baseURL: `http://localhost:${PORT}`,
 		trace: 'retain-on-failure',
 		screenshot: 'only-on-failure',
-		video: 'retain-on-failure'
+		// Finalising every test's video on browser close timed out under load locally (the repo is in
+		// a synced OneDrive folder); traces and screenshots remain for debugging. CI keeps video.
+		video: isCi ? 'retain-on-failure' : 'off'
 	},
 	projects: [
 		{
