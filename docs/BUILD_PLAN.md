@@ -285,7 +285,8 @@ Plain UTF-8 text, line-based. Blank lines ignored. A line starting with `@` open
 | `@diagram stack <name>`  | Layered diagram                                                                     | `layer :: role`, top to bottom                                     |
 | `@diagram flow <name>`   | Box-and-arrow diagram                                                               | `A -> B : label` (label optional)                                  |
 | `@occlusion <file>`      | Occlusion card from an attached image                                               | — (boxes from OCR/editor)                                          |
-| `@coverage`              | Section list from the chatbot                                                       | comma-separated; shown in preview, not stored as cards             |
+| `@coverage`              | Section list from the chatbot (older prompts)                                       | comma-separated; shown in preview, not stored as cards             |
+| `@end`                   | The chatbot finished its reply                                                      | no argument, no lines; without it (or `@coverage`) the preview warns the reply may be cut off |
 
 Any line ending in `[CHECK]` sets `check: true` (strip the marker). Unknown directives and malformed lines become **errors with line numbers**; the preview screen shows them and lets valid blocks import. Commit runs in one Dexie transaction (all-or-nothing for the valid set).
 
@@ -306,8 +307,8 @@ The import screen accepts pasted text **plus** attached images (file picker, pas
 
 ```
 You convert my lecture notes into study cards in a strict import format.
-Pick out what I must know for the exam and turn only that into cards.
-Fewer, better cards beat many weak ones.
+Read my notes as a revision tutor: decide what an exam could test, and
+turn only that into cards. Fewer, better cards beat many weak ones.
 
 INPUTS
 - My notes or slides (required).
@@ -334,9 +335,15 @@ WHAT TO MAKE
   they test different things (the order of the steps vs what each step
   does), but each fact appears once, in the one format that fits.
   A term goes in @keyterms or @fact, never both.
-- If something is unclear, or my material contradicts itself, still make
-  the card and end that line with [CHECK] (exactly that, nothing inside
-  the brackets).
+- If my notes are unclear or contradict each other, decide yourself: use
+  the lecturer's version and say so in the question ("According to the
+  lecture, ..."). Never mark anything for me to check.
+
+GROUPING
+- @deck: one per lecture or chapter, the level at which I'd say "I've
+  read that". Usually 1-3 per reply; never one per slide.
+- @tag: the sub-headings inside it.
+- When I say "continue", repeat the exact same @deck line you were in.
 
 PICK THE FORMAT
 - term -> meaning: @fact (or @keyterms for the few terms needed to
@@ -350,6 +357,7 @@ PICK THE FORMAT
   A -> B : label. Never invent nodes or arrows you can't see.
 
 ANSWER RULES (answers are typed or picked, so keep them short)
+- Every answer is clear and short, and would earn the mark in an exam.
 - One card per line. "::" appears once, between question and answer.
 - @fact: the definition is one plain sentence, at most about 15 words.
 - @cloze: each {{ }} hides 1-3 key words, at most 3 per line. Never hide
@@ -381,12 +389,12 @@ PRIORITY
   as a rule -> high; supporting detail -> normal.
 
 OUTPUT
-- Output ONLY the format below: no commentary, no markdown fences, one
+- Output ONLY the import text: nothing before or after it, no
+  commentary, no list of what you skipped, no markdown fences. One
   directive or card per line, with the line breaks kept.
-- If you run out of space, stop at the end of a section, write @coverage
-  for what you finished, and I will reply "continue".
-- End with @coverage and the section headings you processed (skipped
-  ones included), so I can confirm nothing was missed.
+- If you run out of space, stop at the end of a section; I will reply
+  "continue".
+- When everything is done, end the reply with a line @end.
 
 FORMAT
 @deck <topic>
@@ -413,8 +421,7 @@ subgoal label :: step
 layer :: role
 @diagram flow <name>       (one arrow per line)
 A -> B : arrow label
-@coverage
-<section>, <section>, ...
+@end
 
 Here are my notes:
 [paste]
@@ -1025,3 +1032,5 @@ Choices this plan makes where the concept was silent. Add new ones here.
 | Phase 5 e2e harness: `/dev/session` (dev and `build:test` only) imports a sample course covering every non-diagram note type (`services/dev-sample.ts`) through the real import pipeline and starts a session with one card per non-diagram kind. `StartOptions.forceKinds` sets only a card's first showing (later showings follow its path, so a card forced to a recognition kind can still meet the criterion); `cardIds` picks the cards without the practice cap. Dev builds expose the current spec as `window.__snowpackExercise` so e2e can answer correctly through the real controls | Phase 5's done-when needs a session that uses each exercise kind; the modes that schedule off-path kinds come in Phase 7 |
 | Phase order is now **5 → 7 → 8 → 6 → 9 → 10** (§10's numbering is kept; only the order changes). Diagrams (Phase 6) move after Modes and Planner | User's call: a working demo first. Phases don't depend on Phase 6: practice sessions already leave diagram and occlusion notes out |
 | Phase 6 must also close the import prompt's gaps (`import/prompt.ts`): (1) no word on zips — say the student puts the `.txt` and its images in one zip (a chatbot only writes text); (2) `@occlusion <file>` is missing from FORMAT; (3) the diagram `source: <file>` line isn't mentioned; (4) tell the chatbot to use the exact image file names the student lists, with `[CHECK]` on any image it can't place. Proposed spec change, to decide at the start of Phase 6: the chatbot lists visible labels as `box: <label>` lines under `@occlusion`, and import pre-fills boxes for the student to position in the editor, so an import is close to "import once, then everything is set" | User found that image and diagram imports can't be done in one go today; flow and stack diagrams already import fully from text |
+| Import preview redesign, from two scoped reviews (UI-flow sceptic, student effort); what both agreed on: a summary first; problems never block, each shown as one plain line ("N parts couldn't be read and will be left out", "N cards the chatbot wasn't sure about") with the line list folded away (`Disclosure`); topics get a filled `Segmented` read/haven't-read switch (default haven't read), a line saying what each choice does, and "I've read all of these" / "Mark all unread"; coverage, unused images and generated chunks fold into "Details". New directive `@end` ends a chatbot reply; without `@end` or `@coverage` the preview warns the reply may be cut off and says to type "continue". Prompt: one `@deck` per lecture or chapter (placement is per deck), `@tag` for sub-headings, the same `@deck` repeated on "continue"; unclear points settled by the AI ("According to the lecture, ...") instead of `[CHECK]` (the parser still accepts `[CHECK]` from older prompts); output is import text only, ending in `@end`. Import e2e assertions updated to the new wording; they still check the same things | User reports: no visible placement state, code-like errors, too many small topics. Ideas from only one review are listed as later options in PROGRESS/HANDOFF, not built |
+| Trash a course: an ✕ on each course card (Today) opens a `ConfirmDialog`; `CourseService.trash` calls `ContentStore.trashCourse`, which tombstones the course, its topics, chunks, notes and cards in one transaction. Study events stay (append-only) and media stays (shared by hash) | User's request. Soft deletes keep rule 6 and let the deletion merge to other devices. Archive (Phase 9) is separate: it hides a finished course but keeps it |

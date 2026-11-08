@@ -73,6 +73,8 @@ export interface ImportPreview {
 	checked: CheckedItem[];
 	/** Attached images no block names; they are not stored. */
 	unusedImages: string[];
+	/** The reply was finished (`@end`, or `@coverage` from older prompts); false: it may be cut off. */
+	ended: boolean;
 }
 
 /** What a commit wrote. */
@@ -212,7 +214,10 @@ export class ImportService {
 				.flatMap((topic) => topic.chunks)
 				.filter((chunk) => chunk.source === 'generated').length,
 			checked: checkedItems(plan, text),
-			unusedImages: images.filter((image) => !isUsed(image)).map((image) => image.fileName)
+			unusedImages: images.filter((image) => !isUsed(image)).map((image) => image.fileName),
+			ended: parsed.document.blocks.some(
+				(block) => block.kind === 'end' || block.kind === 'coverage'
+			)
 		};
 	}
 

@@ -1,7 +1,8 @@
 <!--
 	Buttons (DESIGN §5, §12): soft and slightly tactile, with a darker bottom lip; pressing moves
 	the button down and shrinks the lip. `data-paw` lets the paw-press layer draw a paw at the touch
-	point (§11.2). Loading keeps the label for width and shows the paw loader dots instead.
+	point (§11.2). Loading keeps the label for width and shows the paw loader instead. With `href`
+	it renders a link that looks the same (navigation should be a link).
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
@@ -15,6 +16,8 @@
 		loading?: boolean;
 		icon?: Snippet;
 		children: Snippet;
+		/** Renders a link instead (callers pass a resolve()d href). */
+		href?: string;
 	};
 
 	let {
@@ -26,20 +29,12 @@
 		type = 'button',
 		icon,
 		children,
+		href,
 		...rest
 	}: Props = $props();
 </script>
 
-<button
-	{...rest}
-	{type}
-	class="button {variant} {size === 'icon' ? 'icon-size' : size}"
-	class:full
-	class:loading
-	disabled={disabled || loading}
-	aria-busy={loading || undefined}
-	data-paw
->
+{#snippet inner()}
 	{#if icon}<span class="icon" aria-hidden="true">{@render icon()}</span>{/if}
 	<span class="label">{@render children()}</span>
 	{#if loading}
@@ -47,7 +42,28 @@
 			>{#each [0, 1, 2] as i (i)}<span class="dot"><Paw size={16} /></span>{/each}</span
 		>
 	{/if}
-</button>
+{/snippet}
+
+{#if href}
+	<!-- eslint-disable svelte/no-navigation-without-resolve -- callers pass resolve()d hrefs -->
+	<a {href} class="button {variant} {size === 'icon' ? 'icon-size' : size}" class:full data-paw>
+		{@render inner()}
+	</a>
+	<!-- eslint-enable svelte/no-navigation-without-resolve -->
+{:else}
+	<button
+		{...rest}
+		{type}
+		class="button {variant} {size === 'icon' ? 'icon-size' : size}"
+		class:full
+		class:loading
+		disabled={disabled || loading}
+		aria-busy={loading || undefined}
+		data-paw
+	>
+		{@render inner()}
+	</button>
+{/if}
 
 <style>
 	.button {
@@ -73,6 +89,7 @@
 		font-weight: var(--type-strong-weight);
 		box-shadow: inset 0 calc(var(--lip-height) * -1) 0 var(--button-lip);
 		cursor: pointer;
+		text-decoration: none;
 		touch-action: manipulation;
 		user-select: none;
 		transition:

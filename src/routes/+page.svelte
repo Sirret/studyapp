@@ -17,6 +17,9 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Card from '#lib/ui/primitives/Card.svelte';
 	import Chip from '#lib/ui/primitives/Chip.svelte';
+	import Icon from '#lib/ui/primitives/Icon.svelte';
+	import ConfirmDialog from '#lib/ui/components/ConfirmDialog.svelte';
+	import { X } from '@lucide/svelte';
 
 	type Course = StudyView['course'];
 	let courses = $state<Course[] | null>(null);
@@ -36,6 +39,30 @@
 				failed = true;
 			});
 	});
+
+	let trashTarget = $state<Course | null>(null);
+	let confirmOpen = $state(false);
+	let trashing = $state(false);
+
+	function askTrash(course: Course): void {
+		trashTarget = course;
+		confirmOpen = true;
+	}
+
+	/** Trashes the course after the popup is confirmed, then drops it from the list. */
+	async function trash(): Promise<void> {
+		const target = trashTarget;
+		if (!target) return;
+		trashing = true;
+		try {
+			const { courseService } = await import('#lib/services/study-wiring.ts');
+			await courseService.trash(target.id as CourseId);
+			courses = (courses ?? []).filter((course) => course.id !== target.id);
+			confirmOpen = false;
+		} finally {
+			trashing = false;
+		}
+	}
 
 	async function practise(course: Course): Promise<void> {
 		starting = course.id;
@@ -65,7 +92,7 @@
 	{:else if courses.length === 0}
 		<EmptyState message="No courses yet." companion={prefs.companion !== 'off'}>
 			{#snippet action()}
-				<Button onclick={() => goto(resolve('/import'))}>Import your first lecture</Button>
+				<Button href={resolve('/import')}>Import your first lecture</Button>
 			{/snippet}
 		</EmptyState>
 	{:else}
@@ -74,6 +101,15 @@
 				<Stack gap="md">
 					<Row justify="between">
 						<Chip color={course.color}>{course.name}</Chip>
+						<Button
+							variant="ghost"
+							size="icon"
+							aria-label="Delete {course.name}"
+							onclick={() => askTrash(course)}
+							data-trash={course.name}
+						>
+							<Icon icon={X} />
+						</Button>
 					</Row>
 					<Button
 						full
@@ -84,7 +120,16 @@
 				</Stack>
 			</Card>
 		{/each}
-		<Button variant="secondary" onclick={() => goto(resolve('/import'))}>Import more</Button>
+		<Button variant="secondary" href={resolve('/import')}>Import more</Button>
 	{/if}
 	<span class="sr-only">{APP_SHORT_NAME}</span>
+	<ConfirmDialog
+		bind:open={confirmOpen}
+		title="Delete {trashTarget?.name ?? 'this course'}?"
+		confirmLabel="Delete course"
+		busy={trashing}
+		onconfirm={trash}
+	>
+		Its topics and cards are removed. Your past study sessions aren't affected.
+	</ConfirmDialog>
 </Screen>

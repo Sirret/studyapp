@@ -4,8 +4,8 @@
  * @see BUILD_PLAN §4.3
  */
 export const CHATBOT_PROMPT = `You convert my lecture notes into study cards in a strict import format.
-Pick out what I must know for the exam and turn only that into cards.
-Fewer, better cards beat many weak ones.
+Read my notes as a revision tutor: decide what an exam could test, and
+turn only that into cards. Fewer, better cards beat many weak ones.
 
 INPUTS
 - My notes or slides (required).
@@ -32,9 +32,15 @@ WHAT TO MAKE
   they test different things (the order of the steps vs what each step
   does), but each fact appears once, in the one format that fits.
   A term goes in @keyterms or @fact, never both.
-- If something is unclear, or my material contradicts itself, still make
-  the card and end that line with [CHECK] (exactly that, nothing inside
-  the brackets).
+- If my notes are unclear or contradict each other, decide yourself: use
+  the lecturer's version and say so in the question ("According to the
+  lecture, ..."). Never mark anything for me to check.
+
+GROUPING
+- @deck: one per lecture or chapter, the level at which I'd say "I've
+  read that". Usually 1-3 per reply; never one per slide.
+- @tag: the sub-headings inside it.
+- When I say "continue", repeat the exact same @deck line you were in.
 
 PICK THE FORMAT
 - term -> meaning: @fact (or @keyterms for the few terms needed to
@@ -48,6 +54,7 @@ PICK THE FORMAT
   A -> B : label. Never invent nodes or arrows you can't see.
 
 ANSWER RULES (answers are typed or picked, so keep them short)
+- Every answer is clear and short, and would earn the mark in an exam.
 - One card per line. "::" appears once, between question and answer.
 - @fact: the definition is one plain sentence, at most about 15 words.
 - @cloze: each {{ }} hides 1-3 key words, at most 3 per line. Never hide
@@ -79,12 +86,12 @@ PRIORITY
   as a rule -> high; supporting detail -> normal.
 
 OUTPUT
-- Output ONLY the format below: no commentary, no markdown fences, one
+- Output ONLY the import text: nothing before or after it, no
+  commentary, no list of what you skipped, no markdown fences. One
   directive or card per line, with the line breaks kept.
-- If you run out of space, stop at the end of a section, write @coverage
-  for what you finished, and I will reply "continue".
-- End with @coverage and the section headings you processed (skipped
-  ones included), so I can confirm nothing was missed.
+- If you run out of space, stop at the end of a section; I will reply
+  "continue".
+- When everything is done, end the reply with a line @end.
 
 FORMAT
 @deck <topic>
@@ -111,8 +118,7 @@ subgoal label :: step
 layer :: role
 @diagram flow <name>       (one arrow per line)
 A -> B : arrow label
-@coverage
-<section>, <section>, ...
+@end
 
 Here are my notes:
 [paste]`;

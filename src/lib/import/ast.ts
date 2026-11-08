@@ -105,7 +105,9 @@ export const BlockSchema = z.discriminatedUnion('kind', [
 		kind: z.literal('coverage'),
 		line: LineSchema,
 		sections: z.array(TextSchema).min(1, '@coverage has no sections.')
-	})
+	}),
+	/** The chatbot finished its reply (BUILD_PLAN §4.1); without it the reply may be cut off. */
+	z.object({ kind: z.literal('end'), line: LineSchema })
 ]);
 export type Block = z.infer<typeof BlockSchema>;
 

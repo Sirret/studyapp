@@ -288,3 +288,15 @@ describe('parseImport', () => {
 		});
 	});
 });
+
+describe('@end (Decisions log: import preview)', () => {
+	it('closes a reply without an error or a note', () => {
+		const { document, errors } = parseImport('@deck A\n@fact\nTCP :: reliable\n@end');
+		expect(errors).toStrictEqual([]);
+		expect(document.blocks.map((block) => block.kind)).toStrictEqual(['deck', 'fact', 'end']);
+	});
+
+	it('takes no argument', () => {
+		expect(parseImport('@deck A\n@end now').errors).toHaveLength(1);
+	});
+});

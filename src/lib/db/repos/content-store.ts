@@ -1,5 +1,5 @@
 import type { Card } from '../schemas/card.ts';
-import type { DeviceId } from '../schemas/common.ts';
+import type { CourseId, DeviceId } from '../schemas/common.ts';
 import type { Chunk, Media, Topic } from '../schemas/course.ts';
 import type { Note } from '../schemas/note.ts';
 import type { SnowpackDb } from '../schema.ts';
@@ -67,6 +67,42 @@ export class ContentStore {
 			await chunks.bulkAdd(batch.chunks);
 			await notes.bulkAdd(batch.notes);
 			await cards.bulkAdd(batch.cards);
+		});
+	}
+
+	/**
+	 * Trashes a course: the course and its topics, chunks, notes and cards are marked deleted in one
+	 * transaction, so the deletion can merge to other devices. Study events stay (append-only), and
+	 * media stays (shared by hash). Does nothing if the course is already gone.
+	 *
+	 * @see CLAUDE.md rule 6 and Decisions log (trash a course)
+	 */
+	async trashCourse(courseId: CourseId): Promise<void> {
+		const course = await this.courses.get(courseId);
+		if (!course) return;
+		const topics = await this.topics.listByCourse(courseId);
+		const perTopic = await Promise.all(
+			topics.map(async (topic) => ({
+				chunks: await this.chunks.listByTopic(topic.id),
+				notes: await this.notes.listByTopic(topic.id)
+			}))
+		);
+		const cards = await this.cards.listByCourse(courseId);
+		const deviceId = await this.getDeviceId();
+		const updatedAt = this.context.clock();
+		const tomb = <T extends object>(record: T): T => ({
+			...record,
+			deleted: true,
+			updatedAt,
+			deviceId
+		});
+		const { courses, topics: topicTable, chunks, notes, cards: cardTable } = this.db;
+		await this.db.transaction('rw', [courses, topicTable, chunks, notes, cardTable], async () => {
+			await courses.put(tomb(course));
+			await topicTable.bulkPut(topics.map(tomb));
+			await chunks.bulkPut(perTopic.flatMap((t) => t.chunks).map(tomb));
+			await notes.bulkPut(perTopic.flatMap((t) => t.notes).map(tomb));
+			await cardTable.bulkPut(cards.map(tomb));
 		});
 	}
 }

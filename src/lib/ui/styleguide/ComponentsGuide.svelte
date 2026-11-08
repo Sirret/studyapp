@@ -2,6 +2,8 @@
 <script lang="ts">
 	import { CARD_STATUSES } from './guide-data.ts';
 	import Banner from '../components/Banner.svelte';
+	import ConfirmDialog from '../components/ConfirmDialog.svelte';
+	import Disclosure from '../components/Disclosure.svelte';
 	import EmptyState from '../components/EmptyState.svelte';
 	import ExerciseCard from '../components/ExerciseCard.svelte';
 	import FeedbackPanel from '../components/FeedbackPanel.svelte';
@@ -32,6 +34,7 @@
 		breakMinutes: 5
 	};
 	const noop = () => undefined;
+	let confirmOpen = $state(false);
 </script>
 
 <GuideSection id="components" title="Components" layer="Layer 6">
@@ -93,6 +96,24 @@
 			>
 				{#snippet actions()}<Button full>Try again</Button>{/snippet}
 			</FeedbackPanel>
+		</div>
+	</GuideRow>
+	<GuideRow label="Confirm dialog (popup)">
+		<Button variant="secondary" onclick={() => (confirmOpen = true)}>Open confirm dialog</Button>
+		<ConfirmDialog
+			bind:open={confirmOpen}
+			title="Delete Networking?"
+			confirmLabel="Delete course"
+			onconfirm={() => (confirmOpen = false)}
+		>
+			Its topics and cards are removed. Your past study sessions aren't affected.
+		</ConfirmDialog>
+	</GuideRow>
+	<GuideRow label="Disclosure (folded details)">
+		<div class="wide">
+			<Disclosure summary="2 parts couldn't be read and will be left out.">
+				<span>Line 12: Expected "A -> B".</span>
+			</Disclosure>
 		</div>
 	</GuideRow>
 	<GuideRow label="Step list (worked example)">

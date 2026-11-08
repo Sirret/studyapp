@@ -228,5 +228,6 @@ export const BLOCK_PARSERS: ReadonlyMap<string, BlockParser> = new Map<string, B
 	['example', parseExample],
 	['diagram', parseDiagram],
 	['occlusion', parseOcclusion],
-	['coverage', parseCoverage]
+	['coverage', parseCoverage],
+	['end', (raw) => refuseArgument(raw) ?? finishBlock(raw, { kind: 'end', line: raw.line })]
 ]);

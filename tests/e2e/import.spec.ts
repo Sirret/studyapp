@@ -91,7 +91,7 @@ test.describe('import screen', () => {
 		await page.getByRole('button', { name: 'Create course' }).click();
 		await pasteArea(page).fill(SAMPLE);
 		await page.getByRole('button', { name: 'Check' }).click();
-		await expect(page.getByRole('heading', { name: 'Preview' })).toBeVisible();
+		await expect(page.getByRole('region', { name: 'Preview' })).toBeVisible();
 		const overflow = await page.evaluate(
 			() => document.documentElement.scrollWidth - document.documentElement.clientWidth
 		);
@@ -102,13 +102,14 @@ test.describe('import screen', () => {
 		await openWithCourse(page);
 		await pasteArea(page).fill(SAMPLE);
 		await page.getByRole('button', { name: 'Check' }).click();
-		await expect(page.getByText('1 to fix')).toBeVisible();
+		// Problems are one plain line each, with the details folded away (Decisions log: import preview).
+		await page.getByText("1 part couldn't be read").click();
 		await expect(page.getByRole('button', { name: /^Line 8: Expected/ })).toBeVisible();
-		await expect(page.getByText('Key terms: 1')).toBeVisible();
-		await expect(page.getByText('Facts: 1')).toBeVisible();
-		await expect(page.getByText('Fill-in sentences: 1')).toBeVisible();
-		await expect(page.getByRole('button', { name: 'Line 7: TCP :: reliable' })).toBeVisible();
-		await expect(page.getByText('Transport', { exact: true })).toBeVisible();
+		await expect(page.getByText('1 key terms · 1 facts · 1 fill-in sentences')).toBeVisible();
+		await page.getByText("1 card the chatbot wasn't sure about").click();
+		await expect(page.getByText('TCP :: reliable', { exact: true })).toBeVisible();
+		await page.getByText('Details', { exact: true }).click();
+		await expect(page.getByText('Sections covered: Transport')).toBeVisible();
 		expect(await readTable(page, 'notes')).toEqual([]);
 	});
 
@@ -116,6 +117,7 @@ test.describe('import screen', () => {
 		await openWithCourse(page);
 		await pasteArea(page).fill(SAMPLE);
 		await page.getByRole('button', { name: 'Check' }).click();
+		await page.getByText("1 part couldn't be read").click();
 		await page.getByRole('button', { name: /^Line 8:/ }).click();
 		const selected = await pasteArea(page).evaluate((element) => {
 			const area = element as HTMLTextAreaElement;
@@ -157,7 +159,7 @@ test.describe('import screen', () => {
 		await expect(page.getByRole('combobox', { name: 'Course' })).toHaveValue(/.+/);
 		await pasteArea(page).fill('@deck Networking\n@scenario\nvideo call :: UDP');
 		await page.getByRole('button', { name: 'Check' }).click();
-		await expect(page.getByText('Adds to this topic: 1 notes, 1 cards')).toBeVisible();
+		await expect(page.getByText('Adds to this topic · 1 card')).toBeVisible();
 		await page.getByRole('button', { name: 'Add to course' }).click();
 		await expect(page.getByRole('status')).toContainText('Added 1 notes');
 		expect(await readTable(page, 'topics')).toHaveLength(1);
@@ -222,6 +224,7 @@ test.describe('import images', () => {
 		await openWithCourse(page);
 		await pasteArea(page).fill('@deck A\n@occlusion gone.png');
 		await page.getByRole('button', { name: 'Check' }).click();
+		await page.getByText("1 part couldn't be read").click();
 		await expect(
 			page.getByRole('button', { name: 'Line 2: Image "gone.png" is not attached.' })
 		).toBeVisible();

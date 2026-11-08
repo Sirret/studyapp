@@ -50,7 +50,10 @@ export interface BuildContext {
 	newId: () => string;
 }
 
-type NoteBlock = Exclude<Block, { kind: 'deck' | 'tag' | 'priority' | 'read' | 'coverage' }>;
+type NoteBlock = Exclude<
+	Block,
+	{ kind: 'deck' | 'tag' | 'priority' | 'read' | 'coverage' | 'end' }
+>;
 
 /** A note's content before the sticky state is applied. */
 interface Draft {
@@ -276,6 +279,8 @@ function applyBlock(state: BuildState, block: Block, blocks: Block[], index: num
 			return addChunk(state, block);
 		case 'coverage':
 			state.coverage.push(...block.sections);
+			return;
+		case 'end':
 			return;
 		default:
 			return addNotes(state, block, blocks, index);

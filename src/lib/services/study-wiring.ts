@@ -1,4 +1,6 @@
 import { CardRepo, CourseRepo, NoteRepo, TopicRepo } from '#lib/db/repos/content-repos.ts';
+import { ContentStore } from '#lib/db/repos/content-store.ts';
+import { CourseService } from './course-service.ts';
 import { DeviceRepo } from '#lib/db/repos/device-repo.ts';
 import { EventRepo } from '#lib/db/repos/event-repo.ts';
 import { KvRepo } from '#lib/db/repos/kv-repo.ts';
@@ -52,3 +54,6 @@ export const studyService = new StudyService({
 	clock,
 	logger
 });
+
+/** Trashing courses from Today. */
+export const courseService = new CourseService(new ContentStore(db, context), logger);

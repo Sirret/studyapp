@@ -7,6 +7,7 @@
 	import Chip from '../primitives/Chip.svelte';
 	import Icon from '../primitives/Icon.svelte';
 	import Input from '../primitives/Input.svelte';
+	import Segmented from '../primitives/Segmented.svelte';
 	import Toggle from '../primitives/Toggle.svelte';
 	import Moon from '../motifs/Moon.svelte';
 	import Paw from '../motifs/Paw.svelte';
@@ -16,6 +17,7 @@
 
 	const variants = ['primary', 'secondary', 'ghost', 'danger'] as const;
 	let tab = $state('Databases');
+	let read = $state<'unread' | 'read'>('unread');
 </script>
 
 <GuideSection id="primitives" title="Primitives and motifs" layer="Layer 5">
@@ -61,6 +63,17 @@
 		<Toggle label="Disabled" disabled />
 		<Checkbox checked>Names the three-way handshake</Checkbox>
 		<Checkbox>Explains why the server sends SYN-ACK</Checkbox>
+	</GuideRow>
+	<GuideRow label="Segmented control">
+		<Segmented
+			label="Placement"
+			options={[
+				{ value: 'unread', label: "Haven't read" },
+				{ value: 'read', label: 'Read it' }
+			]}
+			value={read}
+			onchange={(value) => (read = value)}
+		/>
 	</GuideRow>
 	<GuideRow label="Icons (Lucide) and motifs">
 		<Icon icon={Check} />
