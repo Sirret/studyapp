@@ -32,13 +32,15 @@
 
 <style>
 	.segmented {
-		display: inline-flex;
+		display: flex;
+		width: 100%;
 		padding: var(--size-px-4);
 		border-radius: var(--r-pill);
 		background: var(--surface-alt);
 	}
 
 	button {
+		flex: 1;
 		min-height: var(--touch-min);
 		padding: 0 var(--gap-md);
 		border: 0;

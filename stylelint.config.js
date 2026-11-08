@@ -41,7 +41,9 @@ export default {
 					'transparent',
 					'/^calc[(]/',
 					'/^env[(]/',
-					'/^-?var[(]/'
+					'/^-?var[(]/',
+					// Shadows built from tokens, e.g. inset 0 calc(...) 0 var(--lip).
+					'inset'
 				],
 				disableFix: true
 			}

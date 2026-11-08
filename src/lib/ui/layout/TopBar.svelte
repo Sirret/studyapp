@@ -7,10 +7,17 @@
 
 	let {
 		leading,
+		title,
 		middle,
 		trailing,
 		below
-	}: { leading?: Snippet; middle?: Snippet; trailing?: Snippet; below?: Snippet } = $props();
+	}: {
+		leading?: Snippet;
+		title?: string;
+		middle?: Snippet;
+		trailing?: Snippet;
+		below?: Snippet;
+	} = $props();
 </script>
 
 <header class="bar">
@@ -19,6 +26,7 @@
 			{#if leading}{@render leading()}{/if}
 		</div>
 		<div class="middle">
+			{#if title}<h1>{title}</h1>{/if}
 			{#if middle}{@render middle()}{/if}
 		</div>
 		<div class="slot end">
@@ -52,6 +60,13 @@
 		justify-content: center;
 		gap: var(--gap-sm);
 		min-width: 0;
+	}
+
+	h1 {
+		margin: 0;
+		font-size: var(--type-title-size);
+		line-height: var(--type-title-leading);
+		font-weight: var(--type-title-weight);
 	}
 
 	.end {

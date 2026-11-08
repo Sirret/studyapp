@@ -5,12 +5,16 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
-	let { summary, children }: { summary: string; children: Snippet } = $props();
+	let {
+		summary,
+		preformatted = false,
+		children
+	}: { summary: string; preformatted?: boolean; children: Snippet } = $props();
 </script>
 
 <details class="disclosure">
 	<summary>{summary}</summary>
-	<div class="body">{@render children()}</div>
+	<div class="body" class:preformatted>{@render children()}</div>
 </details>
 
 <style>
@@ -37,5 +41,9 @@
 		color: var(--text-muted);
 		font-size: var(--type-small-size);
 		overflow-wrap: anywhere;
+	}
+
+	.preformatted {
+		white-space: pre-wrap;
 	}
 </style>

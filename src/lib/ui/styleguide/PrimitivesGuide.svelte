@@ -7,7 +7,11 @@
 	import Chip from '../primitives/Chip.svelte';
 	import Icon from '../primitives/Icon.svelte';
 	import Input from '../primitives/Input.svelte';
+	import FileButton from '../primitives/FileButton.svelte';
+	import { SAMPLE_IMPORT_TEXT } from './guide-data.ts';
 	import Segmented from '../primitives/Segmented.svelte';
+	import Select from '../primitives/Select.svelte';
+	import TextArea from '../primitives/TextArea.svelte';
 	import Toggle from '../primitives/Toggle.svelte';
 	import Moon from '../motifs/Moon.svelte';
 	import Paw from '../motifs/Paw.svelte';
@@ -18,6 +22,7 @@
 	const variants = ['primary', 'secondary', 'ghost', 'danger'] as const;
 	let tab = $state('Databases');
 	let read = $state<'unread' | 'read'>('unread');
+	let course = $state<string | undefined>('db');
 </script>
 
 <GuideSection id="primitives" title="Primitives and motifs" layer="Layer 5">
@@ -63,6 +68,18 @@
 		<Toggle label="Disabled" disabled />
 		<Checkbox checked>Names the three-way handshake</Checkbox>
 		<Checkbox>Explains why the server sends SYN-ACK</Checkbox>
+	</GuideRow>
+	<GuideRow label="Select, text area (notebook paper), file button">
+		<Select
+			label="Course"
+			bind:value={course}
+			options={[
+				{ value: 'db', label: 'Databases' },
+				{ value: 'net', label: 'Networking' }
+			]}
+		/>
+		<TextArea label="Paste the chatbot's text" value={SAMPLE_IMPORT_TEXT} />
+		<FileButton label="Attach images or a .zip" />
 	</GuideRow>
 	<GuideRow label="Segmented control">
 		<Segmented

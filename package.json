@@ -17,7 +17,7 @@
 		"preview": "node scripts/serve-build.ts",
 		"prepare": "svelte-kit sync && (simple-git-hooks || true)",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"lint": "prettier --check . && eslint .",
+		"lint": "prettier --check . && eslint . && stylelint \"src/**/*.{svelte,css}\"",
 		"format": "prettier --write .",
 		"test": "vitest run --coverage",
 		"test:watch": "vitest",

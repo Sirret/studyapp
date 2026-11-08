@@ -130,6 +130,6 @@
 		busy={trashing}
 		onconfirm={trash}
 	>
-		Its topics and cards are removed. Your past study sessions aren't affected.
+		This deletes the course and all its topics and cards. This can't be undone.
 	</ConfirmDialog>
 </Screen>

@@ -222,7 +222,7 @@
 	}
 
 	.s-trot {
-		animation: yuki-trot var(--dur-trot) ease-in-out infinite;
+		animation: yuki-trot var(--dur-trot) ease-in-out 2;
 	}
 
 	.s-hop {

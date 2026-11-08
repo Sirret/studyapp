@@ -6,7 +6,21 @@
 	import type { Course } from '#lib/db/schemas/course.ts';
 	import type { ImageSource, ImportPreview, PreparedImage } from '#lib/services/import-service.ts';
 	import { CHATBOT_PROMPT, importService } from '#lib/services/import-wiring.ts';
+	import { ArrowLeft } from '@lucide/svelte';
+	import Banner from '#lib/ui/components/Banner.svelte';
+	import Disclosure from '#lib/ui/components/Disclosure.svelte';
 	import ImportPreviewPanel from '#lib/ui/import-screen/ImportPreviewPanel.svelte';
+	import Row from '#lib/ui/layout/Row.svelte';
+	import Screen from '#lib/ui/layout/Screen.svelte';
+	import Stack from '#lib/ui/layout/Stack.svelte';
+	import TopBar from '#lib/ui/layout/TopBar.svelte';
+	import Button from '#lib/ui/primitives/Button.svelte';
+	import Card from '#lib/ui/primitives/Card.svelte';
+	import FileButton from '#lib/ui/primitives/FileButton.svelte';
+	import Icon from '#lib/ui/primitives/Icon.svelte';
+	import Input from '#lib/ui/primitives/Input.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
+	import TextArea from '#lib/ui/primitives/TextArea.svelte';
 
 	// `raw`: IndexedDB can't store Svelte's reactive proxies, and these hold Blobs that reach it.
 	let courses = $state.raw<Course[]>([]);
@@ -142,71 +156,80 @@
 	<title>Import</title>
 </svelte:head>
 
-<main>
-	<p><a href={resolve('/')}>Back</a></p>
-	<h1>Import</h1>
+<Screen>
+	{#snippet top()}
+		<TopBar title="Import">
+			{#snippet leading()}
+				<Button variant="ghost" size="icon" href={resolve('/')} aria-label="Back">
+					<Icon icon={ArrowLeft} size="nav" />
+				</Button>
+			{/snippet}
+		</TopBar>
+	{/snippet}
 
-	<section aria-label="Choose a course">
-		{#if courses.length > 0}
-			<label>
-				Course
-				<select bind:value={courseId} onchange={textChanged}>
-					{#each courses as course (course.id)}
-						<option value={course.id}>{course.name}</option>
-					{/each}
-				</select>
-			</label>
-		{/if}
-		<form onsubmit={createCourse}>
-			<label>
-				New course
-				<input bind:value={newCourseName} maxlength="120" autocomplete="off" />
-			</label>
-			<button type="submit" disabled={newCourseName.trim() === ''}>Create course</button>
-		</form>
-	</section>
+	<Card tag="section" label="Choose a course">
+		<Stack gap="md">
+			{#if courses.length > 0}
+				<Select
+					label="Course"
+					bind:value={courseId}
+					options={courses.map((course) => ({ value: course.id, label: course.name }))}
+					onchange={textChanged}
+				/>
+			{/if}
+			<form onsubmit={createCourse}>
+				<Stack gap="sm">
+					<Input label="New course" bind:value={newCourseName} maxlength={120} />
+					<Button type="submit" variant="secondary" disabled={newCourseName.trim() === ''}>
+						Create course
+					</Button>
+				</Stack>
+			</form>
+		</Stack>
+	</Card>
 
-	<section aria-label="Chatbot prompt">
-		<button type="button" onclick={copyPrompt}>Copy the chatbot prompt</button>
-		<details>
-			<summary>Show the prompt</summary>
-			<pre>{CHATBOT_PROMPT}</pre>
-		</details>
-	</section>
+	<Card tag="section" label="Chatbot prompt">
+		<Stack gap="sm">
+			<Button variant="secondary" full onclick={copyPrompt}>Copy the chatbot prompt</Button>
+			<Disclosure summary="Show the prompt" preformatted>{CHATBOT_PROMPT}</Disclosure>
+		</Stack>
+	</Card>
 
-	<section aria-label="Text and images">
-		<label>
-			Paste the chatbot's text
-			<textarea
-				bind:this={textArea}
+	<Card tag="section" label="Text and images">
+		<Stack gap="md">
+			<TextArea
+				label="Paste the chatbot's text"
+				bind:ref={textArea}
 				bind:value={text}
 				oninput={textChanged}
 				onpaste={pasteImages}
-				rows="12"
-				spellcheck="false"></textarea>
-		</label>
-		<label>
-			Attach images or a .zip
-			<input type="file" accept="image/*,.zip" multiple onchange={attachFiles} />
-		</label>
-		<label>
-			Take a photo
-			<input type="file" accept="image/*" capture="environment" onchange={attachFiles} />
-		</label>
-		{#if images.length > 0}
-			<p>Attached: {images.map((image) => image.fileName).join(', ')}</p>
-		{/if}
-		{#each imageErrors as error (error)}
-			<p role="alert">{error}</p>
-		{/each}
-		<button
-			type="button"
-			disabled={!courseId || text.trim() === '' || isBusy}
-			onclick={checkImport}
-		>
-			Check
-		</button>
-	</section>
+				rows={12}
+			/>
+			<Row gap="sm">
+				<FileButton
+					label="Attach images or a .zip"
+					accept="image/*,.zip"
+					multiple
+					onchange={attachFiles}
+				/>
+				<FileButton
+					label="Take a photo"
+					accept="image/*"
+					capture="environment"
+					onchange={attachFiles}
+				/>
+			</Row>
+			{#if images.length > 0}
+				<p>Attached: {images.map((image) => image.fileName).join(', ')}</p>
+			{/if}
+			{#each imageErrors as error (error)}
+				<p role="alert">{error}</p>
+			{/each}
+			<Button full disabled={!courseId || text.trim() === '' || isBusy} onclick={checkImport}>
+				Check
+			</Button>
+		</Stack>
+	</Card>
 
 	{#if preview}
 		<ImportPreviewPanel
@@ -215,54 +238,17 @@
 			onPlacement={(topicName, placement) => placements.set(topicName, placement)}
 			onJumpToLine={jumpToLine}
 		/>
-		<button type="button" disabled={preview.topics.length === 0 || isBusy} onclick={commitImport}>
+		<Button
+			full
+			size="session"
+			disabled={preview.topics.length === 0 || isBusy}
+			onclick={commitImport}
+		>
 			Add to course
-		</button>
+		</Button>
 	{/if}
 
 	{#if notice}
-		<p role="status">{notice}</p>
+		<Banner tone="success">{notice}</Banner>
 	{/if}
-</main>
-
-<style>
-	main {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-		padding: 1rem;
-		max-width: 48rem;
-		margin-inline: auto;
-	}
-
-	section,
-	form {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-	}
-
-	label {
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-	}
-
-	textarea,
-	input,
-	select {
-		width: 100%;
-		box-sizing: border-box;
-		min-height: 2.75rem;
-		font-size: 1rem;
-	}
-
-	button {
-		min-height: 2.75rem;
-	}
-
-	pre {
-		white-space: pre-wrap;
-		overflow-wrap: anywhere;
-	}
-</style>
+</Screen>

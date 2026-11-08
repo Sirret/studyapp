@@ -1,6 +1,8 @@
 <!-- Layer 6 in the style guide: every component in its states. Dev builds only. -->
 <script lang="ts">
-	import { CARD_STATUSES } from './guide-data.ts';
+	import { CARD_STATUSES, SAMPLE_IMPORT_PREVIEW } from './guide-data.ts';
+	import ImportPreviewPanel from '../import-screen/ImportPreviewPanel.svelte';
+	import { SvelteMap } from 'svelte/reactivity';
 	import Banner from '../components/Banner.svelte';
 	import ConfirmDialog from '../components/ConfirmDialog.svelte';
 	import Disclosure from '../components/Disclosure.svelte';
@@ -35,6 +37,7 @@
 	};
 	const noop = () => undefined;
 	let confirmOpen = $state(false);
+	const placements = new SvelteMap<string, 'read' | 'unread'>();
 </script>
 
 <GuideSection id="components" title="Components" layer="Layer 6">
@@ -98,6 +101,16 @@
 			</FeedbackPanel>
 		</div>
 	</GuideRow>
+	<GuideRow label="Import preview (sample: one skipped part, one unsure card, cut-off warning)">
+		<div class="wide">
+			<ImportPreviewPanel
+				preview={SAMPLE_IMPORT_PREVIEW}
+				{placements}
+				onPlacement={(name, placement) => placements.set(name, placement)}
+				onJumpToLine={noop}
+			/>
+		</div>
+	</GuideRow>
 	<GuideRow label="Confirm dialog (popup)">
 		<Button variant="secondary" onclick={() => (confirmOpen = true)}>Open confirm dialog</Button>
 		<ConfirmDialog
@@ -106,7 +119,7 @@
 			confirmLabel="Delete course"
 			onconfirm={() => (confirmOpen = false)}
 		>
-			Its topics and cards are removed. Your past study sessions aren't affected.
+			This deletes the course and all its topics and cards. This can't be undone.
 		</ConfirmDialog>
 	</GuideRow>
 	<GuideRow label="Disclosure (folded details)">
