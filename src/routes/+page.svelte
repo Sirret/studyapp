@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { APP_SHORT_NAME } from '#lib/config/defaults.ts';
+	import { APP_NAME } from '#lib/config/defaults.ts';
 	import type { CourseId } from '#lib/db/schemas/common.ts';
 	import { logger } from '#lib/services/app.ts';
 	import { prefs } from '#lib/services/preferences.svelte.ts';
@@ -13,6 +13,7 @@
 	import PawLoader from '#lib/ui/delight/PawLoader.svelte';
 	import Row from '#lib/ui/layout/Row.svelte';
 	import Screen from '#lib/ui/layout/Screen.svelte';
+	import TopBar from '#lib/ui/layout/TopBar.svelte';
 	import Stack from '#lib/ui/layout/Stack.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Card from '#lib/ui/primitives/Card.svelte';
@@ -76,6 +77,7 @@
 </script>
 
 <Screen>
+	{#snippet top()}<TopBar title={APP_NAME} />{/snippet}
 	<Row gap="md">
 		{#if prefs.companion !== 'off'}<Yuki state="idle" size={96} />{/if}
 		<SpeechBubble text="Hi! Pick a course and we'll practise." />
@@ -122,7 +124,6 @@
 		{/each}
 		<Button variant="secondary" href={resolve('/import')}>Import more</Button>
 	{/if}
-	<span class="sr-only">{APP_SHORT_NAME}</span>
 	<ConfirmDialog
 		bind:open={confirmOpen}
 		title="Delete {trashTarget?.name ?? 'this course'}?"
