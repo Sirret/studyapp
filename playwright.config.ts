@@ -8,6 +8,9 @@ export default defineConfig({
 	testDir: 'tests/e2e',
 	outputDir: 'test-results/playwright',
 	forbidOnly: true,
+	// Locally, more parallel browsers (each recording video) made context teardown time out under
+	// load; two keep the full run stable. CI uses Playwright's default.
+	workers: isCi ? undefined : 2,
 	retries: 0,
 	reporter: [
 		['list'],
