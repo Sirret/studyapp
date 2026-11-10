@@ -116,8 +116,7 @@
 					<Button
 						variant="secondary"
 						full
-						href={resolve('/course/[courseId]', { courseId: course.id })}
-						data-open-course={course.name}>Plan and learn</Button
+						href={resolve('/course/[courseId]', { courseId: course.id })}>Plan and learn</Button
 					>
 					<Button
 						full

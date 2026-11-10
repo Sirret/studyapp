@@ -87,7 +87,7 @@
 </Card>
 
 {#if today.learn?.mode === 'acquisition'}
-	<Card label="Learn new material">
+	<Card tag="section" label="Learn new material">
 		<Stack gap="md">
 			<h2>Learn new material</h2>
 			<p>
@@ -104,8 +104,7 @@
 						href={resolve('/learn/[courseId]/[unitKey]', {
 							courseId: today.course.id,
 							unitKey: unit.key
-						})}
-						data-learn-unit={unit.title}>Start</Button
+						})}>Start</Button
 					>
 				</Row>
 			{/each}
@@ -134,8 +133,7 @@
 						href={resolve('/learn/[courseId]/[unitKey]', {
 							courseId: today.course.id,
 							unitKey: unit.key
-						})}
-						data-learn-unit={unit.title}>Start</Button
+						})}>Start</Button
 					>
 				</Row>
 			{/each}
