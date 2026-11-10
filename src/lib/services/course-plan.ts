@@ -46,7 +46,10 @@ export interface PlanEnv {
 
 const isReview = (event: StudyEvent): event is ReviewEvent => event.type === 'review';
 
-/** Per card: whether it has a credited review, and whether it was met in a learning mode. */
+/**
+ * Per card: whether it has a credited review outside one-night mode (which takes it out of
+ * learning), and whether it was met in a learning mode (acquisition or one-night).
+ */
 export function reviewFacts(events: readonly StudyEvent[]): {
 	credited: Set<CardId>;
 	learnt: Set<CardId>;
@@ -54,7 +57,8 @@ export function reviewFacts(events: readonly StudyEvent[]): {
 	const credited = new Set<CardId>();
 	const learnt = new Set<CardId>();
 	for (const event of events.filter(isReview)) {
-		if (event.credited) credited.add(event.cardId);
+		// One-night answers are credited, but the card stays in its unit until a real review.
+		if (event.credited && event.mode !== 'onenight') credited.add(event.cardId);
 		if (event.mode === 'acquisition' || event.mode === 'onenight') learnt.add(event.cardId);
 	}
 	return { credited, learnt };

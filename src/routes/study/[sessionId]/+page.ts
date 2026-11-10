@@ -1,3 +1,4 @@
+import { safeBackPath } from '#lib/services/back-path.ts';
 import type { PageLoad } from './$types';
 
 /**
@@ -5,9 +6,8 @@ import type { PageLoad } from './$types';
  * else falls back to Today).
  */
 export const load: PageLoad = ({ params, url }) => {
-	const back = url.searchParams.get('back');
 	return {
 		sessionId: params.sessionId,
-		back: back?.startsWith('/') && !back.startsWith('//') ? back : null
+		back: safeBackPath(url.searchParams.get('back'), url.origin)
 	};
 };

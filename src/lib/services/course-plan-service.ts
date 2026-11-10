@@ -208,6 +208,8 @@ export class CoursePlanService {
 
 	/** After a unit's chunk quiz: sets the split flag when first-attempt accuracy was low. */
 	async finishQuiz(courseId: CourseId, sessionId: SessionId, chunkId: string): Promise<boolean> {
+		const existing = await this.deps.repos.chunks.get(chunkId);
+		if (existing?.splitFlag === true) return true;
 		const events = await this.deps.events.listBySession(sessionId);
 		const first = events.filter(
 			(event): event is ReviewEvent =>

@@ -48,9 +48,9 @@
 				missing = true;
 				return;
 			}
-			const quizStep = loaded.steps.find((step) => step.step === 'read');
-			if (quizSession && quizStep?.step === 'read') {
-				await plans.finishQuiz(courseId, quizSession as SessionId, quizStep.chunkId);
+			const readStep = loaded.steps.find((step) => step.step === 'read');
+			if (quizSession && readStep?.step === 'read') {
+				await plans.finishQuiz(courseId, quizSession as SessionId, readStep.chunkId);
 			}
 			unit = loaded;
 		})().catch((error: unknown) => {

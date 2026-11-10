@@ -185,7 +185,7 @@ Indexes: `id, courseId, topicId, chunkId, type, updatedAt`.
 | `path` | `ExerciseKind[]` | ✓ | content | ≥ 1; fixed per variant (plan §5) | Format sequence |
 | `suspended` | `boolean` | ✓ | content | default `false` | Excluded from study |
 | `fsrs` | `FsrsCardState \| null` | ✓ | cache | `null` until first credited review | ts-fsrs card state |
-| `due` | `number` | — | cache | epoch ms | Next due time |
+| `due` | `number` | — | cache | epoch ms | Next due time: FSRS's `due`; for a card met only in acquisition (no FSRS state yet), the start of the next study day after its last acquisition review (BUILD_PLAN §6.7 handoff) |
 | `status` | `CardStatus` | ✓ | cache | §4.4 | Shown label |
 | `fragile` | `boolean` | ✓ | cache | | Cram-fragile |
 | `weak` | `boolean` | ✓ | cache | | Failed a relearn this session → cram gap 1 |
@@ -411,6 +411,8 @@ The ts-fsrs 6 `Card` object as stored by the library (due, stability, difficulty
 | `overrides` | `{ date: string; minutes: number }[]` | Per-date changes (`YYYY-MM-DD`) |
 | `sleepWindow` | `{ start: 'HH:mm'; end: 'HH:mm' }` | No work planned inside it |
 | `examMorningMinutes` | `number` | Top-up time before an exam |
+
+Until the student sets it, `DEFAULT_AVAILABILITY` (`db/schemas/kv.ts`) applies: `DEFAULT_DAY_MINUTES` every weekday, `DEFAULT_SLEEP_WINDOW`, `DEFAULT_EXAM_MORNING_MINUTES`, no overrides.
 
 ---
 
