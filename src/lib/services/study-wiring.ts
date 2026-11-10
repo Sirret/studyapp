@@ -1,5 +1,12 @@
-import { CardRepo, CourseRepo, NoteRepo, TopicRepo } from '#lib/db/repos/content-repos.ts';
+import {
+	CardRepo,
+	ChunkRepo,
+	CourseRepo,
+	NoteRepo,
+	TopicRepo
+} from '#lib/db/repos/content-repos.ts';
 import { ContentStore } from '#lib/db/repos/content-store.ts';
+import { CoursePlanService } from './course-plan-service.ts';
 import { CourseService } from './course-service.ts';
 import { DeviceRepo } from '#lib/db/repos/device-repo.ts';
 import { EventRepo } from '#lib/db/repos/event-repo.ts';
@@ -57,3 +64,14 @@ export const studyService = new StudyService({
 
 /** Trashing courses from Today. */
 export const courseService = new CourseService(new ContentStore(db, context), logger);
+
+/** The course page: today's modes, review, learn units and one-night (BUILD_PLAN §6.6–§6.8). */
+export const coursePlanService = new CoursePlanService({
+	repos: { ...repos, chunks: new ChunkRepo(db, context) },
+	events,
+	kv,
+	study: studyService,
+	replayConfig,
+	clock,
+	logger
+});

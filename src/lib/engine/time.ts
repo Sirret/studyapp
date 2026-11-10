@@ -29,3 +29,39 @@ export function daysBetween(a: number, b: number, tzOffsetMin: number): number {
 export function isSameStudyDay(a: number, b: number, tzOffsetMin: number): boolean {
 	return daysBetween(a, b, tzOffsetMin) === 0;
 }
+
+/** The first millisecond of a study day (`DAY_ROLLOVER_HOUR` local time on that day). */
+export function startOfStudyDay(day: number, tzOffsetMin: number): number {
+	return day * MS_PER_DAY + DAY_ROLLOVER_HOUR * MS_PER_HOUR - tzOffsetMin * MS_PER_MINUTE;
+}
+
+/** Days from Monday of 1970-01-01's week: that date was a Thursday. */
+const EPOCH_WEEKDAY_MON0 = 3;
+const DAYS_PER_WEEK = 7;
+const MINUTES_PER_HOUR = 60;
+
+/** The weekday of a study day, 0 = Monday … 6 = Sunday (`Availability.weekdayMinutes` order). */
+export function weekdayOf(day: number): number {
+	return (((day + EPOCH_WEEKDAY_MON0) % DAYS_PER_WEEK) + DAYS_PER_WEEK) % DAYS_PER_WEEK;
+}
+
+/** The study day of a local calendar date (`YYYY-MM-DD`). */
+export function dayOfLocalDate(date: string): number {
+	return Math.floor(Date.parse(`${date}T00:00:00Z`) / MS_PER_DAY);
+}
+
+/** The local calendar date (`YYYY-MM-DD`) a study day starts on. */
+export function localDateOf(day: number): string {
+	return new Date(day * MS_PER_DAY).toISOString().slice(0, 10);
+}
+
+/** Minutes after local midnight of an `HH:mm` time. */
+export function minutesOfTime(time: string): number {
+	const [hours = 0, minutes = 0] = time.split(':').map(Number);
+	return hours * MINUTES_PER_HOUR + minutes;
+}
+
+/** The epoch ms of a local date and `HH:mm` time. */
+export function localDateTime(date: string, time: string, tzOffsetMin: number): number {
+	return dayOfLocalDate(date) * MS_PER_DAY + (minutesOfTime(time) - tzOffsetMin) * MS_PER_MINUTE;
+}

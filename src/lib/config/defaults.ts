@@ -97,6 +97,19 @@ export const NEW_SHARE_MAX = 0.5;
 /** K: relearning sessions planned per card. */
 export const RELEARN_SESSIONS_MAX = 3;
 
+/** Cram runs when the exam is at most this many days away; further away is long-term. */
+export const CRAM_MAX_DAYS = 7;
+/** Availability until the student sets it (Phase 8 adds the calendar): minutes every weekday. */
+export const DEFAULT_DAY_MINUTES = 60;
+export const DEFAULT_SLEEP_WINDOW = { start: '23:00', end: '07:00' } as const;
+export const DEFAULT_EXAM_MORNING_MINUTES = 30;
+/** Exam start time when a course has a date but no time. */
+export const DEFAULT_EXAM_TIME = '09:00';
+/** New cards a long-term session feeds in. */
+export const LONGTERM_NEW_PER_DAY = 10;
+/** Corrects a pre-train or chunk-quiz card needs in its (uncredited) acquisition step. */
+export const ACQ_STEP_REQUIRED = 1;
+
 export const PRETEST_MAX = 3;
 export const PRETEST_AUTOHIDE_SKIPS = 2;
 export const CHUNK_WORDS = { min: 150, max: 400 } as const;
@@ -133,6 +146,8 @@ export const SEC_PER_ATTEMPT = {
 	fadeStep: 30,
 	newInstance: 120
 } as const;
+/** Seconds per attempt for a kind with no `SEC_PER_ATTEMPT` entry and no calibration. */
+export const SEC_PER_ATTEMPT_DEFAULT = 15;
 
 export const FSRS_OPTIMISE_MIN_REVIEWS = 1000;
 /** Tesseract word confidence (0–100). */

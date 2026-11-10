@@ -33,9 +33,23 @@
 
 	let { data }: PageProps = $props();
 
+	/** Where the summary's button goes: the screen that started the session, else Today. */
+	async function leave(): Promise<void> {
+		// eslint-disable-next-line svelte/no-navigation-without-resolve -- `back` is an in-app path built with resolve() by the screen that started the session
+		await goto(data.back ?? resolve('/'));
+	}
+
 	type Service = (typeof import('#lib/services/study-wiring.ts'))['studyService'];
 	let service: Service | undefined;
 	let view = $state<StudyView | null>(null);
+	const nextLine = $derived(
+		view?.mode === 'acquisition'
+			? "Tomorrow's retest is where it counts."
+			: view?.mode === 'onenight'
+				? 'Sleep is part of the plan: the morning check is the real test.'
+				: "Come back tomorrow for the retest — that's when it sticks."
+	);
+
 	let failed = $state(false);
 	let answer = $state<StudyAnswer | null>(null);
 	let response: ExerciseResponse | null = $state(null);
@@ -176,14 +190,15 @@
 			<SessionSummary
 				practised={view.summary.practised}
 				ready={view.summary.ready}
-				next="Come back tomorrow for the retest — that's when it sticks."
+				next={nextLine}
 				{companion}
 			>
 				{#snippet figure(value)}<CountUp
 						{value}
 						play={effectOn('countUp', prefs.companion)}
 					/>{/snippet}
-				{#snippet actions()}<Button full onclick={() => goto(resolve('/'))}>Back to Today</Button
+				{#snippet actions()}<Button full onclick={leave} data-session-continue
+						>{data.back ? 'Continue' : 'Back to Today'}</Button
 					>{/snippet}
 				{#snippet footer()}{#if effectOn('pawWalk', prefs.companion)}<PawWalk />{/if}{/snippet}
 			</SessionSummary>

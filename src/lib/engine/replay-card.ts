@@ -11,7 +11,7 @@ import {
 import { advancePathStep } from './exercise-kinds.ts';
 import { capStability, ratingFor, reviewFsrs, type FsrsConfig } from './fsrs.ts';
 import { deriveStatus, EMPTY_DAY_TALLY, tallyDay, type DayTally } from './status.ts';
-import { dayIndex, daysBetween } from './time.ts';
+import { dayIndex, daysBetween, startOfStudyDay } from './time.ts';
 import type { Traced, TraceEntry } from './trace.ts';
 
 /** Modes whose study is massed: their corrects grant only capped, fragile stability. */
@@ -37,6 +37,8 @@ interface CardFold {
 	/** Each credited session's mode, from its first counting event. */
 	modes: Map<SessionId, Mode>;
 	lastSession: LastSession | null;
+	/** When the card's latest acquisition-mode review happened, for the handoff `due`. */
+	lastAcquisitionAt: number | null;
 	trace: TraceEntry[];
 }
 
@@ -54,6 +56,7 @@ function emptyFold(): CardFold {
 		criteria: emptyCriterionHistory(),
 		modes: new Map(),
 		lastSession: null,
+		lastAcquisitionAt: null,
 		trace: []
 	};
 }
@@ -123,6 +126,7 @@ function foldCounting(
 
 function foldReview(fold: CardFold, event: ReviewEvent, input: ReplayCardInput): void {
 	fold.reviewed = true;
+	if (event.mode === 'acquisition') fold.lastAcquisitionAt = event.ts;
 	if (event.firstAttempt && event.weight !== 'none') {
 		const { n, correct } = fold.accuracy;
 		fold.accuracy = { n: n + 1, correct: correct + (event.correct ? 1 : 0) };
@@ -142,7 +146,19 @@ function foldEvent(fold: CardFold, event: StudyEvent, input: ReplayCardInput): v
 	}
 }
 
-function cachesOf(fold: CardFold): Traced<CardCaches> {
+/**
+ * The acquisition handoff: a card met in acquisition with no FSRS state yet is due at the start of
+ * the next study day, so tomorrow's retest is its first FSRS review.
+ *
+ * @see BUILD_PLAN §6.7 (handoff in replay) and Decisions log (Phase 7: the acquisition handoff)
+ */
+function dueOf(fold: CardFold, tzOffsetMin: number): number | undefined {
+	if (fold.fsrs) return fold.fsrs.due;
+	if (fold.lastAcquisitionAt === null) return undefined;
+	return startOfStudyDay(dayIndex(fold.lastAcquisitionAt, tzOffsetMin) + 1, tzOffsetMin);
+}
+
+function cachesOf(fold: CardFold, tzOffsetMin: number): Traced<CardCaches> {
 	const last = fold.lastSession;
 	const status = deriveStatus({
 		reviewed: fold.reviewed,
@@ -154,9 +170,10 @@ function cachesOf(fold: CardFold): Traced<CardCaches> {
 		fragile: fold.fragile,
 		cramCriterionMet: last?.mode === 'cram' && last.met
 	});
+	const due = dueOf(fold, tzOffsetMin);
 	const caches: CardCaches = {
 		fsrs: fold.fsrs,
-		...(fold.fsrs ? { due: fold.fsrs.due } : {}),
+		...(due === undefined ? {} : { due }),
 		status: status.result,
 		fragile: fold.fragile,
 		weak: last !== null && last.relearn && last.criterion.failed,
@@ -180,5 +197,5 @@ export function replayCard(
 ): Traced<CardCaches> {
 	const fold = emptyFold();
 	for (const event of events) foldEvent(fold, event, input);
-	return cachesOf(fold);
+	return cachesOf(fold, input.tzOffsetMin);
 }

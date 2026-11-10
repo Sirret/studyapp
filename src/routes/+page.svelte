@@ -114,6 +114,12 @@
 						</Button>
 					</Row>
 					<Button
+						variant="secondary"
+						full
+						href={resolve('/course/[courseId]', { courseId: course.id })}
+						data-open-course={course.name}>Plan and learn</Button
+					>
+					<Button
 						full
 						loading={starting === course.id}
 						onclick={() => practise(course)}

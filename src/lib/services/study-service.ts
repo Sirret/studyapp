@@ -1,7 +1,14 @@
 import type { CardRepo, CourseRepo, NoteRepo, TopicRepo } from '#lib/db/repos/content-repos.ts';
 import type { EventRepo } from '#lib/db/repos/event-repo.ts';
 import type { KvRepo } from '#lib/db/repos/kv-repo.ts';
-import type { CardId, CourseId, EventId, ExerciseKind, SessionId } from '#lib/db/schemas/common.ts';
+import type {
+	CardId,
+	CourseId,
+	EventId,
+	ExerciseKind,
+	Mode,
+	SessionId
+} from '#lib/db/schemas/common.ts';
 import type { ReviewEvent, StudyEvent } from '#lib/db/schemas/event.ts';
 import { DEFAULT_SETTINGS } from '#lib/db/schemas/kv.ts';
 import { confusionCounts } from '#lib/engine/distractors.ts';
@@ -38,6 +45,22 @@ export interface StartOptions {
 	forceKinds?: Partial<Record<CardId, ExerciseKind>>;
 }
 
+/** One card of a planned session: its kind on first showing and its criterion, when the mode sets them. */
+export interface PlannedCard {
+	id: CardId;
+	kind?: ExerciseKind;
+	required?: number;
+	/** Relearning sessions the plan has for the card before the exam. */
+	relearningSessionsAhead?: number;
+}
+
+/** A session a mode has planned. Acquisition answers are logged with `credited: false`. */
+export interface PlannedSession {
+	mode: Mode;
+	cards: readonly PlannedCard[];
+	plannedMinutes: number;
+}
+
 /** Kinds answered by typing, after which the next showing uses first-letter mode (§6.10). */
 const TYPED_KINDS: ReadonlySet<ExerciseKind> = new Set([
 	'cloze',
@@ -59,30 +82,60 @@ export class StudyService {
 	private readonly forced = new Map<SessionId, Partial<Record<CardId, ExerciseKind>>>();
 	private readonly shown = new Map<SessionId, { spec: ExerciseSpec; at: number }>();
 	private readonly answered = new Map<SessionId, ExerciseSpec>();
+	private readonly modes = new Map<SessionId, Mode>();
 
 	constructor(private readonly deps: StudyServiceDeps) {}
 
-	/** Starts a `longterm` practice session of a course. @see Decisions log (practice sessions) */
+	/**
+	 * Starts a `longterm` practice session of a course (the dev harness and tests use it).
+	 *
+	 * @see Decisions log (Phase 5: practice sessions)
+	 */
 	async startCourse(courseId: CourseId, options: StartOptions = {}): Promise<StudyView> {
 		const material = await loadCourse(this.deps.repos, courseId);
-		const events = await this.deps.events.list();
 		const forced = options.forceKinds ?? {};
 		const chosen = options.cardIds
 			? options.cardIds.flatMap((id) => material.cards.filter((card) => card.id === id))
 			: practiceCards(material);
-		const plan = chosen.map((card) => {
+		return this.startPlanned(courseId, {
+			mode: 'longterm',
+			plannedMinutes: 0,
+			cards: chosen.map((card) => ({
+				id: card.id,
+				...(forced[card.id] ? { kind: forced[card.id] } : {})
+			}))
+		});
+	}
+
+	/**
+	 * Starts a session a mode planned: cards in the given order, each with its criterion from
+	 * `toPlanCard` unless the plan sets `required`, and its first showing forced to `kind` when set.
+	 *
+	 * @see BUILD_PLAN §6.4, §6.6–§6.8
+	 */
+	async startPlanned(courseId: CourseId, plan: PlannedSession): Promise<StudyView> {
+		const material = await loadCourse(this.deps.repos, courseId);
+		const events = await this.deps.events.list();
+		const byId = new Map(material.cards.map((card) => [card.id, card]));
+		const forced: Partial<Record<CardId, ExerciseKind>> = {};
+		const cards = plan.cards.flatMap((planned) => {
+			const card = byId.get(planned.id);
+			if (!card) return [];
 			const note = material.notes.get(card.noteId);
-			const planned = toPlanCard(card, note?.type ?? 'fact', events, {
-				mode: 'longterm',
-				relearningSessionsAhead: 0
+			const base = toPlanCard(card, note?.type ?? 'fact', events, {
+				mode: plan.mode,
+				relearningSessionsAhead: planned.relearningSessionsAhead ?? 0
 			});
-			return { ...planned, kind: forced[card.id] ?? planned.kind };
+			if (planned.kind) forced[card.id] = planned.kind;
+			return [
+				{ ...base, kind: planned.kind ?? base.kind, required: planned.required ?? base.required }
+			];
 		});
 		const view = await this.deps.sessions.start({
-			mode: 'longterm',
+			mode: plan.mode,
 			courseIds: [courseId],
-			plannedMinutes: 0,
-			cards: plan,
+			plannedMinutes: plan.plannedMinutes,
+			cards,
 			confusionEvents: events.filter(isReview)
 		});
 		this.material.set(view.session.id, material);
@@ -114,7 +167,8 @@ export class StudyService {
 			kind: shown.spec.kind,
 			correct: verdict.correct,
 			responseMs: this.deps.clock() - shown.at,
-			credited: true,
+			// Same-day acquisition answers give no scheduling credit (BUILD_PLAN §6.7).
+			credited: this.modes.get(id) !== 'acquisition',
 			...(verdict.chosen === undefined ? {} : { chosen: verdict.chosen }),
 			...(verdict.chosenFromCardId ? { chosenFromCardId: verdict.chosenFromCardId } : {}),
 			...selfRatedOf(shown.spec, response)
@@ -193,12 +247,14 @@ export class StudyService {
 
 	private async present(view: SessionView): Promise<StudyView> {
 		const { session } = view;
+		this.modes.set(session.id, session.mode);
 		const material = await this.materialFor(view);
 		const states = Object.values(session.snapshot.cards);
 		const item = view.item ? await this.buildItem(view, material) : null;
 		if (!item) this.shown.delete(session.id);
 		return {
 			sessionId: session.id,
+			mode: session.mode,
 			course: { id: material.course.id, name: material.course.name, color: material.course.color },
 			phase: session.phase,
 			ended: session.endedAt !== undefined,

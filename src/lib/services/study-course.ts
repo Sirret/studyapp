@@ -7,8 +7,13 @@ import type { Note, NoteType } from '#lib/db/schemas/note.ts';
 import { generateCards } from '#lib/engine/cardgen.ts';
 import type { ExerciseCard, ExerciseNote } from '#lib/engine/exercise-spec.ts';
 
-/** Note types whose exercises need the diagram view (Phase 6); practice sessions leave them out. */
+/** Note types whose exercises need the diagram view (Phase 6); sessions leave them out for now. */
 const DIAGRAM_NOTES: ReadonlySet<NoteType> = new Set(['diagram', 'occlusion']);
+
+/** Whether a note's cards can be studied before Phase 6 (not a diagram or occlusion). */
+export function isStudyable(note: Pick<Note, 'type'> | undefined): boolean {
+	return note !== undefined && !DIAGRAM_NOTES.has(note.type);
+}
 
 /** A course's live cards and notes, ordered by topic, note and card. */
 export interface CourseMaterial {

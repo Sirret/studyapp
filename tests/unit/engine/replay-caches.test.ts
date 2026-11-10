@@ -21,7 +21,7 @@ import {
 	type FsrsConfig
 } from '#lib/engine/fsrs.ts';
 import { DEFAULT_REPLAY_CONFIG, replay, type ReplayConfig } from '#lib/engine/replay.ts';
-import { dayIndex, MS_PER_DAY } from '#lib/engine/time.ts';
+import { dayIndex, MS_PER_DAY, startOfStudyDay } from '#lib/engine/time.ts';
 import {
 	arbEvents,
 	arbShuffled,
@@ -198,7 +198,8 @@ describe('replay FSRS (§6.2, Decisions log: FSRS review = first counting event 
 		h.session('acquisition', at(0), [ok, no, ok, ok, ok]);
 		const caches = cachesOf(h.events);
 		expect(caches.fsrs).toBeNull();
-		expect(caches.due).toBeUndefined();
+		// Phase 7 handoff (Decisions log): due the next study day, FSRS state still null.
+		expect(caches.due).toBe(startOfStudyDay(dayIndex(at(0), 0) + 1, 0));
 	});
 
 	it('never touches FSRS with none-weight answers', () => {

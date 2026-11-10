@@ -1,5 +1,12 @@
 import { z } from 'zod';
-import { RETENTION, RETENTION_MAX, RETENTION_MIN } from '#lib/config/defaults.ts';
+import {
+	DEFAULT_DAY_MINUTES,
+	DEFAULT_EXAM_MORNING_MINUTES,
+	DEFAULT_SLEEP_WINDOW,
+	RETENTION,
+	RETENTION_MAX,
+	RETENTION_MIN
+} from '#lib/config/defaults.ts';
 import {
 	DeviceIdSchema,
 	ExerciseKindSchema,
@@ -51,6 +58,14 @@ export const AvailabilitySchema = z.object({
 	examMorningMinutes: z.number().min(0)
 });
 export type Availability = z.infer<typeof AvailabilitySchema>;
+
+/** Used until the student sets their availability. @see DATA_MODEL §5 */
+export const DEFAULT_AVAILABILITY: Availability = {
+	weekdayMinutes: Array.from({ length: WEEKDAYS }, () => DEFAULT_DAY_MINUTES),
+	overrides: [],
+	sleepWindow: { ...DEFAULT_SLEEP_WINDOW },
+	examMorningMinutes: DEFAULT_EXAM_MORNING_MINUTES
+};
 
 /**
  * Every `kv` key and the schema of its value. Reads are validated against this.

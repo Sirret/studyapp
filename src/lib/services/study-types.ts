@@ -4,7 +4,7 @@
  *
  * @see BUILD_PLAN §5.1 and §15.1
  */
-import type { CardId, CourseColor, EventId, SessionId } from '#lib/db/schemas/common.ts';
+import type { CardId, CourseColor, EventId, Mode, SessionId } from '#lib/db/schemas/common.ts';
 import type { SessionPhase } from '#lib/db/schemas/session.ts';
 import type { ExerciseResponse, ExerciseVerdict } from '#lib/engine/exercise-check.ts';
 import type { ExerciseSpec } from '#lib/engine/exercise-spec.ts';
@@ -40,6 +40,7 @@ export interface StudyItem {
 /** Everything the study screen shows. `item` and `round` are null once the session ends. */
 export interface StudyView {
 	sessionId: SessionId;
+	mode: Mode;
 	course: { id: string; name: string; color: CourseColor };
 	phase: SessionPhase;
 	ended: boolean;
