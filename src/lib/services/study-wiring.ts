@@ -87,5 +87,5 @@ export const coursePlanService = new CoursePlanService({
 	replayConfig,
 	clock,
 	logger,
-	shares: (courseId) => plannerService.shareOf(courseId)
+	shares: (courseId, events) => plannerService.shareOf(courseId, events)
 });

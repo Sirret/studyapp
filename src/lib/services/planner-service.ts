@@ -3,6 +3,7 @@ import type { EventRepo } from '#lib/db/repos/event-repo.ts';
 import type { KvRepo } from '#lib/db/repos/kv-repo.ts';
 import type { Course } from '#lib/db/schemas/course.ts';
 import type { CourseId } from '#lib/db/schemas/common.ts';
+import type { StudyEvent } from '#lib/db/schemas/event.ts';
 import { AvailabilitySchema, DEFAULT_AVAILABILITY, type Availability } from '#lib/db/schemas/kv.ts';
 import { planDays, type PlanCourse, type PlannerResult } from '#lib/engine/planner.ts';
 import { compareText } from '#lib/engine/replay.ts';
@@ -44,6 +45,8 @@ interface Planned {
 	planned: PlanCourse[];
 	/** Day minutes from today (index 0 = today, after what was studied). */
 	dayMinutes: number[];
+	/** Today's available minutes before what was studied. */
+	todayMinutes: number;
 	studied: number;
 	plan: PlannerResult;
 }
@@ -76,19 +79,21 @@ export class PlannerService {
 		this.deps.logger.info('planner', 'availability', { overrides: overrides.length });
 	}
 
-	/** Today: minutes per course, what is due, the first shortfall, and whether today is done. */
+	/**
+	 * Today: minutes per course, what is due, the first shortfall, and whether today is done (the
+	 * day had time, and studying has used all of it; never shown on a day off).
+	 */
 	async today(): Promise<TodayPlanView> {
 		const run = await this.run();
 		const todaySplit = run.plan.days[0]?.minutes ?? {};
 		const courses = [...run.data.values()].map((data) =>
 			this.courseToday(data, run, todaySplit[data.material.course.id])
 		);
-		const planned = courses.reduce((sum, c) => sum + (c.plannedMinutes ?? 0), 0);
 		return {
 			courses,
 			studiedMinutes: Math.round(run.studied),
 			shortfall: this.shortfall(run),
-			done: run.planned.length > 0 && run.studied >= 1 && planned === 0
+			done: run.planned.length > 0 && run.todayMinutes > 0 && run.studied >= run.todayMinutes
 		};
 	}
 
@@ -103,23 +108,27 @@ export class PlannerService {
 	}
 
 	/**
-	 * A course's minutes per day from today to the day before its exam: its split minutes plus the
-	 * day's free minutes; `null` when the course has no exam ahead.
+	 * A course's minutes per day from today to the day before its exam: its split minutes plus an
+	 * even share (floored) of the day's free minutes among the courses with an exam after that day,
+	 * so the shares never add up to more than the day. `null` when the course has no exam ahead.
+	 * `events` lets a caller that already read the log skip a second read.
 	 */
-	async shareOf(courseId: CourseId): Promise<number[] | null> {
-		const run = await this.run();
+	async shareOf(courseId: CourseId, events?: StudyEvent[]): Promise<number[] | null> {
+		const run = await this.run(events);
 		const course = run.planned.find((c) => c.courseId === courseId);
 		if (!course) return null;
 		return Array.from({ length: course.examDay - run.today }, (_, i) => {
 			const split = run.plan.days[i];
-			return (split?.minutes[courseId] ?? 0) + (split?.freeMinutes ?? run.dayMinutes[i] ?? 0);
+			const sharing = run.planned.filter((c) => c.examDay > run.today + i).length;
+			const free = Math.floor((split?.freeMinutes ?? 0) / Math.max(1, sharing));
+			return (split?.minutes[courseId] ?? 0) + free;
 		});
 	}
 
-	private async run(): Promise<Planned> {
+	private async run(loaded?: StudyEvent[]): Promise<Planned> {
 		const { repos, kv, replayConfig, clock } = this.deps;
 		const env = await loadPlanEnv(kv, replayConfig, clock());
-		const events = await this.deps.events.list();
+		const events = loaded ?? (await this.deps.events.list());
 		const courses = (await repos.courses.list()).filter((c) => c.status === 'active');
 		const data = new Map<CourseId, CourseData>();
 		for (const course of courses)
@@ -129,7 +138,8 @@ export class PlannerService {
 		const lastExam = Math.max(today, ...planned.map((c) => c.examDay));
 		const studied = studiedMinutes(events, env);
 		const dayMinutes = dayMinutesFrom(env.availability, today, lastExam - today + 1);
-		dayMinutes[0] = Math.max(0, (dayMinutes[0] ?? 0) - studied);
+		const todayMinutes = dayMinutes[0] ?? 0;
+		dayMinutes[0] = Math.max(0, todayMinutes - studied);
 		const plan = planDays({
 			courses: planned,
 			today,
@@ -144,7 +154,7 @@ export class PlannerService {
 			feasible: plan.result.feasible,
 			courses: planned.length
 		});
-		return { env, today, data, planned, dayMinutes, studied, plan: plan.result };
+		return { env, today, data, planned, dayMinutes, todayMinutes, studied, plan: plan.result };
 	}
 
 	private courseToday(data: CourseData, run: Planned, split: number | undefined): TodayCourseView {

@@ -90,7 +90,7 @@ async function setup() {
 		replayConfig,
 		clock,
 		logger,
-		shares: (id) => planner.shareOf(id)
+		shares: (id, events) => planner.shareOf(id, events)
 	});
 	const importer = new ImportService(new ContentStore(db, context), encoder, randomUUID, logger);
 	const addCourse = async (name: string): Promise<CourseId> => {
@@ -211,7 +211,7 @@ describe('PlannerService (BUILD_PLAN §6.9)', { timeout: 30_000 }, () => {
 		expect((await env.planner.today()).studiedMinutes).toBe(20);
 	});
 
-	it("a course's share is its split minutes plus the free minutes, one entry per day before the exam", async () => {
+	it("a course's share is its split minutes plus an even part of the free minutes, one entry per day before the exam", async () => {
 		const env = await setup();
 		const a = await env.addCourse('Networks');
 		const b = await env.addCourse('Databases');
@@ -227,6 +227,43 @@ describe('PlannerService (BUILD_PLAN §6.9)', { timeout: 30_000 }, () => {
 			expect(minutes).toBe(own + (day?.freeMinutes ?? 0));
 		});
 		expect(await env.planner.shareOf(b)).toBeNull();
+	});
+
+	it("the courses' shares never add up to more than the day", async () => {
+		const env = await setup();
+		const a = await env.addCourse('Networks');
+		const b = await env.addCourse('Databases');
+		await env.examIn(a, 2);
+		await env.examIn(b, 4);
+		await env.planner.setAvailability(minutesEvery(600));
+		const [shareA, shareB] = [await env.planner.shareOf(a), await env.planner.shareOf(b)];
+		const week = await env.planner.week();
+		week.days.slice(0, 4).forEach((day, i) => {
+			expect((shareA?.[i] ?? 0) + (shareB?.[i] ?? 0)).toBeLessThanOrEqual(day.capMinutes);
+		});
+		expect(shareB?.[0]).toBeGreaterThan(0);
+	});
+
+	it('is done once studying used up a day that had time, never on a day off', async () => {
+		const env = await setup();
+		const card = (await env.repos.cards.listByCourse(await env.addCourse('Networks')))[0];
+		const study = (minutes: number) =>
+			env.events.append({
+				type: 'pretest',
+				cardId: card?.id as CardId,
+				sessionId: randomUUID() as SessionId,
+				skipped: false,
+				responseMs: minutes * MS_PER_MINUTE
+			});
+		const courseId = (await env.planner.today()).courses[0]?.id as CourseId;
+		await env.examIn(courseId, 3);
+		await env.planner.setAvailability(minutesEvery(0));
+		await study(5);
+		expect((await env.planner.today()).done).toBe(false);
+		await env.planner.setAvailability(minutesEvery(30));
+		expect((await env.planner.today()).done).toBe(false);
+		await study(30);
+		expect((await env.planner.today()).done).toBe(true);
 	});
 
 	it('the course page plans cram against its share, and a past exam leaves the planner', async () => {

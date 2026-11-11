@@ -9,7 +9,7 @@ import type {
 import type { EventRepo } from '#lib/db/repos/event-repo.ts';
 import type { KvRepo } from '#lib/db/repos/kv-repo.ts';
 import type { CardId, CourseId, ExamFormat, SessionId } from '#lib/db/schemas/common.ts';
-import type { ReviewEvent } from '#lib/db/schemas/event.ts';
+import type { ReviewEvent, StudyEvent } from '#lib/db/schemas/event.ts';
 import { splitFlagFor, unitSteps, type AcqStep } from '#lib/engine/acquisition.ts';
 import { planCram, type CramPlan } from '#lib/engine/cram.ts';
 import { longtermCards, todayModes, type TodayModes } from '#lib/engine/mode-select.ts';
@@ -47,7 +47,7 @@ export interface CoursePlanDeps {
 	clock: () => number;
 	logger: Logger;
 	/** The planner's minutes per day for a course (`PlannerService.shareOf`); none → whole days. */
-	shares?: (courseId: CourseId) => Promise<number[] | null>;
+	shares?: (courseId: CourseId, events: StudyEvent[]) => Promise<number[] | null>;
 }
 
 interface Loaded {
@@ -235,7 +235,7 @@ export class CoursePlanService {
 		const hasUnread = openUnits(data, env, false).units.length > 0;
 		const examDay = examDayOf(data.material.course);
 		const modes = todayModes({ today, examDay, hasUnread }).result;
-		const share = (await this.deps.shares?.(courseId)) ?? null;
+		const share = (await this.deps.shares?.(courseId, events)) ?? null;
 		return { data, env, modes, today, share };
 	}
 

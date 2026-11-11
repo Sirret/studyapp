@@ -24,8 +24,8 @@
 - [x] 3. Engine green (fixed: `courseWork` −0; unit margin applied twice → `learnMinutes` now without margin) — committed 4fca826
 - [x] 4. `PlannerService` + CoursePlanService `shares` — committed 4fca826 (with engine + agent tests; 1560 unit pass)
 - [x] 5. Screens: DayBar (+ style guide), Today, `/planner` + AvailabilityForm; e2e `planner.spec.ts` 2/2 + modes 4/4 pass — committed (see git log)
-- [ ] 6. `npm run verify`
-- [ ] 7. `reviewer` (Sonnet) on diff since 2be30c1
+- [ ] 6. `npm run verify` — run 1 failed only on lint (unused var from a review fix), rerunning after review-fix commit
+- [x] 7. `reviewer` done: CHANGES REQUIRED, no blockers. Fixed 3 should-fix (shares split free minutes evenly so sum ≤ cap; course page passes loaded events to shareOf; done only when day had time and it's used up). Nits left: ROUNDING_EPSILON local (numeric tolerance, not tunable); `relearn > 1` floors; studied minutes count all courses (intended: it's the student's time); cutFirst mutates while probing. Was, told not to run tests; brief: review diff vs §6.9 (incl. 'concretely'/'Edges'), §9, CONCEPT §10, DESIGN §6, CLAUDE rules; look at cut binary search, laxity loop termination, shareOf feeding, per-call loading cost; findings blocker/should-fix/nit
 - [ ] 8. Docs: Decisions log, HANDOFF, PROGRESS; delete WIP
 
 ## Agent briefs
