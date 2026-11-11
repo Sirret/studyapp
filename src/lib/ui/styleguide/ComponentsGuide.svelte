@@ -13,6 +13,7 @@
 	import PhaseLabel from '../components/PhaseLabel.svelte';
 	import ProgressDots from '../components/ProgressDots.svelte';
 	import ProgressStrip from '../components/ProgressStrip.svelte';
+	import DayBar from '../components/DayBar.svelte';
 	import ReadinessRing from '../components/ReadinessRing.svelte';
 	import RoundSummary from '../components/RoundSummary.svelte';
 	import SessionSummary from '../components/SessionSummary.svelte';
@@ -60,6 +61,24 @@
 	<GuideRow label="Readiness rings">
 		<ReadinessRing percent={62} color="lavender" />
 		<ReadinessRing percent={18} color="peach" label="secure" />
+	</GuideRow>
+	<GuideRow label="Day bars (Plan)">
+		<DayBar
+			label="Today"
+			today
+			capMinutes={60}
+			segments={[
+				{ name: 'Networks', color: 'lavender', minutes: 40 },
+				{ name: 'Databases', color: 'peach', minutes: 10 }
+			]}
+		/>
+		<DayBar
+			label="Thu 14"
+			capMinutes={30}
+			segments={[{ name: 'Databases', color: 'peach', minutes: 30 }]}
+			exams={[{ name: 'Networks', color: 'lavender' }]}
+		/>
+		<DayBar label="Fri 15" capMinutes={0} segments={[]} />
 	</GuideRow>
 	<GuideRow label="Tap chips and slots">
 		<TapChip text="SYN" />

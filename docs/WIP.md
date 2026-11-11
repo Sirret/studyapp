@@ -21,9 +21,9 @@
 
 - [x] 1. Interface: engine signatures (stubs) + WIP + §6.9 "The planner, concretely" — committed (see git log)
 - [x] 2. `spec-test-writer` done: 78 tests (5 files + `planner-fixtures.ts`); 7 SPEC-GAPs settled in §6.9 "Edges" (add Decisions log row at the end)
-- [x] 3. Engine green (fixed: `courseWork` −0; unit margin applied twice → `learnMinutes` now without margin)
-- [x] 4. `PlannerService` (`planner-service.ts`, `planner-inputs.ts`, `planner-types.ts`; 7 tests in `tests/unit/services/planner-service.test.ts` pass), CoursePlanService takes `shares` (wired in `study-wiring.ts`); `PLAN_FORECAST_DAYS` added. NOT COMMITTED yet: waiting for the agent's tests (pre-commit runs untracked tests)
-- [ ] 5. Screens: Today rewrite, `/planner` (availability editor, week bars, feasibility), components in `/dev/ui`; e2e
+- [x] 3. Engine green (fixed: `courseWork` −0; unit margin applied twice → `learnMinutes` now without margin) — committed 4fca826
+- [x] 4. `PlannerService` + CoursePlanService `shares` — committed 4fca826 (with engine + agent tests; 1560 unit pass)
+- [x] 5. Screens: DayBar (+ style guide), Today, `/planner` + AvailabilityForm; e2e `planner.spec.ts` 2/2 + modes 4/4 pass — committed (see git log)
 - [ ] 6. `npm run verify`
 - [ ] 7. `reviewer` (Sonnet) on diff since 2be30c1
 - [ ] 8. Docs: Decisions log, HANDOFF, PROGRESS; delete WIP
