@@ -636,6 +636,17 @@ output: today's minutes per course + a forecast for the coming days
 
 **Re-plan** on the first app open of each study day and after any change to exams, availability or cards. **After an exam**, its course drops to long-term and leaves the planner.
 
+**The planner, concretely** (`planner-work.ts`, `planner-cuts.ts`, `planner-split.ts`, `planner.ts`; nothing stored, re-derived on every read):
+
+- _Courses:_ only courses with an exam today or later. Long-term courses (no exam ahead) stay outside the split.
+- _Items:_ a review **card** (standing from cram `triage`; minutes `cardMinutes` for that standing at the knobs) or an acquisition **unit** still to learn (minutes = its `learnMinutes` + its cards as `new` cards, since the next-day retest is their first credited session).
+- _Value:_ card `PRIORITY_WEIGHT[priority] × max(0, R_target − R_exam)`; unit `PRIORITY_WEIGHT[priority] × R_target × its card count` (R_exam = 0). `R_target` = `Settings.retention`. Ratio = value ÷ minutes at the current knobs; ties by course ID, then item ID.
+- _Work:_ per course `ceil(Σ item minutes × SAFETY_MARGIN)`, whole minutes. Day minutes are floored; a missing day counts as 0. Today's minutes are what is left of today (availability − minutes already studied today).
+- _Processor demand:_ exams sorted by exam day, then course ID. Exam k: demand = Σ work of exams 1..k; supply = Σ day minutes of the days from today to the day before its exam + `examMorningMinutes`; it fits when demand ≤ supply, shortfall = max(0, demand − supply).
+- _Cuts:_ every course starts at `CRITERION_FIRST` and `RELEARN_SESSIONS_MAX`. For the first exam that doesn't fit, the courses with an exam on or before its day get `CRITERION_FIRST_DEGRADED`, then K lowered by one at a time (all of them together) to 1, then items removed lowest ratio first until that exam fits; then the next exam that doesn't fit. Each step is listed once per course (`criterion`, `relearning`, `cut`), when first applied. Cuts are suggestions the student sees; sessions still follow the per-course cram plan.
+- _Daily split:_ days from today to the day before the last exam, using the work after cuts. Floor = min(`DAILY_FLOOR_MIN`, floor(cap ÷ |active|), the course's remaining); blocks = min(`BLOCK_MIN`, cap left, the course's remaining); laxity = cap left today + Σ caps of the later days before its exam − remaining; ties to the earlier exam, then course ID.
+- _Feeding the modes:_ a course's cram `dayMinutes[d]` (and its acquisition and one-night minutes) = its split minutes on day d + that day's free minutes.
+
 _Done when:_ unit tests cover the processor-demand check (including a case where totals fit but the first deadline fails), deterministic cuts, and least-laxity never starving a course with remaining work.
 
 ### 6.10 Grading (`grading.ts`)
