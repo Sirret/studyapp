@@ -20,9 +20,9 @@
 ## Steps
 
 - [x] 1. Interface: engine signatures (stubs) + WIP + §6.9 "The planner, concretely" — committed (see git log)
-- [ ] 2. `spec-test-writer` on planner engine + 4-exam sim
-- [ ] 3. Implement engine until green
-- [ ] 4. `PlannerService` (+ tests), feed CoursePlanService
+- [x] 2. `spec-test-writer` done: 78 tests (5 files + `planner-fixtures.ts`); 7 SPEC-GAPs settled in §6.9 "Edges" (add Decisions log row at the end)
+- [x] 3. Engine green (fixed: `courseWork` −0; unit margin applied twice → `learnMinutes` now without margin)
+- [x] 4. `PlannerService` (`planner-service.ts`, `planner-inputs.ts`, `planner-types.ts`; 7 tests in `tests/unit/services/planner-service.test.ts` pass), CoursePlanService takes `shares` (wired in `study-wiring.ts`); `PLAN_FORECAST_DAYS` added. NOT COMMITTED yet: waiting for the agent's tests (pre-commit runs untracked tests)
 - [ ] 5. Screens: Today rewrite, `/planner` (availability editor, week bars, feasibility), components in `/dev/ui`; e2e
 - [ ] 6. `npm run verify`
 - [ ] 7. `reviewer` (Sonnet) on diff since 2be30c1
@@ -30,4 +30,4 @@
 
 ## Agent briefs
 
-(filled in when launched)
+**spec-test-writer (planner engine):** tests from BUILD_PLAN §6.9 (incl. "The planner, concretely"), §6.6 Feasibility bullet, CONCEPT §10–§11 for `engine/planner-work.ts`, `planner-cuts.ts`, `planner-split.ts`, `planner.ts`. Owns: `tests/unit/engine/planner-{work,cuts,split}.test.ts`, `tests/unit/engine/planner.test.ts`, `tests/sim/planner-week.test.ts` (4 exams in one week, generous + tight availability, feasible-or-flagged, deterministic, no starving, writeSimReport). Must include "totals fit but the first deadline fails" and a fast-check no-starving property. Report: rule→test table, SPEC-GAPs.

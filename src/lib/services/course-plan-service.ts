@@ -10,10 +10,8 @@ import type { EventRepo } from '#lib/db/repos/event-repo.ts';
 import type { KvRepo } from '#lib/db/repos/kv-repo.ts';
 import type { CardId, CourseId, ExamFormat, SessionId } from '#lib/db/schemas/common.ts';
 import type { ReviewEvent } from '#lib/db/schemas/event.ts';
-import { DEFAULT_AVAILABILITY, DEFAULT_SETTINGS } from '#lib/db/schemas/kv.ts';
 import { splitFlagFor, unitSteps, type AcqStep } from '#lib/engine/acquisition.ts';
 import { planCram, type CramPlan } from '#lib/engine/cram.ts';
-import { EMPTY_CALIBRATION } from '#lib/engine/estimate.ts';
 import { longtermCards, todayModes, type TodayModes } from '#lib/engine/mode-select.ts';
 import { dayIndex } from '#lib/engine/time.ts';
 import type { Logger } from '#lib/log/logger.ts';
@@ -30,7 +28,7 @@ import {
 } from './course-plan.ts';
 import type { CourseToday, CramView, LearnStepView, LearnUnitView } from './course-types.ts';
 import type { ReplayConfigSource } from './replay-service.ts';
-import { loadCourse } from './study-course.ts';
+import { loadCourseData, loadPlanEnv } from './planner-inputs.ts';
 import type { PlannedCard, StudyService } from './study-service.ts';
 import type { StudyView } from './study-types.ts';
 
@@ -48,6 +46,8 @@ export interface CoursePlanDeps {
 	replayConfig: ReplayConfigSource;
 	clock: () => number;
 	logger: Logger;
+	/** The planner's minutes per day for a course (`PlannerService.shareOf`); none → whole days. */
+	shares?: (courseId: CourseId) => Promise<number[] | null>;
 }
 
 interface Loaded {
@@ -55,6 +55,8 @@ interface Loaded {
 	env: PlanEnv;
 	modes: TodayModes;
 	today: number;
+	/** The planner's minutes per day from today, or `null` when the course isn't planned. */
+	share: number[] | null;
 }
 
 function cramView(plan: CramPlan): CramView {
@@ -97,11 +99,12 @@ export class CoursePlanService {
 
 	/** Everything the course page shows for today. */
 	async today(courseId: CourseId): Promise<CourseToday> {
-		const { data, env, modes, today } = await this.load(courseId);
+		const loaded = await this.load(courseId);
+		const { data, env, modes } = loaded;
 		const { course, cards } = data.material;
 		const counts: CourseToday['counts'] = {};
 		for (const card of cards) counts[card.status] = (counts[card.status] ?? 0) + 1;
-		const review = this.reviewPlan({ data, env, modes, today });
+		const review = this.reviewPlan(loaded);
 		return {
 			course: {
 				id: course.id,
@@ -119,7 +122,7 @@ export class CoursePlanService {
 				minutes: Math.ceil(review.minutes),
 				cram: review.cram ? cramView(review.cram) : null
 			},
-			learn: this.learnPlan({ data, env, modes, today }),
+			learn: this.learnPlan(loaded),
 			splitPrompts: splitPrompts(data, env)
 		};
 	}
@@ -225,25 +228,15 @@ export class CoursePlanService {
 
 	private async load(courseId: CourseId): Promise<Loaded> {
 		const { repos, kv } = this.deps;
-		const material = await loadCourse(repos, courseId);
-		const topics = await repos.topics.listByCourse(courseId);
-		const chunks = (await Promise.all(topics.map((t) => repos.chunks.listByTopic(t.id)))).flat();
 		const events = await this.deps.events.list();
-		const config = await this.deps.replayConfig();
-		const now = this.deps.clock();
-		const env: PlanEnv = {
-			now,
-			tzOffsetMin: config.tzOffsetMin,
-			fsrs: config.fsrs,
-			settings: (await kv.get('settings')) ?? DEFAULT_SETTINGS,
-			availability: (await kv.get('availability')) ?? DEFAULT_AVAILABILITY,
-			calibration: (await kv.get('calibration')) ?? EMPTY_CALIBRATION
-		};
-		const data: CourseData = { material, topics, chunks, events };
-		const today = dayIndex(now, env.tzOffsetMin);
+		const data = await loadCourseData(repos, courseId, events);
+		const env = await loadPlanEnv(kv, this.deps.replayConfig, this.deps.clock());
+		const today = dayIndex(env.now, env.tzOffsetMin);
 		const hasUnread = openUnits(data, env, false).units.length > 0;
-		const modes = todayModes({ today, examDay: examDayOf(material.course), hasUnread }).result;
-		return { data, env, modes, today };
+		const examDay = examDayOf(data.material.course);
+		const modes = todayModes({ today, examDay, hasUnread }).result;
+		const share = (await this.deps.shares?.(courseId)) ?? null;
+		return { data, env, modes, today, share };
 	}
 
 	private reviewPlan(loaded: Loaded) {
@@ -259,7 +252,8 @@ export class CoursePlanService {
 			};
 		}
 		if (modes.review === 'cram' && modes.daysToExam !== null) {
-			const plan = planCram(cramInput(data, env, modes.daysToExam)).result;
+			const share = loaded.share ?? undefined;
+			const plan = planCram(cramInput(data, env, modes.daysToExam, share)).result;
 			return { kind: 'cram' as const, ...cramToday(plan), cram: plan };
 		}
 		const ids = longtermCards({
@@ -305,13 +299,14 @@ export class CoursePlanService {
 	}
 
 	private tonight(loaded: Loaded): number {
-		return dayMinutesFrom(loaded.env.availability, loaded.today, 1)[0] ?? 0;
+		return loaded.share?.[0] ?? dayMinutesFrom(loaded.env.availability, loaded.today, 1)[0] ?? 0;
 	}
 
 	private minutesBeforeExam(loaded: Loaded): number | null {
 		const days = loaded.modes.daysToExam;
 		if (days === null) return null;
-		return dayMinutesFrom(loaded.env.availability, loaded.today, days).reduce((a, b) => a + b, 0);
+		const minutes = loaded.share ?? dayMinutesFrom(loaded.env.availability, loaded.today, days);
+		return minutes.reduce((a, b) => a + b, 0);
 	}
 
 	/** Cards met in one-night mode today, for block 2 once block 1 has emptied the open units. */

@@ -1,6 +1,15 @@
+import { PRIORITY_WEIGHT } from '#lib/config/defaults.ts';
 import type { CourseId, Priority } from '#lib/db/schemas/common.ts';
-import type { Calibration, EstimateCard, Standing } from './estimate.ts';
+import {
+	cardMinutes,
+	withMargin,
+	type Calibration,
+	type EstimateCard,
+	type EstimateContext,
+	type Standing
+} from './estimate.ts';
 import type { FsrsConfig } from './fsrs.ts';
+import { compareText } from './replay.ts';
 import type { Traced } from './trace.ts';
 
 /**
@@ -30,7 +39,7 @@ export interface PlanUnitItem {
 	type: 'unit';
 	/** The unit key. */
 	id: string;
-	/** The unit's learning minutes (`unitCost`, safety margin already applied). */
+	/** The unit's learning minutes, without the safety margin (`courseWork` applies it once). */
 	learnMinutes: number;
 	cards: EstimateCard[];
 	priority: Priority;
@@ -45,6 +54,9 @@ export interface PlanCourse {
 	examDay: number;
 	items: PlanItem[];
 }
+
+/** Absorbs float noise before rounding work up (e.g. 6.000000000001 stays 6). */
+const ROUNDING_EPSILON = 1e-9;
 
 /** The degrade knobs of a course (§6.6 degrade order). */
 export interface PlanKnobs {
@@ -75,6 +87,17 @@ export interface ExamCheck {
 	fits: boolean;
 }
 
+/** The estimate context of an item at the given knobs. */
+function estimateContext(knobs: PlanKnobs, context: PlanEstimateContext): EstimateContext {
+	return {
+		criterion: knobs.criterion,
+		relearnSessions: knobs.relearn,
+		at: context.now,
+		calibration: context.calibration,
+		fsrs: context.fsrs
+	};
+}
+
 /**
  * An item's minutes at the given knobs, safety margin not applied: a card `cardMinutes` for its
  * standing; a unit its `learnMinutes` + its cards as `new`.
@@ -84,10 +107,16 @@ export function itemMinutes(
 	knobs: PlanKnobs,
 	context: PlanEstimateContext
 ): number {
-	void item;
-	void knobs;
-	void context;
-	throw new Error('not implemented');
+	const estimate = estimateContext(knobs, context);
+	switch (item.type) {
+		case 'card':
+			return cardMinutes(item.card, item.standing, estimate);
+		case 'unit':
+			return item.cards.reduce(
+				(sum, card) => sum + cardMinutes(card, 'new', estimate),
+				item.learnMinutes
+			);
+	}
 }
 
 /**
@@ -95,14 +124,18 @@ export function itemMinutes(
  * unit, `PRIORITY_WEIGHT[priority] × retention × its card count` (R_exam = 0).
  */
 export function itemValue(item: PlanItem, retention: number): number {
-	void item;
-	void retention;
-	throw new Error('not implemented');
+	const weight = PRIORITY_WEIGHT[item.priority];
+	switch (item.type) {
+		case 'card':
+			return weight * Math.max(0, retention - item.rExam);
+		case 'unit':
+			return weight * retention * item.cards.length;
+	}
 }
 
 /**
  * A course's work in whole minutes: `ceil(Σ itemMinutes × SAFETY_MARGIN)` over the items not in
- * `cut`.
+ * `cut`. Summed in item-ID order, so the float total doesn't depend on input order.
  */
 export function courseWork(
 	course: PlanCourse,
@@ -110,11 +143,24 @@ export function courseWork(
 	context: PlanEstimateContext,
 	cut: ReadonlySet<string> = new Set()
 ): number {
-	void course;
-	void knobs;
-	void context;
-	void cut;
-	throw new Error('not implemented');
+	const minutes = course.items
+		.filter((item) => !cut.has(item.id))
+		.sort((a, b) => compareText(a.id, b.id))
+		.reduce((sum, item) => sum + itemMinutes(item, knobs, context), 0);
+	// `max(0, …)` also turns ceil(−ε) = −0 into 0.
+	return Math.max(0, Math.ceil(withMargin(minutes) - ROUNDING_EPSILON));
+}
+
+/** Whole available minutes of a day: floored, never negative, missing → 0. */
+export function wholeMinutes(minutes: number | undefined): number {
+	return Math.max(0, Math.floor(minutes ?? 0));
+}
+
+/** Exams in check order: exam day, then course ID. */
+export function examOrder<T extends { courseId: CourseId; examDay: number }>(
+	exams: readonly T[]
+): T[] {
+	return [...exams].sort((a, b) => a.examDay - b.examDay || compareText(a.courseId, b.courseId));
 }
 
 /**
@@ -128,6 +174,25 @@ export function demandCheck(input: {
 	dayMinutes: readonly number[];
 	examMorningMinutes: number;
 }): Traced<ExamCheck[]> {
-	void input;
-	throw new Error('not implemented');
+	let demand = 0;
+	const checks = examOrder(input.exams).map((exam): ExamCheck => {
+		demand += exam.workMinutes;
+		let supply = wholeMinutes(input.examMorningMinutes);
+		for (let day = input.today; day < exam.examDay; day++) {
+			supply += wholeMinutes(input.dayMinutes[day - input.today]);
+		}
+		const shortfall = Math.max(0, demand - supply);
+		return {
+			courseId: exam.courseId,
+			examDay: exam.examDay,
+			demandMinutes: demand,
+			supplyMinutes: supply,
+			shortfallMinutes: shortfall,
+			fits: shortfall === 0
+		};
+	});
+	return {
+		result: checks,
+		trace: checks.map((check) => ({ rule: 'planner.demand', ...check }))
+	};
 }

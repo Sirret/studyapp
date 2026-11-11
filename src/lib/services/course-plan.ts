@@ -148,8 +148,16 @@ export function dayMinutesFrom(availability: Availability, today: number, count:
 	});
 }
 
-/** The cram plan's input for a course whose exam is `daysToExam` study days away. */
-export function cramInput(data: CourseData, env: PlanEnv, daysToExam: number): CramPlanInput {
+/**
+ * The cram plan's input for a course whose exam is `daysToExam` study days away. `dayMinutes`
+ * is the planner's share for this course (Phase 8); without it, the whole day's availability.
+ */
+export function cramInput(
+	data: CourseData,
+	env: PlanEnv,
+	daysToExam: number,
+	dayMinutes?: readonly number[]
+): CramPlanInput {
 	const { course, notes } = data.material;
 	const topics = topicOf(data);
 	const cards: CramCard[] = reviewCards(data, env.now).map((card) => ({
@@ -167,7 +175,7 @@ export function cramInput(data: CourseData, env: PlanEnv, daysToExam: number): C
 		examFormat: course.examFormat,
 		examAt: examAtOf(course, env.tzOffsetMin) ?? env.now,
 		now: env.now,
-		dayMinutes: dayMinutesFrom(env.availability, today, daysToExam),
+		dayMinutes: dayMinutes ?? dayMinutesFrom(env.availability, today, daysToExam),
 		examMorningMinutes: env.availability.examMorningMinutes,
 		sleep: {
 			startMin: minutesOfTime(env.availability.sleepWindow.start),

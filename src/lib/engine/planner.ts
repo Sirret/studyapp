@@ -1,7 +1,8 @@
+import { CRITERION_FIRST, RELEARN_SESSIONS_MAX } from '#lib/config/defaults.ts';
 import type { CourseId } from '#lib/db/schemas/common.ts';
-import type { CourseCuts, PlanCutsInput } from './planner-cuts.ts';
-import type { DaySplit } from './planner-split.ts';
-import type { ExamCheck } from './planner-work.ts';
+import { planCuts, type CourseCuts, type PlanCutsInput } from './planner-cuts.ts';
+import { dailySplit, type DaySplit } from './planner-split.ts';
+import { courseWork, demandCheck, type ExamCheck, type PlanKnobs } from './planner-work.ts';
 import type { Traced } from './trace.ts';
 
 export * from './planner-cuts.ts';
@@ -32,6 +33,49 @@ export interface PlannerResult {
 
 /** Runs `demandCheck` at full work, `planCuts`, then `dailySplit` on the work after cuts. */
 export function planDays(input: PlannerInput): Traced<PlannerResult> {
-	void input;
-	throw new Error('not implemented');
+	const full: PlanKnobs = { criterion: CRITERION_FIRST, relearn: RELEARN_SESSIONS_MAX };
+	const base = {
+		today: input.today,
+		dayMinutes: input.dayMinutes,
+		examMorningMinutes: input.examMorningMinutes
+	};
+	const checked = demandCheck({
+		...base,
+		exams: input.courses.map((course) => ({
+			courseId: course.courseId,
+			examDay: course.examDay,
+			workMinutes: courseWork(course, full, input)
+		}))
+	});
+	const cuts = planCuts(input);
+	const examDays = new Map(input.courses.map((course) => [course.courseId, course.examDay]));
+	const split = dailySplit({
+		today: input.today,
+		dayMinutes: input.dayMinutes,
+		courses: cuts.result.map((cut) => ({
+			courseId: cut.courseId,
+			examDay: examDays.get(cut.courseId) ?? input.today,
+			workMinutes: cut.workMinutes
+		}))
+	});
+	const short = checked.result.find((check) => !check.fits);
+	const result: PlannerResult = {
+		checks: checked.result,
+		feasible: short === undefined,
+		firstShort: short
+			? {
+					courseId: short.courseId,
+					examDay: short.examDay,
+					shortfallMinutes: short.shortfallMinutes
+				}
+			: null,
+		cuts: cuts.result,
+		days: split.result
+	};
+	const summary = {
+		rule: 'planner.plan',
+		feasible: result.feasible,
+		firstShort: result.firstShort
+	};
+	return { result, trace: [...checked.trace, ...cuts.trace, ...split.trace, summary] };
 }

@@ -120,6 +120,8 @@ export const SAFETY_MARGIN = 1.2;
 export const PRIORITY_WEIGHT = { high: 3, normal: 1 } as const;
 export const DAILY_FLOOR_MIN = 10;
 export const BLOCK_MIN = 10;
+/** Days the Plan screen shows from today (more when an exam is further out). @see BUILD_PLAN §6.9 */
+export const PLAN_FORECAST_DAYS = 7;
 export const ONENIGHT_BREAK_MIN = 10;
 
 /** Attempts needed before measured accuracy replaces the default p0. */
