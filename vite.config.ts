@@ -9,6 +9,12 @@ import {
 } from './src/lib/config/defaults.ts';
 
 /**
+ * Sub-path the app is served from: empty locally, `/studyapp` on GitHub Pages (set by
+ * `.github/workflows/pages.yml`). All in-app links go through `resolve()`, so they follow it.
+ */
+const base = (process.env.BASE_PATH ?? '') as '' | `/${string}`;
+
+/**
  * @see BUILD_PLAN §1 (adapter-static SPA) and §8.3 (service worker). Dev-only routes (`/dev/*`) are
  * compiled in for `vite dev` and `vite build --mode test` (e2e), and left out of the deploy build.
  */
@@ -17,12 +23,13 @@ export default defineConfig(({ mode }) => ({
 	plugins: [
 		withPwa(
 			{
-				adapter: adapter({ fallback: 'index.html' })
+				adapter: adapter({ fallback: 'index.html' }),
+				paths: { base }
 			},
 			{
 				// Absolute, so nested routes (e.g. /dev/ui) register /sw.js, not ./sw.js.
-				base: '/',
-				scope: '/',
+				base: `${base}/`,
+				scope: `${base}/`,
 				strategies: 'generateSW',
 				registerType: 'prompt',
 				injectRegister: false,
@@ -31,17 +38,27 @@ export default defineConfig(({ mode }) => ({
 					name: APP_NAME,
 					short_name: APP_SHORT_NAME,
 					description: APP_DESCRIPTION,
-					start_url: '/',
-					scope: '/',
+					start_url: `${base}/`,
+					scope: `${base}/`,
 					display: 'standalone',
 					orientation: 'portrait',
 					background_color: PWA_BACKGROUND_COLOR,
 					theme_color: PWA_BACKGROUND_COLOR,
 					icons: [
-						{ src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-						{ src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
 						{
-							src: '/icons/icon-maskable-512.png',
+							src: `${base}/icons/icon-192.png`,
+							sizes: '192x192',
+							type: 'image/png',
+							purpose: 'any'
+						},
+						{
+							src: `${base}/icons/icon-512.png`,
+							sizes: '512x512',
+							type: 'image/png',
+							purpose: 'any'
+						},
+						{
+							src: `${base}/icons/icon-maskable-512.png`,
 							sizes: '512x512',
 							type: 'image/png',
 							purpose: 'maskable'
