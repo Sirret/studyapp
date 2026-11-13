@@ -3,8 +3,13 @@ import type { Note } from '#lib/db/schemas/note.ts';
 import { assertNever } from '#lib/util/result.ts';
 import { clozeAnswers } from './cardgen.ts';
 
-/** Which answers can stand in for each other as options. @see BUILD_PLAN Decisions log */
-export type AnswerKind = 'term' | 'definition' | 'step';
+/**
+ * Which answers can stand in for each other as options: a comparison-table value (`cell`) is a
+ * property, never a term.
+ *
+ * @see BUILD_PLAN Decisions log (answer kinds)
+ */
+export type AnswerKind = 'term' | 'definition' | 'step' | 'cell';
 
 /** The text a card asks for. @see BUILD_PLAN Decisions log (cardAnswer) */
 export interface CardAnswer {
@@ -70,7 +75,7 @@ function compareAnswer(note: AnswerNoteOf<'compare'>, variant: string): CardAnsw
 	const [r, c] = indexes(variant, 'cell', 2) ?? [];
 	if (r === undefined || c === undefined) return null;
 	const text = note.payload.rows[r]?.values[c];
-	return text === undefined ? null : term(text, `${note.id}/row:${r}`);
+	return text === undefined ? null : { text, kind: 'cell', group: `${note.id}/row:${r}` };
 }
 
 function edgeAnswer(note: AnswerNoteOf<'diagram'>, edgeId: string): CardAnswer | null {

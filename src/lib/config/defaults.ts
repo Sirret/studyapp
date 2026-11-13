@@ -52,6 +52,8 @@ export const ERROR_LAG = 3;
 /** Competitive multiple choice is offered while a card's accuracy is below this. */
 export const MC_UNTIL_ACCURACY = 0.75;
 export const MC_OPTIONS = 4;
+/** Fewest options a multiple choice shows; with fewer, the card moves to its next path step. */
+export const MC_MIN_OPTIONS = 3;
 /** Options in first-letter and occlusion word banks. */
 export const BANK_SIZE = 4;
 
@@ -123,9 +125,15 @@ export const BLOCK_MIN = 10;
 /** Days the Plan screen shows from today (more when an exam is further out). @see BUILD_PLAN §6.9 */
 export const PLAN_FORECAST_DAYS = 7;
 export const ONENIGHT_BREAK_MIN = 10;
+/** One-night always plans at least this block, even past the sleep start (with the sleep reminder). */
+export const ONENIGHT_MIN_BLOCK_MIN = 45;
+/** Longest gap between two answers of a session that counts as study time (today's minutes used). */
+export const IDLE_CAP_SEC = 60;
 
 /** Attempts needed before measured accuracy replaces the default p0. */
 export const CALIBRATION_MIN_ATTEMPTS = 30;
+/** Accuracy of a new card after its first attempt, and of its relearning while it has no FSRS state. */
+export const P_LEARNED = 0.8;
 /** Default first-attempt accuracy for new cards, by material type. */
 export const P0 = {
 	fact: 0.5,

@@ -1,5 +1,6 @@
 import {
 	P0,
+	P_LEARNED,
 	READ_WPM,
 	SAFETY_MARGIN,
 	SEC_PER_ATTEMPT,
@@ -94,8 +95,19 @@ export function recallFor(
 }
 
 /**
- * Attempts a card needs (§6.9): new `k / p0 + K / p_relearn` (p_relearn = p0), at-risk
- * `K / R(at)`, secure `1 / R(at)`. R is floored at `p0` so a near-forgotten card stays finite.
+ * Attempts for a new card to reach `k` corrects in its first session: the first attempt is right
+ * with `p0`, every later one with `P_LEARNED`, so `1 + max(0, k − p0) / P_LEARNED`.
+ *
+ * @see BUILD_PLAN §6.9 and Decisions log (Fix pass: estimator)
+ */
+export function introAttempts(k: number, p0: number): number {
+	return 1 + Math.max(0, k - p0) / P_LEARNED;
+}
+
+/**
+ * Attempts a card needs (§6.9): new `introAttempts(k, p0) + K / P_LEARNED` (relearning at R(t),
+ * which is `P_LEARNED` while the card has no FSRS state), at-risk `K / R(at)`, secure `1 / R(at)`.
+ * R is floored at `p0` so a near-forgotten card stays finite.
  */
 export function cardAttempts(
 	card: EstimateCard,
@@ -105,7 +117,7 @@ export function cardAttempts(
 	const p0 = p0For(card.noteType, context.calibration);
 	switch (standing) {
 		case 'new':
-			return context.criterion / p0 + context.relearnSessions / p0;
+			return introAttempts(context.criterion, p0) + context.relearnSessions / P_LEARNED;
 		case 'at-risk':
 			return (
 				context.relearnSessions / recallFor(card, context.at, context.calibration, context.fsrs)

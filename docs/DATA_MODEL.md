@@ -204,7 +204,8 @@ Common to all events:
 | `id` | `ID` | ✓ | UUID | Unique; merge key |
 | `ts` | `number` | ✓ | epoch ms | When it happened |
 | `deviceId` | `ID` | ✓ | | Recording device |
-| `seq` | `number` | ✓ | per-device, strictly increasing | Ordering tie-break |
+| `seq` | `number` | ✓ | per-device, strictly increasing | Order within the device (see below) |
+| `tzOffsetMin` | `number` | — | integer, −840…840 | Device's minutes east of UTC when logged; replay's study day for this event. Absent on events from before the Fix pass (replay uses the current offset) |
 | `type` | `'review' \| 'pretest' \| 'selfRated' \| 'acceptAdded'` | ✓ | | Discriminant |
 
 `type: 'review'` — every answer in a session:
@@ -254,7 +255,7 @@ Common to all events:
 | `value` | `string` | ✓ | Normalised accepted string |
 | `reviewEventId` | `ID` | — | The review re-judged as correct, if any |
 
-Indexes: `id, ts, cardId, sessionId, type, [cardId+ts]`. **Order for replay:** `(ts, deviceId, seq)`.
+Indexes: `id, ts, cardId, sessionId, type, [cardId+ts]` (unchanged by `tzOffsetMin`, so no Dexie version bump). **Order for replay:** each device's events in `seq` order (a device's clock can jump back; its counter can't), devices interleaved by time: repeatedly take, among each device's next event, the one with the smallest `(ts, deviceId, seq, id)`. Within one device, `seq` ties (never expected) fall back to `ts`, then `id`. With clocks that only move forward this is exactly `(ts, deviceId, seq)`. `sortEvents` in `engine/replay.ts` is the one implementation; `compareEvents` compares two heads (BUILD_PLAN §6.12).
 
 ### 3.7 `sessions` — local
 

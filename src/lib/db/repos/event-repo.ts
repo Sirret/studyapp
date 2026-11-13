@@ -8,6 +8,8 @@ export interface EventRepoDeps {
 	clock: () => number;
 	newId: () => string;
 	device: DeviceRepo;
+	/** The device's minutes east of UTC now, stored on each event; absent → not stored. */
+	tzOffsetMin?: () => number;
 }
 
 /**
@@ -23,7 +25,7 @@ export class EventRepo {
 		private readonly deps: EventRepoDeps
 	) {}
 
-	/** Appends one event, assigning its `id`, `ts`, `deviceId` and `seq`. */
+	/** Appends one event, assigning its `id`, `ts`, `deviceId`, `seq` and `tzOffsetMin`. */
 	async append(fields: NewStudyEvent): Promise<StudyEvent> {
 		const deviceId: DeviceId = await this.deps.device.getDeviceId();
 		return this.db.transaction('rw', this.db.events, this.db.kv, () => this.add(fields, deviceId));
@@ -51,7 +53,8 @@ export class EventRepo {
 			id: this.deps.newId(),
 			ts: this.deps.clock(),
 			deviceId,
-			seq: await this.deps.device.nextSeq()
+			seq: await this.deps.device.nextSeq(),
+			...(this.deps.tzOffsetMin ? { tzOffsetMin: this.deps.tzOffsetMin() } : {})
 		});
 		await this.db.events.add(event);
 		return event;

@@ -98,6 +98,20 @@ describe('pickDistractors: tiers', () => {
 		const definition = entry(2, 'A connectionless protocol', { kind: 'definition' });
 		expect(optionIds(pick(definition, pool))).toEqual(ids(2, 20));
 	});
+
+	it('keeps compare cell values (kind cell) apart from terms, even sharing topic and tags', () => {
+		const tags = ['transport'];
+		const target = entry(1, 'TCP', { tags });
+		const pool = [
+			entry(20, 'yes', { kind: 'cell', tags, group: 'table/row:0' }),
+			entry(21, '20 B', { kind: 'cell', tags, group: 'table/row:1' }),
+			entry(22, '8 B', { kind: 'cell', tags, group: 'table/row:1' }),
+			entry(23, 'UDP', { tags })
+		];
+		expect(optionIds(pick(target, pool))).toEqual(ids(1, 23));
+		const cell = entry(2, 'no', { kind: 'cell', tags, group: 'table/row:0' });
+		expect(optionIds(pick(cell, pool))).toEqual(ids(2, 20, 21, 22));
+	});
 });
 
 /** @see BUILD_PLAN §6.11 (rank by confusion, then similar length, then ID) */

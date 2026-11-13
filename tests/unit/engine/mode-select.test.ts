@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { CRAM_MAX_DAYS, LONGTERM_NEW_PER_DAY } from '#lib/config/defaults.ts';
+import {
+	CRAM_MAX_DAYS,
+	CRITERION_FIRST,
+	LONGTERM_NEW_PER_DAY,
+	NEW_SHARE_MAX
+} from '#lib/config/defaults.ts';
 import type { Card } from '#lib/db/schemas/card.ts';
-import { longtermCards, todayModes } from '#lib/engine/mode-select.ts';
+import { newPerDay } from '#lib/engine/cram-basics.ts';
+import { longtermCards, longtermNewPerDay, todayModes } from '#lib/engine/mode-select.ts';
 import { cardId } from './fixtures.ts';
 
 /** @see BUILD_PLAN §6.7 "Mode choice (`todayModes`)" and long-term sessions; Decisions log (Phase 7: mode choice) */
@@ -165,5 +171,73 @@ describe('longtermCards', () => {
 	it('is deterministic, trace included', () => {
 		const input = { cards: [lt(2), lt(1)], newCandidates: [], now: NOW };
 		expect(longtermCards(input)).toStrictEqual(longtermCards(input));
+	});
+});
+
+describe('longtermCards: new cards per day', () => {
+	const fresh = (count: number) => Array.from({ length: count }, (_, i) => cardId(200 + i));
+	const unseen = (ids: readonly ReturnType<typeof cardId>[]) =>
+		ids.map((id) => ({ id, status: 'unseen' as const, suspended: false, due: undefined }));
+
+	it('takes the newPerDay it is given instead of LONGTERM_NEW_PER_DAY', () => {
+		const ids = fresh(LONGTERM_NEW_PER_DAY + 5);
+		const input = { cards: unseen(ids), newCandidates: ids, now: NOW, newPerDay: 3 };
+		expect(longtermCards(input).result).toStrictEqual(ids.slice(0, 3));
+	});
+
+	it('can take more than LONGTERM_NEW_PER_DAY when the plan says so', () => {
+		const ids = fresh(LONGTERM_NEW_PER_DAY + 5);
+		const input = { cards: unseen(ids), newCandidates: ids, now: NOW, newPerDay: ids.length };
+		expect(longtermCards(input).result).toStrictEqual(ids);
+	});
+});
+
+describe('longtermNewPerDay (SESSION_NOTES A4)', () => {
+	const MEAN_SEC = 10;
+
+	it('is LONGTERM_NEW_PER_DAY with no exam ahead', () => {
+		const input = { nNew: 50, daysToExam: null, shareMinutes: null, meanSecPerAttempt: MEAN_SEC };
+		expect(longtermNewPerDay(input).result).toBe(LONGTERM_NEW_PER_DAY);
+	});
+
+	it('is LONGTERM_NEW_PER_DAY when the planner gives the course no share', () => {
+		const input = { nNew: 50, daysToExam: 20, shareMinutes: null, meanSecPerAttempt: MEAN_SEC };
+		expect(longtermNewPerDay(input).result).toBe(LONGTERM_NEW_PER_DAY);
+	});
+
+	it("with an exam beyond CRAM_MAX_DAYS, follows newPerDay on today's share", () => {
+		const daysToExam = CRAM_MAX_DAYS + 10;
+		const input = { nNew: 120, daysToExam, shareMinutes: 20, meanSecPerAttempt: MEAN_SEC };
+		const expected = newPerDay({
+			nNew: 120,
+			daysToExam,
+			criterion: CRITERION_FIRST,
+			capacityTrials: Math.floor((20 * 60) / MEAN_SEC)
+		});
+		expect(longtermNewPerDay(input).result).toBe(expected);
+	});
+
+	it('spreads the new cards over the days to the exam', () => {
+		const input = { nNew: 34, daysToExam: 18, shareMinutes: 600, meanSecPerAttempt: MEAN_SEC };
+		expect(longtermNewPerDay(input).result).toBe(Math.ceil(34 / 17));
+	});
+
+	it('keeps new trials within NEW_SHARE_MAX of a small share', () => {
+		const input = { nNew: 500, daysToExam: 10, shareMinutes: 2, meanSecPerAttempt: MEAN_SEC };
+		const capacityTrials = Math.floor((2 * 60) / MEAN_SEC);
+		const result = longtermNewPerDay(input).result;
+		expect(result * CRITERION_FIRST).toBeLessThanOrEqual(NEW_SHARE_MAX * capacityTrials);
+	});
+
+	it('is 0 with no share minutes today (a day off)', () => {
+		const input = { nNew: 50, daysToExam: 20, shareMinutes: 0, meanSecPerAttempt: MEAN_SEC };
+		expect(longtermNewPerDay(input).result).toBe(0);
+	});
+
+	it('traces where the number came from', () => {
+		const input = { nNew: 50, daysToExam: 20, shareMinutes: 30, meanSecPerAttempt: MEAN_SEC };
+		expect(longtermNewPerDay(input).trace).toContainEqual(
+			expect.objectContaining({ rule: 'mode.longtermNew', source: 'planner' })
+		);
 	});
 });

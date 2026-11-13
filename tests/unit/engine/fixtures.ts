@@ -243,9 +243,43 @@ export function byId<T extends { id: string }>(records: readonly T[]): T[] {
 	return [...records].sort((a, b) => compareText(a.id, b.id));
 }
 
-/** The `(ts, deviceId, seq)` order, independent of `compareEvents`. Stable sort keeps key ties. */
-export function byEventKey(a: StudyEvent, b: StudyEvent): number {
+type OrderFields = Pick<StudyEvent, 'id' | 'ts' | 'deviceId' | 'seq'>;
+
+/** The `(ts, deviceId, seq)` head key: the old flat order, and the key devices interleave by. */
+export function byHeadKey(a: OrderFields, b: OrderFields): number {
 	return a.ts - b.ts || compareText(a.deviceId, b.deviceId) || a.seq - b.seq;
+}
+
+/**
+ * The replay order of BUILD_PLAN §6.12, written from the spec and independent of `sortEvents`:
+ * each device's events by `seq` (ties: `ts`, then `id`), devices interleaved by repeatedly taking
+ * the head with the smallest `(ts, deviceId, seq, id)`.
+ */
+export function inReplayOrder<T extends OrderFields>(events: readonly T[]): T[] {
+	const streams = new Map<string, T[]>();
+	for (const event of events) {
+		const stream = streams.get(event.deviceId) ?? [];
+		stream.push(event);
+		streams.set(event.deviceId, stream);
+	}
+	const queues = [...streams.values()].map((stream) =>
+		[...stream].sort((a, b) => a.seq - b.seq || a.ts - b.ts || compareText(a.id, b.id))
+	);
+	const out: T[] = [];
+	for (;;) {
+		let best: T[] | undefined;
+		for (const queue of queues) {
+			const head = queue[0];
+			const bestHead = best?.[0];
+			if (!head) continue;
+			if (!bestHead || (byHeadKey(head, bestHead) || compareText(head.id, bestHead.id)) < 0) {
+				best = queue;
+			}
+		}
+		const next = best?.shift();
+		if (!next) return out;
+		out.push(next);
+	}
 }
 
 /** Freezes plain objects and arrays, so a mutating implementation throws. */

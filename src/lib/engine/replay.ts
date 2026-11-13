@@ -31,22 +31,57 @@ export function compareText(a: string, b: string): number {
 }
 
 /**
- * Orders events by `(ts, deviceId, seq)`, the one order replay uses on every device.
+ * Compares two events by `(ts, deviceId, seq)`: how `sortEvents` picks between the next events of
+ * different devices.
  *
- * @see BUILD_PLAN §6.12
+ * @see BUILD_PLAN §6.12 (event order)
  */
 export function compareEvents(a: EventOrderKey, b: EventOrderKey): number {
 	return a.ts - b.ts || compareText(a.deviceId, b.deviceId) || a.seq - b.seq;
 }
 
+type Keyed = EventOrderKey & { id: string };
+
+/** One device's events in `seq` order; `ts`, then `id`, settle seq ties. */
+function deviceStream<T extends Keyed>(events: readonly T[]): T[] {
+	return [...events].sort((a, b) => a.seq - b.seq || a.ts - b.ts || compareText(a.id, b.id));
+}
+
+/** Index of the stream whose next event comes first by `(ts, deviceId, seq, id)`, or -1. */
+function firstHead<T extends Keyed>(streams: readonly T[][], at: readonly number[]): number {
+	let best = -1;
+	streams.forEach((stream, i) => {
+		const head = stream[at[i] ?? 0];
+		const current = best < 0 ? undefined : streams[best]?.[at[best] ?? 0];
+		if (head === undefined) return;
+		if (!current || (compareEvents(head, current) || compareText(head.id, current.id)) < 0)
+			best = i;
+	});
+	return best;
+}
+
 /**
- * Returns the events in replay order, with `id` settling the rare full tie so the order never
- * depends on the input.
+ * The one replay order on every device: each device's events in `seq` order (its clock may jump
+ * back, its counter can't), devices interleaved by repeatedly taking the next event with the
+ * smallest `(ts, deviceId, seq, id)`. Never depends on the input order.
  *
- * @see BUILD_PLAN §6.12
+ * @see BUILD_PLAN §6.12 (event order) and Decisions log (Fix pass: replay order)
  */
-export function sortEvents<T extends EventOrderKey & { id: string }>(events: readonly T[]): T[] {
-	return [...events].sort((a, b) => compareEvents(a, b) || compareText(a.id, b.id));
+export function sortEvents<T extends Keyed>(events: readonly T[]): T[] {
+	const byDevice = new Map<string, T[]>();
+	for (const event of events) {
+		const stream = byDevice.get(event.deviceId);
+		if (stream) stream.push(event);
+		else byDevice.set(event.deviceId, [event]);
+	}
+	const streams = [...byDevice.values()].map(deviceStream);
+	const at = streams.map(() => 0);
+	const out: T[] = [];
+	for (let i = firstHead(streams, at); i >= 0; i = firstHead(streams, at)) {
+		out.push(streams[i]?.[at[i] ?? 0] as T);
+		at[i] = (at[i] ?? 0) + 1;
+	}
+	return out;
 }
 
 /** The card an event belongs to, if any. */

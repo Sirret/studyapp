@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CRITERION_FIRST, P0, RELEARN_SESSIONS_MAX } from '#lib/config/defaults.ts';
+import { CRITERION_FIRST, P0, P_LEARNED, RELEARN_SESSIONS_MAX } from '#lib/config/defaults.ts';
 import type { CardId, ExamFormat } from '#lib/db/schemas/common.ts';
 import {
 	cramOrder,
@@ -9,7 +9,7 @@ import {
 	type CramPlan,
 	type CramPlanInput
 } from '#lib/engine/cram.ts';
-import { withMargin } from '#lib/engine/estimate.ts';
+import { introAttempts, withMargin } from '#lib/engine/estimate.ts';
 import { retrievabilityAt } from '#lib/engine/fsrs.ts';
 import {
 	AT_RISK,
@@ -209,14 +209,17 @@ describe('planCram: minutes', () => {
 		expect(plan(input).sessions[0]!.minutes).toBeCloseTo(withMargin(1 / r), 6);
 	});
 
-	it('costs a new card k / p0 attempts in its intro session', () => {
+	it('costs a new card introAttempts(k, p0) attempts in its intro session', () => {
 		const p = plan(planInput(1, [cramCard(1)]));
 		expect(p.criterion).toBe(CRITERION_FIRST);
-		expect(p.sessions[0]!.minutes).toBeCloseTo(withMargin(CRITERION_FIRST / P0.concept), 6);
+		expect(p.sessions[0]!.minutes).toBeCloseTo(
+			withMargin(introAttempts(CRITERION_FIRST, P0.concept)),
+			6
+		);
 	});
 
-	it('costs a new card 1 / p0 attempts in its later sessions', () => {
+	it('costs a new card 1 / P_LEARNED attempts in its later sessions', () => {
 		const p = plan(planInput(2, [cramCard(1)]));
-		expect(finalPass(p)!.minutes).toBeCloseTo(withMargin(1 / P0.concept), 6);
+		expect(finalPass(p)!.minutes).toBeCloseTo(withMargin(1 / P_LEARNED), 6);
 	});
 });

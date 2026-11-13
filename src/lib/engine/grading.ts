@@ -20,6 +20,8 @@ export interface TypedVerdict {
 	/** Edits to the matched string; null when nothing matched within tolerance. */
 	edits: number | null;
 	chosenFromCardId?: CardId;
+	/** For a fuzzy match: the answer or accepted string it matched, as written, for feedback. */
+	spelledAs?: string;
 }
 
 /** What `gradeTyped` needs. `others` may include the card itself; it is ignored there. */
@@ -124,26 +126,50 @@ function normalizedOthers(cardId: CardId, others: readonly OtherAnswer[]): Other
 		.filter((other) => other.text !== '');
 }
 
-/** The smallest edit count to a target within that target's tolerance, or null. */
-function fuzzyEdits(typed: string, targets: readonly string[]): number | null {
-	let best: number | null = null;
-	for (const target of targets) {
+/** The closest target within its tolerance (first on a tie), with its edit count, or null. */
+function fuzzyMatch(
+	typed: string,
+	targets: readonly string[]
+): { edits: number; index: number } | null {
+	let best: { edits: number; index: number } | null = null;
+	targets.forEach((target, index) => {
 		const edits = osaDistance(typed, target);
 		const fits = edits <= allowedEdits(textLength(target));
-		if (fits && (best === null || edits < best)) best = edits;
+		if (fits && (best === null || edits < best.edits)) best = { edits, index };
+	});
+	return best;
+}
+
+/** The other answer closest to the typed text (first in `others` on a tie), or null. */
+function nearestOther(
+	typed: string,
+	others: readonly OtherAnswer[]
+): { cardId: CardId; edits: number } | null {
+	let best: { cardId: CardId; edits: number } | null = null;
+	for (const other of others) {
+		const edits = osaDistance(typed, other.text);
+		if (best === null || edits < best.edits) best = { cardId: other.cardId, edits };
 	}
 	return best;
 }
 
+/**
+ * Exact, accepted, exact collision, then fuzzy. A fuzzy match is a collision instead when the typed
+ * text is as close or closer to another card's answer than to any of its own.
+ *
+ * @see BUILD_PLAN §6.10 and Decisions log (Fix pass: fuzzy collision guard)
+ */
 function judge(input: TypedInput, normalized: string): TypedVerdict {
 	const answer = normalizeAnswer(input.answer);
 	if (normalized === '') return { correct: false, match: 'none', normalized, edits: null };
 	if (normalized === answer) return { correct: true, match: 'exact', normalized, edits: 0 };
 	const others = normalizedOthers(input.cardId, input.others);
 	const collides = (text: string) => others.some((other) => other.text === text);
-	const accepted = input.accepted
-		.map(normalizeAnswer)
-		.filter((text) => text !== '' && !collides(text));
+	const acceptedRaw = input.accepted.filter((text) => {
+		const norm = normalizeAnswer(text);
+		return norm !== '' && !collides(norm);
+	});
+	const accepted = acceptedRaw.map(normalizeAnswer);
 	if (accepted.includes(normalized)) {
 		return { correct: true, match: 'accepted', normalized, edits: 0 };
 	}
@@ -157,9 +183,21 @@ function judge(input: TypedInput, normalized: string): TypedVerdict {
 			chosenFromCardId: hit.cardId
 		};
 	}
-	const edits = fuzzyEdits(normalized, [answer, ...accepted]);
-	if (edits !== null) return { correct: true, match: 'fuzzy', normalized, edits };
-	return { correct: false, match: 'none', normalized, edits: null };
+	const fuzzy = fuzzyMatch(normalized, [answer, ...accepted]);
+	if (fuzzy === null) return { correct: false, match: 'none', normalized, edits: null };
+	const { edits } = fuzzy;
+	const rival = nearestOther(normalized, others);
+	if (rival && rival.edits <= edits) {
+		return {
+			correct: false,
+			match: 'collision',
+			normalized,
+			edits: null,
+			chosenFromCardId: rival.cardId
+		};
+	}
+	const spelledAs = [input.answer, ...acceptedRaw][fuzzy.index] ?? input.answer;
+	return { correct: true, match: 'fuzzy', normalized, edits, spelledAs };
 }
 
 /**

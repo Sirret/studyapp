@@ -8,7 +8,7 @@ import {
 	type AcqStep,
 	type AcqUnit
 } from '#lib/engine/acquisition.ts';
-import { readMinutes, withMargin } from '#lib/engine/estimate.ts';
+import { introAttempts, readMinutes, withMargin } from '#lib/engine/estimate.ts';
 import { uniformCalibration } from './cram-fixtures.ts';
 import { cardId, chunkId, topicId } from './fixtures.ts';
 
@@ -162,18 +162,19 @@ describe('unitCost', () => {
 	const SEC = 30;
 	const calibration = uniformCalibration(SEC);
 
-	it('costs reading plus ACQ_STEP_REQUIRED / p0 attempts per pretrain and quiz card and one per pretest card, with the margin', () => {
+	it('costs reading plus introAttempts(ACQ_STEP_REQUIRED, p0) attempts per pretrain and quiz card and one per pretest card; minutes with the margin, workMinutes without', () => {
 		const deck = [keyterm(1), fact(2), card(3)];
 		const steps = stepsFor(deck);
 		const pretested = stepOf(steps, 'pretest')!.cardIds.length;
 		const attempts =
-			ACQ_STEP_REQUIRED / P0.fact +
-			ACQ_STEP_REQUIRED / P0.fact +
-			ACQ_STEP_REQUIRED / P0.concept +
+			introAttempts(ACQ_STEP_REQUIRED, P0.fact) +
+			introAttempts(ACQ_STEP_REQUIRED, P0.fact) +
+			introAttempts(ACQ_STEP_REQUIRED, P0.concept) +
 			pretested;
-		const expected = withMargin(readMinutes(300) + (attempts * SEC) / 60);
+		const work = readMinutes(300) + (attempts * SEC) / 60;
 		const cost = unitCost({ steps, cards: deck, words: 300, calibration });
-		expect(cost.minutes).toBeCloseTo(expected, 6);
+		expect(cost.workMinutes).toBeCloseTo(work, 6);
+		expect(cost.minutes).toBeCloseTo(withMargin(work), 6);
 		expect(cost.steps).toBe(steps.length);
 	});
 
@@ -190,12 +191,17 @@ describe('unitCost', () => {
 			words: 450,
 			calibration
 		});
-		expect(cost).toStrictEqual({ minutes: withMargin(readMinutes(450)), steps: 1 });
+		expect(cost).toStrictEqual({
+			minutes: withMargin(readMinutes(450)),
+			workMinutes: readMinutes(450),
+			steps: 1
+		});
 	});
 
 	it('costs nothing for no steps', () => {
 		expect(unitCost({ steps: [], cards: [], words: 0, calibration })).toStrictEqual({
 			minutes: 0,
+			workMinutes: 0,
 			steps: 0
 		});
 	});

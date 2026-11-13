@@ -3,12 +3,14 @@ import {
 	BANK_SIZE,
 	BLURT_TITLE_CHARS,
 	MATCHING_PAIRS,
+	MC_MIN_OPTIONS,
 	MC_OPTIONS,
 	MC_UNTIL_ACCURACY,
 	PARSONS_EXTRAS
 } from '#lib/config/defaults.ts';
 import type { ExerciseKind } from '#lib/db/schemas/common.ts';
 import {
+	buildExercise,
 	exerciseKindFor,
 	promptFor,
 	type ExerciseSpec,
@@ -26,6 +28,7 @@ import {
 	compare,
 	example,
 	fact,
+	inputFor,
 	keyterm,
 	noteOf,
 	scenario,
@@ -487,10 +490,13 @@ describe('buildExercise: mc and pretest', () => {
 		const course = buildCourse([
 			{ content: keyterm('TCP', 'stream'), accept: { fwd: ['Transmission Control'] } },
 			{ content: keyterm('Transmission Control', 'a long name') },
-			{ content: keyterm('UDP', 'datagrams') }
+			{ content: keyterm('UDP', 'datagrams') },
+			// A third valid option, so the MC keeps MC_MIN_OPTIONS without the synonym.
+			{ content: keyterm('ICMP', 'control messages') }
 		]);
 		const spec = asShape(build(course, 1, 'fwd', 'mc').result, 'choose');
-		expect(sorted(texts(spec.options))).toStrictEqual(['TCP', 'UDP']);
+		expect(sorted(texts(spec.options))).toStrictEqual(['ICMP', 'TCP', 'UDP']);
+		expect(texts(spec.options)).not.toContain('Transmission Control');
 	});
 
 	it('mc: passes logged confusions on, so a confused card is offered', () => {
@@ -511,6 +517,39 @@ describe('buildExercise: mc and pretest', () => {
 		const spec = asShape(build(course, 1, 'fwd', 'mc').result, 'type');
 		expect(spec.kind).toBe('cloze');
 		expect(spec.answer).toBe('TCP');
+	});
+
+	it('mc with fewer than MC_MIN_OPTIONS options moves to the next path step (SESSION_NOTES A8)', () => {
+		const two = buildCourse([
+			{ content: keyterm('TCP', 'stream') },
+			{ content: keyterm('UDP', 'datagram') }
+		]);
+		const { result, trace } = build(two, 1, 'fwd', 'mc');
+		const card = cardOf(two, 1, 'fwd');
+		expect(card.path[card.path.indexOf('mc') + 1]).toBe('cloze');
+		expect(result.kind).toBe('cloze');
+		expect(trace[0]).toMatchObject({ rule: 'exercise.fallback', from: 'mc', to: 'cloze' });
+	});
+
+	it('mc follows the card’s own path when its next step is not cloze', () => {
+		const two = buildCourse([
+			{ content: keyterm('TCP', 'stream') },
+			{ content: keyterm('UDP', 'datagram') }
+		]);
+		const card = { ...cardOf(two, 1, 'fwd'), path: ['mc', 'flip'] as ExerciseKind[] };
+		const { result } = buildExercise(inputFor(two, card, 'mc'));
+		expect(result.kind).toBe('flip');
+	});
+
+	it('mc shows with exactly MC_MIN_OPTIONS options', () => {
+		const three = buildCourse([
+			{ content: keyterm('TCP', 'stream') },
+			{ content: keyterm('UDP', 'datagram') },
+			{ content: keyterm('ICMP', 'control messages') }
+		]);
+		const spec = asShape(build(three, 1, 'fwd', 'mc').result, 'choose');
+		expect(spec.kind).toBe('mc');
+		expect(spec.options).toHaveLength(MC_MIN_OPTIONS);
 	});
 
 	it('mc on a card with no text answer ends at flip (cloze falls back to flip)', () => {
@@ -729,8 +768,21 @@ describe('buildExercise: multiSelect', () => {
 			['r0', ['same', 'same']],
 			['r1', ['also', 'also']]
 		];
-		const course = buildCourse([{ content: compare(['A', 'B'], rows) }, ...FILLERS]);
-		expect(build(course, 1, 'cell:0:0', 'multiSelect').result.kind).toBe('mc');
+		// A second table gives the course enough distinct cell values (Decisions log: answer kinds)
+		// for an mc of at least MC_MIN_OPTIONS options (Fix pass A8); note 1's own rows still leave
+		// multiSelect no wrong option.
+		const other: [string, string[]][] = [
+			['s0', ['other', 'extra']],
+			['s1', ['spare', 'more']]
+		];
+		const course = buildCourse([
+			{ content: compare(['A', 'B'], rows) },
+			{ content: compare(['C', 'D'], other) },
+			...FILLERS
+		]);
+		const spec = build(course, 1, 'cell:0:0', 'multiSelect').result;
+		expect(spec.kind).toBe('mc');
+		expect(asShape(spec, 'choose').options.length).toBeGreaterThanOrEqual(MC_MIN_OPTIONS);
 	});
 
 	it('falls back to mc for a card that is not a compare cell', () => {

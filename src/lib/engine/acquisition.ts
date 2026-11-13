@@ -13,7 +13,14 @@ import type {
 	TopicId
 } from '#lib/db/schemas/common.ts';
 import type { NoteType } from '#lib/db/schemas/note.ts';
-import { attemptMinutes, p0For, readMinutes, withMargin, type Calibration } from './estimate.ts';
+import {
+	attemptMinutes,
+	introAttempts,
+	p0For,
+	readMinutes,
+	withMargin,
+	type Calibration
+} from './estimate.ts';
 import { compareText } from './replay.ts';
 import type { Traced } from './trace.ts';
 
@@ -198,7 +205,7 @@ function stepMinutes(step: AcqStep, byId: Map<CardId, AcqCard>, calibration: Cal
 		return card ? attemptMinutes(attempts(card), kind ?? card.kind, calibration) : 0;
 	};
 	const toCriterion = (card: AcqCard): number =>
-		ACQ_STEP_REQUIRED / p0For(card.noteType, calibration);
+		introAttempts(ACQ_STEP_REQUIRED, p0For(card.noteType, calibration));
 	switch (step.step) {
 		case 'pretrain':
 			return step.cardIds.reduce((sum, id) => sum + cost(id, null, toCriterion), 0);
@@ -212,23 +219,25 @@ function stepMinutes(step: AcqStep, byId: Map<CardId, AcqCard>, calibration: Cal
 }
 
 /**
- * A unit's cost before it starts: reading minutes plus `ACQ_STEP_REQUIRED / p0` attempts per
- * pretrain and quiz card and one per pretest card, at each card's seconds per attempt, with the
- * safety margin; and the number of steps.
+ * A unit's cost before it starts: reading minutes plus `introAttempts(ACQ_STEP_REQUIRED, p0)`
+ * attempts per pretrain and quiz card and one per pretest card, at each card's seconds per attempt;
+ * `minutes` carries the safety margin, `workMinutes` doesn't (the planner adds its own once); and
+ * the number of steps.
  */
 export function unitCost(input: {
 	steps: readonly AcqStep[];
 	cards: readonly AcqCard[];
 	words: number;
 	calibration: Calibration;
-}): { minutes: number; steps: number } {
+}): { minutes: number; workMinutes: number; steps: number } {
 	const byId = new Map(input.cards.map((card) => [card.id, card]));
 	const work = input.steps.reduce(
 		(sum, step) => sum + stepMinutes(step, byId, input.calibration),
 		0
 	);
 	const reading = input.steps.some((step) => step.step === 'read') ? readMinutes(input.words) : 0;
-	return { minutes: withMargin(work + reading), steps: input.steps.length };
+	const workMinutes = work + reading;
+	return { minutes: withMargin(workMinutes), workMinutes, steps: input.steps.length };
 }
 
 /** Whether the pretest still shows: fewer than `PRETEST_AUTOHIDE_SKIPS` skips this session. */

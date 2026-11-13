@@ -1,4 +1,4 @@
-import { MATCHING_PAIRS } from '#lib/config/defaults.ts';
+import { MATCHING_PAIRS, MC_MIN_OPTIONS } from '#lib/config/defaults.ts';
 import type { CardId, ExerciseKind } from '#lib/db/schemas/common.ts';
 import { pickDistractors, firstLetterBank } from './distractors.ts';
 import {
@@ -49,11 +49,27 @@ function choiceInput(ctx: BuildContext) {
 	};
 }
 
-/** `mc`, `pretest`, and the sibling-option forms of `whichOne` and `scenario`. */
+/** The card's next path step after the one shown, unless it is `mc` again. */
+function nextPathKind(ctx: BuildContext): ExerciseKind | null {
+	const { path, step } = ctx.input.card;
+	const next = path[step + 1];
+	return next !== undefined && next !== 'mc' ? next : null;
+}
+
+/**
+ * `mc`, `pretest`, and the sibling-option forms of `whichOne` and `scenario`. An `mc` with fewer
+ * than `MC_MIN_OPTIONS` options moves on to the card's next path step (a 2-option choice is a
+ * coin toss).
+ *
+ * @see BUILD_PLAN §5.1 and Decisions log (Fix pass: MC minimum options)
+ */
 export function buildChoice(ctx: BuildContext, kind: ExerciseKind): Built {
 	const noOptions: ExerciseKind = kind === 'pretest' ? 'flip' : kind === 'mc' ? 'cloze' : 'mc';
 	if (!ctx.entry) return fallback(kind === 'pretest' ? 'flip' : noOptions, 'no text answer');
 	const { options, correctIndex } = pickDistractors(choiceInput(ctx)).result;
+	if (kind === 'mc' && options.length < MC_MIN_OPTIONS) {
+		return fallback(nextPathKind(ctx) ?? noOptions, `fewer than ${MC_MIN_OPTIONS} options`);
+	}
 	if (options.length < 2) return fallback(noOptions, 'no distractor');
 	return {
 		...baseOf(ctx, kind),

@@ -151,6 +151,51 @@ describe('gradeTyped: collision guard', () => {
 		).toMatchObject({ correct: true, match: 'fuzzy', edits: 2 });
 	});
 
+	it('rejects a fuzzy match that is as close to another card’s answer (SESSION_NOTES A7)', () => {
+		// "encryptin" is 1 edit from "encryption" and 1 from "encryptian": a tie is no proof.
+		const verdict = grade({
+			typed: 'encryptin',
+			answer: 'Encryption',
+			others: [{ cardId: OTHER, text: 'encryptian' }]
+		});
+		expect(verdict).toMatchObject({ correct: false, match: 'collision', chosenFromCardId: OTHER });
+	});
+
+	it('rejects a fuzzy match that is closer to another card’s answer', () => {
+		// "authenticato" is 2 edits from "authentication" (allowed) but 1 from "authenticator".
+		const verdict = grade({
+			typed: 'authenticato',
+			answer: 'authentication',
+			others: [{ cardId: OTHER, text: 'authenticator' }]
+		});
+		expect(verdict).toMatchObject({ correct: false, match: 'collision', chosenFromCardId: OTHER });
+	});
+
+	it('still accepts a fuzzy match that is strictly closer to its own answer', () => {
+		const verdict = grade({
+			typed: 'encryptoin',
+			answer: 'Encryption',
+			others: [{ cardId: OTHER, text: 'decryption' }]
+		});
+		expect(verdict).toMatchObject({ correct: true, match: 'fuzzy', edits: 1 });
+	});
+
+	it('compares against accepted alternatives too: the closest of the card’s own answers counts', () => {
+		const verdict = grade({
+			typed: 'symetric key',
+			answer: 'secret-key encryption',
+			accepted: ['symmetric key'],
+			others: [{ cardId: OTHER, text: 'asymmetric key' }]
+		});
+		// 1 edit to the accepted "symmetric key", 2 to "asymmetric key".
+		expect(verdict).toMatchObject({
+			correct: true,
+			match: 'fuzzy',
+			edits: 1,
+			spelledAs: 'symmetric key'
+		});
+	});
+
 	it('ignores the card itself when it appears in `others`', () => {
 		const verdict = grade({
 			typed: 'tcp',

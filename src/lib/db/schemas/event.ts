@@ -14,7 +14,9 @@ const EventBaseSchema = z.object({
 	id: EventIdSchema,
 	ts: z.number(),
 	deviceId: DeviceIdSchema,
-	seq: z.number().int().positive()
+	seq: z.number().int().positive(),
+	/** Minutes east of UTC on the device when logged; absent on older events. @see DATA_MODEL §3.6 */
+	tzOffsetMin: z.number().int().min(-840).max(840).optional()
 });
 
 /**
@@ -70,5 +72,8 @@ export type ReviewEvent = Extract<StudyEvent, { type: 'review' }>;
 /** Omit that keeps a union a union. */
 export type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 
-/** What a caller supplies; the repository adds `id`, `ts`, `deviceId` and `seq`. */
-export type NewStudyEvent = DistributiveOmit<StudyEvent, 'id' | 'ts' | 'deviceId' | 'seq'>;
+/** What a caller supplies; the repository adds `id`, `ts`, `deviceId`, `seq` and `tzOffsetMin`. */
+export type NewStudyEvent = DistributiveOmit<
+	StudyEvent,
+	'id' | 'ts' | 'deviceId' | 'seq' | 'tzOffsetMin'
+>;

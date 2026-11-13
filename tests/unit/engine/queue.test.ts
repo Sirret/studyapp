@@ -1,3 +1,4 @@
+import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import {
 	CRITERION_FIRST,
@@ -11,7 +12,7 @@ import type { SessionSnapshot } from '#lib/db/schemas/session.ts';
 import { SessionSnapshotSchema } from '#lib/db/schemas/session.ts';
 import type { QueueAnswer } from '#lib/engine/queue.ts';
 import { applyAnswer, currentItem, lagAfterCorrect, reinsert } from '#lib/engine/queue.ts';
-import { cardId, deepFreeze } from './fixtures.ts';
+import { cardId, deepFreeze, NUM_RUNS } from './fixtures.ts';
 import { at, cardOf, cardRange, makeSnapshot, qa } from './session-fixtures.ts';
 
 const LAST_LAG = at(LAGS, LAGS.length - 1);
@@ -498,5 +499,52 @@ describe('walkthrough: one new card among others, answered to completion', () =>
 		expect(cardOf(s, N)).toMatchObject({ done: true, failed: true, attempt: 5 + CRITERION_FIRST });
 		expect(s.queue).not.toContain(N);
 		expect(() => SessionSnapshotSchema.parse(s)).not.toThrow();
+	});
+});
+
+/**
+ * SESSION_NOTES A9: with fewer than 3 cards left in a round, a card is never shown twice in a row
+ * while another card remains, except as redo-till-right (a wrong answer stays on screen by design).
+ *
+ * @see BUILD_PLAN §6.4
+ */
+describe('no back-to-back repeats in a small round', () => {
+	it('shows another card next whenever one is left, for any answers (2 or 3 cards)', () => {
+		fc.assert(
+			fc.property(
+				fc.integer({ min: 2, max: 3 }),
+				fc.array(fc.boolean(), { minLength: 1, maxLength: 30 }),
+				(size, answers) => {
+					const ids = cardRange(500, size);
+					const cards = Object.fromEntries(ids.map((id) => [id, { required: 3 }]));
+					let state = makeSnapshot(ids, cards);
+					for (const correct of answers) {
+						const shown = state.queue[0];
+						if (shown === undefined) break;
+						state = apply(state, qa(shown, correct));
+						const next = state.queue[0];
+						const redo = state.clearing === shown;
+						const others = new Set(state.queue.filter((id) => id !== shown)).size;
+						if (next === shown && !redo) expect(others).toBe(0);
+					}
+				}
+			),
+			{ numRuns: NUM_RUNS }
+		);
+	});
+
+	it('with two cards, a correct answer always brings the other card next', () => {
+		const [a, b] = cardRange(600, 2) as [CardId, CardId];
+		const state = makeSnapshot([a, b], { [a]: { required: 3 }, [b]: { required: 3 } });
+		expect(apply(state, qa(a, true)).queue[0]).toBe(b);
+	});
+
+	it('after a redo is cleared, the other card comes next', () => {
+		const [a, b] = cardRange(700, 2) as [CardId, CardId];
+		let state = makeSnapshot([a, b], { [a]: { required: 3 }, [b]: { required: 3 } });
+		state = apply(state, qa(a, false));
+		expect(state.queue[0]).toBe(a);
+		state = apply(state, qa(a, true));
+		expect(state.queue[0]).toBe(b);
 	});
 });

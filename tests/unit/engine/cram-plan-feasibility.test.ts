@@ -38,16 +38,22 @@ describe('planCram: feasibility and degrading', () => {
 		expect(p.relearnSessions).toBe(RELEARN_SESSIONS_MAX);
 	});
 
+	// A new card's intro costs introAttempts(k, p0) attempts but CRITERION_FIRST trials against
+	// the NEW_SHARE_MAX cap, so a day of only new cards cannot pass the cap at exactly its own
+	// minutes. One more weak at-risk card puts a review on day 1 (an intro day) so the cap stays
+	// slack at the exact fit and the boundary tested is the day's minutes alone.
+	const boundaryDeck = [...deck, cramCard(10, { fsrs: AT_RISK, weak: true })];
+
 	it('is feasible when every day exactly fits (≤, not <)', () => {
-		const need = perDay(plan(planInput(4, deck)), 4);
-		const p = plan(planInput(4, deck, { dayMinutes: need }));
+		const need = perDay(plan(planInput(4, boundaryDeck)), 4);
+		const p = plan(planInput(4, boundaryDeck, { dayMinutes: need }));
 		expect(p.feasible).toBe(true);
 		expect(p.degradations).toStrictEqual([]);
 	});
 
 	it('degrades the criterion first, 3 → 2, when a day is just short', () => {
-		const need = perDay(plan(planInput(4, deck)), 4).map((m) => m - 0.01);
-		const p = plan(planInput(4, deck, { dayMinutes: need }));
+		const need = perDay(plan(planInput(4, boundaryDeck)), 4).map((m) => m - 0.01);
+		const p = plan(planInput(4, boundaryDeck, { dayMinutes: need }));
 		expect(p.degradations[0]).toBe('criterion');
 		expect(p.criterion).toBe(CRITERION_FIRST_DEGRADED);
 	});

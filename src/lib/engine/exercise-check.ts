@@ -31,6 +31,11 @@ export interface ExerciseVerdict {
 	reveal: string[];
 	/** The normalised typed text, or the chosen option text(s). */
 	chosen?: string;
+	/**
+	 * A typed answer counted as right despite a typo: the spelling it matched (the answer or an
+	 * accepted alternative), which feedback shows.
+	 */
+	typo?: string;
 	/** Another card whose answer the student gave instead (confusion pair). */
 	chosenFromCardId?: CardId;
 	/** "You chose X — that's the answer to Y". */
@@ -56,6 +61,7 @@ function checkTyped(spec: TypeSpec, { typed }: ResponseOf<'type'>): ExerciseVerd
 		reveal: [spec.answer],
 		chosen: result.normalized,
 		marks: [],
+		...(result.match === 'fuzzy' ? { typo: result.spelledAs ?? spec.answer } : {}),
 		...(result.chosenFromCardId ? { chosenFromCardId: result.chosenFromCardId } : {}),
 		...(other && answers ? { contrast: { chosen: other.text, answers } } : {})
 	};

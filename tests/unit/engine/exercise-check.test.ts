@@ -170,6 +170,31 @@ describe('checkResponse: type', () => {
 		expect(check(spec, { shape: 'type', typed: 'Transmision Control' }).correct).toBe(true);
 	});
 
+	it('gives a typo-accepted answer the spelling it matched, for feedback (SESSION_NOTES B)', () => {
+		const spec: TypeSpec = { ...TYPE, answer: 'Transmission Control', accepted: [] };
+		const verdict = check(spec, { shape: 'type', typed: 'Transmision Control' });
+		expect(verdict.typo).toBe('Transmission Control');
+		expect(verdict.reveal).toStrictEqual(['Transmission Control']);
+	});
+
+	it('spells out the accepted alternative when the typo was closest to it', () => {
+		const spec: TypeSpec = {
+			...TYPE,
+			answer: 'TCP',
+			accepted: ['Transmission Control Protocol']
+		};
+		const verdict = check(spec, { shape: 'type', typed: 'Transmision Control Protocol' });
+		expect(verdict.correct).toBe(true);
+		expect(verdict.typo).toBe('Transmission Control Protocol');
+	});
+
+	it('does not flag an exact or accepted answer as a typo', () => {
+		expect(check(TYPE, { shape: 'type', typed: 'tcp' }).typo).toBeUndefined();
+		expect(
+			check(TYPE, { shape: 'type', typed: 'transmission control protocol' }).typo
+		).toBeUndefined();
+	});
+
 	// SPEC-GAP: a type spec has one part, so "marks" has nothing to list; read as empty when wrong.
 	it('is wrong for another string; reveal still shows the answer', () => {
 		const verdict = check(TYPE, { shape: 'type', typed: 'SCTP' });

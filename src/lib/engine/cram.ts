@@ -1,7 +1,7 @@
 import {
 	CRITERION_FIRST,
 	CRITERION_FIRST_DEGRADED,
-	PRIORITY_WEIGHT,
+	P_LEARNED,
 	RELEARN_SESSIONS_MAX,
 	RETENTION
 } from '#lib/config/defaults.ts';
@@ -19,8 +19,16 @@ import {
 	type CramSession,
 	type Degradation
 } from './cram-basics.ts';
-import { attemptMinutes, p0For, secondsPerAttempt, withMargin, type Standing } from './estimate.ts';
+import {
+	attemptMinutes,
+	introAttempts,
+	p0For,
+	secondsPerAttempt,
+	withMargin,
+	type Standing
+} from './estimate.ts';
 import { compareText } from './replay.ts';
+import { valuePerMinute } from './value.ts';
 import type { Traced, TraceEntry } from './trace.ts';
 
 export * from './cram-basics.ts';
@@ -112,7 +120,8 @@ function repeatDays(ctx: Context, card: CramCard, start: number, relearn: number
 function cardMinutesOn(ctx: Context, card: CramCard, isIntro: boolean, criterion: number): number {
 	const { calibration, fsrs, now } = ctx.input;
 	if (ctx.standing.get(card.id) !== 'new') return reviewMinutes(card, now, calibration, fsrs);
-	const attempts = (isIntro ? criterion : 1) / p0For(card.noteType, calibration);
+	const p0 = p0For(card.noteType, calibration);
+	const attempts = isIntro ? introAttempts(criterion, p0) : 1 / P_LEARNED;
 	return attemptMinutes(attempts, card.kind, calibration);
 }
 
@@ -222,8 +231,11 @@ function shortfallOf(input: CramPlanInput, sessions: readonly CramSession[]): nu
 function deferOrder(ctx: Context, criterion: number): CardId[] {
 	const fresh = ctx.input.cards.filter((card) => ctx.standing.get(card.id) === 'new');
 	const ratio = (card: CramCard): number =>
-		(PRIORITY_WEIGHT[card.priority] * RETENTION) /
-		Math.max(cardMinutesOn(ctx, card, true, criterion), Number.MIN_VALUE);
+		valuePerMinute(
+			{ priority: card.priority, rExam: 0 },
+			RETENTION,
+			cardMinutesOn(ctx, card, true, criterion)
+		);
 	return fresh
 		.sort((a, b) => ratio(a) - ratio(b) || compareText(a.id, b.id))
 		.map((card) => card.id);

@@ -16,8 +16,12 @@ import { AT_RISK, SECURE } from './cram-fixtures.ts';
 import { cardId, courseId, NUM_RUNS } from './fixtures.ts';
 import {
 	course,
+	CRITERION_KNOBS,
 	cutsInput,
 	FULL_KNOBS,
+	K1_KNOBS,
+	K2_KNOBS,
+	newClozeWork,
 	newItem,
 	PLAN_CTX,
 	reorder,
@@ -27,8 +31,9 @@ import {
 } from './planner-fixtures.ts';
 
 /**
- * With one minute per attempt, a new cloze card's work (× SAFETY_MARGIN, ceil) is 18 at full
- * knobs, 15 at criterion 2, 12 at K = 2 and 9 at K = 1.
+ * With one minute per attempt, a new cloze card's work (`newClozeWork`: introAttempts(k, p0) +
+ * K / P_LEARNED, × SAFETY_MARGIN, ceil) is 10 at full knobs, 9 at criterion 2, 7 at K = 2 and 6 at
+ * K = 1.
  *
  * @see BUILD_PLAN §6.9 ("Cuts", "The planner, concretely" → Cuts), §6.6 Feasibility degrade order
  */
@@ -85,39 +90,43 @@ describe('planCuts: degrade order criterion → relearning → cut', () => {
 	const one = [course(1, 1, [newItem(1)])];
 
 	it('first lowers the criterion to CRITERION_FIRST_DEGRADED and stops once it fits', () => {
-		const [c] = planCuts(cutsInput(one, [15])).result;
+		// 9 minutes: full work (10) does not fit, criterion 2 (9) does.
+		const [c] = planCuts(cutsInput(one, [newClozeWork(CRITERION_KNOBS)])).result;
 		expect(c).toEqual({
 			courseId: courseId(1),
 			knobs: { criterion: CRITERION_FIRST_DEGRADED, relearn: RELEARN_SESSIONS_MAX },
 			degradations: ['criterion'],
 			cutIds: [],
-			workMinutes: 15
+			workMinutes: newClozeWork(CRITERION_KNOBS)
 		});
 	});
 
 	it('counts the exam morning in the supply', () => {
-		const [c] = planCuts(cutsInput(one, [10], { examMorningMinutes: 5 })).result;
+		// The day alone (5) is short even for criterion 2 (9); with the morning's 4 it fits.
+		const morning = 4;
+		const day = newClozeWork(CRITERION_KNOBS) - morning;
+		const [c] = planCuts(cutsInput(one, [day], { examMorningMinutes: morning })).result;
 		expect(c!.degradations).toEqual(['criterion']);
-		expect(c!.workMinutes).toBe(15);
+		expect(c!.workMinutes).toBe(newClozeWork(CRITERION_KNOBS));
 	});
 
 	it('then lowers K by one at a time, stopping as soon as it fits', () => {
-		const [c] = planCuts(cutsInput(one, [12])).result;
+		const [c] = planCuts(cutsInput(one, [newClozeWork(K2_KNOBS)])).result;
 		expect(c!.knobs).toEqual({ criterion: CRITERION_FIRST_DEGRADED, relearn: 2 });
 		expect(c!.degradations).toEqual(['criterion', 'relearning']);
 		expect(c!.cutIds).toEqual([]);
-		expect(c!.workMinutes).toBe(12);
+		expect(c!.workMinutes).toBe(newClozeWork(K2_KNOBS));
 	});
 
 	it('lowers K down to 1 and lists relearning only once', () => {
-		const [c] = planCuts(cutsInput(one, [9])).result;
+		const [c] = planCuts(cutsInput(one, [newClozeWork(K1_KNOBS)])).result;
 		expect(c!.knobs).toEqual({ criterion: CRITERION_FIRST_DEGRADED, relearn: 1 });
 		expect(c!.degradations).toEqual(['criterion', 'relearning']);
-		expect(c!.workMinutes).toBe(9);
+		expect(c!.workMinutes).toBe(newClozeWork(K1_KNOBS));
 	});
 
 	it('cuts items only after K reaches 1', () => {
-		const [c] = planCuts(cutsInput(one, [5])).result;
+		const [c] = planCuts(cutsInput(one, [newClozeWork(K1_KNOBS) - 1])).result;
 		expect(c).toEqual({
 			courseId: courseId(1),
 			knobs: { criterion: CRITERION_FIRST_DEGRADED, relearn: 1 },
@@ -135,20 +144,24 @@ describe('planCuts: degrade order criterion → relearning → cut', () => {
 });
 
 describe('planCuts: which items go', () => {
-	// Four new cards at K = 1: 4 × 7.5 = 30 minutes → work 36; each card removed saves 9.
+	// Four new cards at K = 1: work for n of them is newClozeWork(K1_KNOBS, n): 21, 16, 11, 6.
 	const four = () => [
 		course(1, 1, [newItem(1, 'high'), newItem(2), newItem(3), newItem(4, 'high')])
 	];
+	const keep = (n: number) => newClozeWork(K1_KNOBS, n);
 
 	it('removes only as many items as the exam needs to fit', () => {
-		expect(planCuts(cutsInput(four(), [27])).result[0]!.cutIds).toHaveLength(1);
-		expect(planCuts(cutsInput(four(), [26])).result[0]!.cutIds).toHaveLength(2);
+		expect(planCuts(cutsInput(four(), [keep(3)])).result[0]!.cutIds).toHaveLength(1);
+		expect(planCuts(cutsInput(four(), [keep(3) - 1])).result[0]!.cutIds).toHaveLength(2);
 	});
 
 	it('removes the lowest value per minute first, ties by item ID', () => {
-		expect(planCuts(cutsInput(four(), [27])).result[0]!.cutIds).toEqual([cardId(2)]);
-		expect(planCuts(cutsInput(four(), [18])).result[0]!.cutIds).toEqual([cardId(2), cardId(3)]);
-		expect(planCuts(cutsInput(four(), [9])).result[0]!.cutIds).toEqual([
+		expect(planCuts(cutsInput(four(), [keep(3)])).result[0]!.cutIds).toEqual([cardId(2)]);
+		expect(planCuts(cutsInput(four(), [keep(2)])).result[0]!.cutIds).toEqual([
+			cardId(2),
+			cardId(3)
+		]);
+		expect(planCuts(cutsInput(four(), [keep(1)])).result[0]!.cutIds).toEqual([
 			cardId(2),
 			cardId(3),
 			cardId(1)
@@ -156,22 +169,22 @@ describe('planCuts: which items go', () => {
 	});
 
 	it('ranks by value ÷ minutes, not by value alone', () => {
-		// The unit is worth more (high, 1 card) but costs 100 + 7.5 minutes; the card 7.5.
+		// The unit is worth more (high, 1 card) but costs 100 + 4.25 minutes at K = 1; the card 4.25.
 		const courses = [course(1, 1, [unitItem(unitKey(1), 100, 1, 'high'), newItem(2)])];
 		const [c] = planCuts(cutsInput(courses, [120])).result;
 		expect(c!.cutIds).toEqual([unitKey(1)]);
-		expect(c!.workMinutes).toBe(9);
+		expect(c!.workMinutes).toBe(newClozeWork(K1_KNOBS));
 	});
 
 	it('removes a secure card (value 0) before anything with value', () => {
 		const courses = [course(1, 1, [newItem(1), reviewedItem(2, SECURE, 'secure', 0.99)])];
-		const [c] = planCuts(cutsInput(courses, [9])).result;
+		const [c] = planCuts(cutsInput(courses, [newClozeWork(K1_KNOBS)])).result;
 		expect(c!.cutIds).toEqual([cardId(2)]);
 	});
 
 	it('breaks ratio ties across courses by course ID before item ID', () => {
 		const courses = [course(2, 1, [newItem(1)]), course(1, 1, [newItem(2)])];
-		const cuts = byCourse(planCuts(cutsInput(courses, [9])).result);
+		const cuts = byCourse(planCuts(cutsInput(courses, [newClozeWork(K1_KNOBS)])).result);
 		expect(cuts.get(courseId(1))!.cutIds).toEqual([cardId(2)]);
 		expect(cuts.get(courseId(2))!.cutIds).toEqual([]);
 		expect(cuts.get(courseId(2))!.degradations).toEqual(['criterion', 'relearning']);
@@ -181,21 +194,25 @@ describe('planCuts: which items go', () => {
 describe('planCuts: which courses are touched', () => {
 	it('leaves courses whose exam is after the failing exam alone', () => {
 		const courses = [course(1, 1, [newItem(1)]), course(2, 4, [newItem(2)])];
-		const cuts = byCourse(planCuts(cutsInput(courses, [15, 100, 100, 100])).result);
+		const days = [newClozeWork(CRITERION_KNOBS), 100, 100, 100];
+		const cuts = byCourse(planCuts(cutsInput(courses, days)).result);
 		expect(cuts.get(courseId(1))!.degradations).toEqual(['criterion']);
 		expect(cuts.get(courseId(2))).toEqual({
 			courseId: courseId(2),
 			knobs: FULL_KNOBS,
 			degradations: [],
 			cutIds: [],
-			workMinutes: 18
+			workMinutes: newClozeWork(FULL_KNOBS)
 		});
 	});
 
 	it('a later failing exam degrades every course with an exam on or before its day', () => {
-		// A alone fits (18 ≤ 20); A + B = 54 > 50 → both to criterion 2: 15 + 30 = 45.
+		// A alone fits (10 ≤ 10); A + B = 10 + 20 = 30 > 26. Degrading B alone gives 10 + 17 = 27,
+		// still > 26, so both go to criterion 2: 9 + 17 = 26.
 		const courses = [course(1, 1, [newItem(1)]), course(2, 2, [newItem(2), newItem(3)])];
-		const cuts = byCourse(planCuts(cutsInput(courses, [20, 30])).result);
+		const bothDegraded = newClozeWork(CRITERION_KNOBS) + newClozeWork(CRITERION_KNOBS, 2);
+		const day0 = newClozeWork(FULL_KNOBS);
+		const cuts = byCourse(planCuts(cutsInput(courses, [day0, bothDegraded - day0])).result);
 		for (const id of [courseId(1), courseId(2)]) {
 			expect(cuts.get(id)!.knobs).toEqual({
 				criterion: CRITERION_FIRST_DEGRADED,
@@ -203,18 +220,20 @@ describe('planCuts: which courses are touched', () => {
 			});
 			expect(cuts.get(id)!.degradations).toEqual(['criterion']);
 		}
-		expect(cuts.get(courseId(2))!.workMinutes).toBe(30);
+		expect(cuts.get(courseId(2))!.workMinutes).toBe(newClozeWork(CRITERION_KNOBS, 2));
 	});
 
 	it('lists each step once per course, in first-applied order, across several failing exams', () => {
-		// Exam 1: A 18 > 15 → criterion (15). Exam 2: 15 + 18 > 25 → B criterion (30 > 25)
-		// → K = 2 for both (12 + 12 = 24 ≤ 25).
+		// Exam 1: A 10 > 9 → criterion (9). Exam 2: 9 + 10 > 15 → B criterion (9 + 9 = 18 > 15)
+		// → K = 2 for both (7 + 7 = 14 ≤ 15).
 		const courses = [course(1, 1, [newItem(1)]), course(2, 2, [newItem(2)])];
-		const cuts = byCourse(planCuts(cutsInput(courses, [15, 10])).result);
+		const day0 = newClozeWork(CRITERION_KNOBS);
+		const total = 2 * newClozeWork(K2_KNOBS) + 1;
+		const cuts = byCourse(planCuts(cutsInput(courses, [day0, total - day0])).result);
 		for (const id of [courseId(1), courseId(2)]) {
 			expect(cuts.get(id)!.knobs).toEqual({ criterion: CRITERION_FIRST_DEGRADED, relearn: 2 });
 			expect(cuts.get(id)!.degradations).toEqual(['criterion', 'relearning']);
-			expect(cuts.get(id)!.workMinutes).toBe(12);
+			expect(cuts.get(id)!.workMinutes).toBe(newClozeWork(K2_KNOBS));
 		}
 	});
 });

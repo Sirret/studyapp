@@ -13,7 +13,7 @@ import {
 	arbReordered,
 	arbThreeSides,
 	arbTwoSides,
-	byEventKey,
+	byHeadKey,
 	byId,
 	CARD_POOL,
 	cardId,
@@ -23,6 +23,7 @@ import {
 	DEVICE_A,
 	DEVICE_B,
 	eventId,
+	inReplayOrder,
 	makeAcceptAdded,
 	makeCard,
 	makeChunk,
@@ -86,7 +87,7 @@ describe('fixtures', () => {
 			)
 		);
 		const tiedKeys = samples.some(([a]) =>
-			a.events.some((x) => a.events.some((y) => x.id !== y.id && byEventKey(x, y) === 0))
+			a.events.some((x) => a.events.some((y) => x.id !== y.id && byHeadKey(x, y) === 0))
 		);
 		expect(tiedContent).toBe(true);
 		expect(tiedKeys).toBe(true);
@@ -232,15 +233,18 @@ describe('merge: content is last-write-wins', () => {
 });
 
 describe('merge: events are the union by id', () => {
+	// DEVICE_B's clock ran back: its seq 1 (`third`) carries a later ts than its seq 2 (`first`).
 	const first = makeReview({ id: eventId(1), ts: T1, deviceId: DEVICE_B, seq: 2 });
 	const second = makeReview({ id: eventId(2), ts: T2, deviceId: DEVICE_A, seq: 10 });
 	const third = makeReview({ id: eventId(3), ts: T2, deviceId: DEVICE_B, seq: 1 });
 	const fourth = makeReview({ id: eventId(4), ts: T2, deviceId: DEVICE_B, seq: 9 });
+	const fifth = makeReview({ id: eventId(5), ts: T2, deviceId: DEVICE_B, seq: 10 });
 
 	it('keeps a shared event once, and those held by one side', () => {
 		const a = makeData({ events: [first, second] });
 		const b = makeData({ events: [second, third] });
-		expect(merge(a, b).result.data.events).toStrictEqual([first, second, third]);
+		// Heads: A `second` (T2) and B `third` (T2, seq 1); A wins the deviceId tie, then B by seq.
+		expect(merge(a, b).result.data.events).toStrictEqual([second, third, first]);
 	});
 
 	it('removes a duplicate id held twice on one side', () => {
@@ -248,11 +252,21 @@ describe('merge: events are the union by id', () => {
 		expect(merge(a, makeData()).result.data.events).toStrictEqual([first]);
 	});
 
-	it('sorts by (ts, deviceId, seq), with seq compared as a number', () => {
-		const a = makeData({ events: [fourth, first] });
+	it('sorts each device by seq (as a number) and interleaves devices by (ts, deviceId, seq)', () => {
+		const a = makeData({ events: [fourth, fifth, first] });
 		const b = makeData({ events: [third, second] });
 		const events = merge(a, b).result.data.events;
-		expect(events).toStrictEqual([first, second, third, fourth]);
+		expect(events).toStrictEqual([second, third, first, fourth, fifth]);
+	});
+
+	it('sorts by (ts, deviceId, seq) when each device clock only moves forward', () => {
+		const b1 = makeReview({ id: eventId(11), ts: T1, deviceId: DEVICE_B, seq: 9 });
+		const a1 = makeReview({ id: eventId(12), ts: T2, deviceId: DEVICE_A, seq: 10 });
+		const b2 = makeReview({ id: eventId(13), ts: T2, deviceId: DEVICE_B, seq: 10 });
+		const a2 = makeReview({ id: eventId(14), ts: T2 + 1, deviceId: DEVICE_A, seq: 11 });
+		const a = makeData({ events: [a2, b2] });
+		const b = makeData({ events: [a1, b1] });
+		expect(merge(a, b).result.data.events).toStrictEqual([b1, a1, b2, a2]);
 	});
 
 	// SPEC-GAP: two different events with the same `id` break the append-only rule. Which one survives?
@@ -407,7 +421,7 @@ describe('merge: properties', () => {
 					expect(data[key]).toStrictEqual(byId<ContentRecord>(a[key]));
 				}
 				expect(byId(data.events)).toStrictEqual(byId(a.events));
-				expect(data.events).toStrictEqual([...data.events].sort(byEventKey));
+				expect(data.events).toStrictEqual(inReplayOrder(data.events));
 				expect(merge(data, data).result.data).toStrictEqual(data);
 			}),
 			RUNS
@@ -447,13 +461,13 @@ describe('merge: properties', () => {
 		);
 	});
 
-	it('holds the union of events, in (ts, deviceId, seq) order', () => {
+	it('holds the union of events, in replay order (each device by seq, devices interleaved by ts)', () => {
 		fc.assert(
 			fc.property(arbTwoSides, ([a, b]) => {
 				const { events } = merge(a, b).result.data;
 				const union = new Map([...a.events, ...b.events].map((event) => [event.id, event]));
 				expect(byId(events)).toStrictEqual(byId([...union.values()]));
-				expect(events).toStrictEqual([...events].sort(byEventKey));
+				expect(events).toStrictEqual(inReplayOrder(events));
 			}),
 			RUNS
 		);

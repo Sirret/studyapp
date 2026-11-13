@@ -1,6 +1,7 @@
-import { CRAM_MAX_DAYS, LONGTERM_NEW_PER_DAY } from '#lib/config/defaults.ts';
+import { CRAM_MAX_DAYS, CRITERION_FIRST, LONGTERM_NEW_PER_DAY } from '#lib/config/defaults.ts';
 import type { Card } from '#lib/db/schemas/card.ts';
 import type { CardId, Mode } from '#lib/db/schemas/common.ts';
+import { newPerDay } from './cram-basics.ts';
 import { compareText } from './replay.ts';
 import type { Traced } from './trace.ts';
 
@@ -39,13 +40,15 @@ export function todayModes(input: {
 
 /**
  * A long-term session: due cards (`due ≤ now`, status not `unseen`), earliest due first, ties by
- * ID; then up to `LONGTERM_NEW_PER_DAY` unseen cards from `newCandidates`, in the order given.
+ * ID; then up to `newPerDay` (default `LONGTERM_NEW_PER_DAY`, see `longtermNewPerDay`) unseen cards
+ * from `newCandidates`, in the order given.
  * Suspended cards never.
  */
 export function longtermCards(input: {
 	cards: readonly Pick<Card, 'id' | 'due' | 'status' | 'suspended'>[];
 	newCandidates: readonly CardId[];
 	now: number;
+	newPerDay?: number;
 }): Traced<CardId[]> {
 	const live = input.cards.filter((card) => !card.suspended);
 	const due = live
@@ -53,9 +56,48 @@ export function longtermCards(input: {
 		.sort((a, b) => (a.due ?? 0) - (b.due ?? 0) || compareText(a.id, b.id))
 		.map((card) => card.id);
 	const unseen = new Set(live.filter((card) => card.status === 'unseen').map((card) => card.id));
-	const fresh = input.newCandidates.filter((id) => unseen.has(id)).slice(0, LONGTERM_NEW_PER_DAY);
+	const fresh = input.newCandidates
+		.filter((id) => unseen.has(id))
+		.slice(0, input.newPerDay ?? LONGTERM_NEW_PER_DAY);
 	return {
 		result: [...due, ...fresh],
 		trace: [{ rule: 'mode.longterm', due: due.length, new: fresh.length }]
+	};
+}
+
+/**
+ * New cards a long-term session takes today. With no exam ahead (or no planner share) it is
+ * `LONGTERM_NEW_PER_DAY`. With an exam further than `CRAM_MAX_DAYS` away, the planner's share for
+ * today sets it, exactly as cram does: `newPerDay` on the share's trial capacity, so the new cards
+ * spread to the exam and stay within `NEW_SHARE_MAX` of the time.
+ *
+ * @see BUILD_PLAN §6.6 (new per day) and Decisions log (Fix pass: planner-set new/day)
+ */
+export function longtermNewPerDay(input: {
+	nNew: number;
+	daysToExam: number | null;
+	/** Today's planner share in minutes, or `null` when the course has none. */
+	shareMinutes: number | null;
+	meanSecPerAttempt: number;
+}): Traced<number> {
+	if (input.daysToExam === null || input.shareMinutes === null) {
+		return {
+			result: LONGTERM_NEW_PER_DAY,
+			trace: [{ rule: 'mode.longtermNew', source: 'default', newPerDay: LONGTERM_NEW_PER_DAY }]
+		};
+	}
+	const perMinute = 60;
+	const capacityTrials = Math.floor(
+		(input.shareMinutes * perMinute) / Math.max(input.meanSecPerAttempt, 1)
+	);
+	const result = newPerDay({
+		nNew: input.nNew,
+		daysToExam: input.daysToExam,
+		criterion: CRITERION_FIRST,
+		capacityTrials
+	});
+	return {
+		result,
+		trace: [{ rule: 'mode.longtermNew', source: 'planner', capacityTrials, newPerDay: result }]
 	};
 }

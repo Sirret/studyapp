@@ -39,6 +39,8 @@ interface CardFold {
 	lastSession: LastSession | null;
 	/** When the card's latest acquisition-mode review happened, for the handoff `due`. */
 	lastAcquisitionAt: number | null;
+	/** The offset the last acquisition review was logged in, for its next study day. */
+	lastAcquisitionTz: number | null;
 	trace: TraceEntry[];
 }
 
@@ -57,6 +59,7 @@ function emptyFold(): CardFold {
 		modes: new Map(),
 		lastSession: null,
 		lastAcquisitionAt: null,
+		lastAcquisitionTz: null,
 		trace: []
 	};
 }
@@ -66,6 +69,16 @@ export interface ReplayCardInput {
 	path: readonly ExerciseKind[];
 	fsrs: FsrsConfig;
 	tzOffsetMin: number;
+}
+
+/**
+ * The offset an event's study day is counted in: its own `tzOffsetMin`, or the replay config's for
+ * events logged before the field existed.
+ *
+ * @see BUILD_PLAN §6.12 (event time zone)
+ */
+export function eventTz(event: { tzOffsetMin?: number | undefined }, fallback: number): number {
+	return event.tzOffsetMin ?? fallback;
 }
 
 /** Whether a long-term correct survived a genuine spaced interval since the previous review. */
@@ -88,7 +101,7 @@ function applyFsrs(fold: CardFold, event: ReviewEvent, input: ReplayCardInput): 
 	if (MASSED_MODES.has(event.mode) && event.correct) {
 		next = capStability(next, Math.max(previous?.stability ?? 0, FRAGILE_CAP_DAYS));
 		fold.fragile ||= next.stability <= FRAGILE_CAP_DAYS;
-	} else if (survivedSpacedGap(previous, event, input.tzOffsetMin)) {
+	} else if (survivedSpacedGap(previous, event, eventTz(event, input.tzOffsetMin))) {
 		fold.fragile = false;
 	}
 	fold.fsrs = next;
@@ -115,7 +128,7 @@ function foldCounting(
 		applyFsrs(fold, event, input);
 	}
 	fold.tally = tallyDay(fold.tally, {
-		day: dayIndex(event.ts, input.tzOffsetMin),
+		day: dayIndex(event.ts, eventTz(event, input.tzOffsetMin)),
 		correct: event.correct
 	});
 	fold.counted = true;
@@ -126,7 +139,10 @@ function foldCounting(
 
 function foldReview(fold: CardFold, event: ReviewEvent, input: ReplayCardInput): void {
 	fold.reviewed = true;
-	if (event.mode === 'acquisition') fold.lastAcquisitionAt = event.ts;
+	if (event.mode === 'acquisition') {
+		fold.lastAcquisitionAt = event.ts;
+		fold.lastAcquisitionTz = eventTz(event, input.tzOffsetMin);
+	}
 	if (event.firstAttempt && event.weight !== 'none') {
 		const { n, correct } = fold.accuracy;
 		fold.accuracy = { n: n + 1, correct: correct + (event.correct ? 1 : 0) };
@@ -155,7 +171,8 @@ function foldEvent(fold: CardFold, event: StudyEvent, input: ReplayCardInput): v
 function dueOf(fold: CardFold, tzOffsetMin: number): number | undefined {
 	if (fold.fsrs) return fold.fsrs.due;
 	if (fold.lastAcquisitionAt === null) return undefined;
-	return startOfStudyDay(dayIndex(fold.lastAcquisitionAt, tzOffsetMin) + 1, tzOffsetMin);
+	const tz = fold.lastAcquisitionTz ?? tzOffsetMin;
+	return startOfStudyDay(dayIndex(fold.lastAcquisitionAt, tz) + 1, tz);
 }
 
 function cachesOf(fold: CardFold, tzOffsetMin: number): Traced<CardCaches> {

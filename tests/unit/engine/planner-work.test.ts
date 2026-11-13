@@ -3,12 +3,13 @@ import {
 	CRITERION_FIRST,
 	CRITERION_FIRST_DEGRADED,
 	P0,
+	P_LEARNED,
 	PRIORITY_WEIGHT,
 	RELEARN_SESSIONS_MAX,
 	RETENTION,
 	SAFETY_MARGIN
 } from '#lib/config/defaults.ts';
-import { cardMinutes, type Standing } from '#lib/engine/estimate.ts';
+import { cardMinutes, introAttempts, type Standing } from '#lib/engine/estimate.ts';
 import {
 	courseWork,
 	demandCheck,
@@ -62,8 +63,8 @@ describe('itemMinutes', () => {
 		});
 	}
 
-	it('a new cloze card at full knobs costs k / p0 + K / p0 attempts of one minute', () => {
-		const expected = CRITERION_FIRST / P0.concept + RELEARN_SESSIONS_MAX / P0.concept;
+	it('a new cloze card at full knobs costs introAttempts(k, p0) + K / P_LEARNED attempts of one minute', () => {
+		const expected = introAttempts(CRITERION_FIRST, P0.concept) + RELEARN_SESSIONS_MAX / P_LEARNED;
 		expect(itemMinutes(newItem(1), FULL_KNOBS, PLAN_CTX)).toBeCloseTo(expected, 9);
 	});
 
@@ -143,9 +144,12 @@ describe('courseWork', () => {
 	});
 
 	it('a whole-number total stays exact (no extra minute)', () => {
-		// one new cloze card at full knobs: 15 minutes × 1.2 = 18
-		const minutes = itemMinutes(newItem(1), FULL_KNOBS, PLAN_CTX);
-		expect(courseWork(course(1, 3, [newItem(1)]), FULL_KNOBS, PLAN_CTX)).toBe(
+		// five new cloze cards at full knobs: 5 × (introAttempts(3, 0.4) + 3 / 0.8) = 5 × 8 = 40
+		// minutes × 1.2 = 48 (one card alone, 9.6, is fractional)
+		const items = [1, 2, 3, 4, 5].map((n) => newItem(n));
+		const minutes = items.reduce((sum, item) => sum + itemMinutes(item, FULL_KNOBS, PLAN_CTX), 0);
+		expect(Number.isInteger(minutes * SAFETY_MARGIN)).toBe(true);
+		expect(courseWork(course(1, 3, items), FULL_KNOBS, PLAN_CTX)).toBe(
 			Math.round(minutes * SAFETY_MARGIN)
 		);
 	});

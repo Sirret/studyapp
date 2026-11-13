@@ -3,6 +3,7 @@ import {
 	CRITERION_FIRST,
 	CRITERION_FIRST_DEGRADED,
 	P0,
+	P_LEARNED,
 	READ_WPM,
 	RELEARN_SESSIONS_MAX,
 	SAFETY_MARGIN,
@@ -15,6 +16,7 @@ import {
 	cardAttempts,
 	cardMinutes,
 	EMPTY_CALIBRATION,
+	introAttempts,
 	materialOf,
 	p0For,
 	readMinutes,
@@ -119,21 +121,48 @@ describe('p0For', () => {
 	});
 });
 
+describe('introAttempts', () => {
+	it('is the first attempt at p0, then the rest of the k corrects at P_LEARNED', () => {
+		expect(introAttempts(3, 0.5)).toBeCloseTo(1 + 2.5 / P_LEARNED, 9);
+	});
+
+	it('is the expected attempts to a first correct when k = 1', () => {
+		// First try right with p0; otherwise each later try is right with P_LEARNED.
+		const p0 = 0.4;
+		const geometric = 1 + (1 - p0) / P_LEARNED;
+		expect(introAttempts(1, p0)).toBeCloseTo(geometric, 9);
+	});
+
+	it('is one attempt when the first attempt alone is expected to meet k', () => {
+		expect(introAttempts(1, 1)).toBe(1);
+	});
+
+	it('is never below one attempt and grows with k', () => {
+		expect(introAttempts(0, 0.5)).toBe(1);
+		expect(introAttempts(3, 0.5)).toBeGreaterThan(introAttempts(2, 0.5));
+	});
+
+	it('costs fewer attempts than k / p0 when P_LEARNED > p0', () => {
+		expect(introAttempts(3, 0.5)).toBeLessThan(3 / 0.5);
+	});
+});
+
 describe('cardAttempts', () => {
-	it('gives a new card k / p0 + K / p_relearn attempts, with p_relearn = p0', () => {
-		const expected = CRITERION_FIRST / P0.fact + RELEARN_SESSIONS_MAX / P0.fact;
+	it('gives a new card its intro attempts plus K / P_LEARNED relearning attempts', () => {
+		const expected = 1 + (CRITERION_FIRST - P0.fact) / P_LEARNED + RELEARN_SESSIONS_MAX / P_LEARNED;
 		expect(cardAttempts(card(), 'new', context())).toBeCloseTo(expected, 9);
 	});
 
 	it('uses the degraded criterion k when the context says so', () => {
 		const ctx = context({ criterion: CRITERION_FIRST_DEGRADED });
-		const expected = CRITERION_FIRST_DEGRADED / P0.fact + RELEARN_SESSIONS_MAX / P0.fact;
+		const expected =
+			1 + (CRITERION_FIRST_DEGRADED - P0.fact) / P_LEARNED + RELEARN_SESSIONS_MAX / P_LEARNED;
 		expect(cardAttempts(card(), 'new', ctx)).toBeCloseTo(expected, 9);
 	});
 
-	it('uses the calibrated p0 for both terms of a new card', () => {
+	it('uses the calibrated p0 for the first attempt of a new card', () => {
 		const ctx = context({ calibration: { ...EMPTY_CALIBRATION, p0: { procedure: 0.6 } } });
-		const expected = CRITERION_FIRST / 0.6 + RELEARN_SESSIONS_MAX / 0.6;
+		const expected = 1 + (CRITERION_FIRST - 0.6) / P_LEARNED + RELEARN_SESSIONS_MAX / P_LEARNED;
 		expect(cardAttempts(card({ noteType: 'example' }), 'new', ctx)).toBeCloseTo(expected, 9);
 	});
 

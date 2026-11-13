@@ -1,7 +1,15 @@
-import { CRITERION_FIRST, RELEARN_SESSIONS_MAX, RETENTION } from '#lib/config/defaults.ts';
+import {
+	CRITERION_FIRST,
+	CRITERION_FIRST_DEGRADED,
+	P0,
+	P_LEARNED,
+	RELEARN_SESSIONS_MAX,
+	RETENTION,
+	SAFETY_MARGIN
+} from '#lib/config/defaults.ts';
 import type { Priority } from '#lib/db/schemas/common.ts';
 import type { FsrsCardState } from '#lib/db/schemas/card.ts';
-import type { EstimateCard, EstimateContext } from '#lib/engine/estimate.ts';
+import { introAttempts, type EstimateCard, type EstimateContext } from '#lib/engine/estimate.ts';
 import { DEFAULT_FSRS_CONFIG } from '#lib/engine/fsrs.ts';
 import type { PlanCutsInput } from '#lib/engine/planner-cuts.ts';
 import type {
@@ -18,13 +26,33 @@ import { cardId, courseId, uuid } from './fixtures.ts';
 /**
  * Shared builders for the planner unit tests and the planner-week simulation.
  * With `MINUTE_PER_ATTEMPT`, one attempt is one minute, so a new `cloze` card (p0 = P0.concept)
- * costs k / p0 + K / p0 minutes.
+ * costs introAttempts(k, p0) + K / P_LEARNED minutes (`newClozeWork` adds the margin and ceil).
  *
  * @see BUILD_PLAN §6.9 ("The planner, concretely")
  */
 
 /** Full knobs: nothing degraded. */
 export const FULL_KNOBS: PlanKnobs = { criterion: CRITERION_FIRST, relearn: RELEARN_SESSIONS_MAX };
+
+/** Criterion lowered, K still RELEARN_SESSIONS_MAX: the first degrade step. */
+export const CRITERION_KNOBS: PlanKnobs = {
+	criterion: CRITERION_FIRST_DEGRADED,
+	relearn: RELEARN_SESSIONS_MAX
+};
+/** Criterion lowered and K = 2. */
+export const K2_KNOBS: PlanKnobs = { criterion: CRITERION_FIRST_DEGRADED, relearn: 2 };
+/** Criterion lowered and K = 1: the last step before cuts. */
+export const K1_KNOBS: PlanKnobs = { criterion: CRITERION_FIRST_DEGRADED, relearn: 1 };
+
+/**
+ * A course's work (§6.9: ceil of Σ minutes × SAFETY_MARGIN) for `count` new cloze cards at one
+ * minute per attempt: introAttempts(k, P0.concept) + K / P_LEARNED attempts each. With the
+ * defaults one card is 10 at full knobs, 9 at criterion 2, 7 at K = 2 and 6 at K = 1.
+ */
+export function newClozeWork(knobs: PlanKnobs, count: number = 1): number {
+	const attempts = introAttempts(knobs.criterion, P0.concept) + knobs.relearn / P_LEARNED;
+	return Math.ceil(count * attempts * SAFETY_MARGIN);
+}
 
 /** The planner's estimate context: planned at NOW, one minute per attempt. */
 export const PLAN_CTX: PlanEstimateContext = {

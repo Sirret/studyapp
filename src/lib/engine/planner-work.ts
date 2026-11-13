@@ -1,4 +1,3 @@
-import { PRIORITY_WEIGHT } from '#lib/config/defaults.ts';
 import type { CourseId, Priority } from '#lib/db/schemas/common.ts';
 import {
 	cardMinutes,
@@ -11,6 +10,7 @@ import {
 import type { FsrsConfig } from './fsrs.ts';
 import { compareText } from './replay.ts';
 import type { Traced } from './trace.ts';
+import { valueOf } from './value.ts';
 
 /**
  * The planner's work and feasibility: what each piece of work costs and is worth, the work per
@@ -120,16 +120,15 @@ export function itemMinutes(
 }
 
 /**
- * An item's value: `PRIORITY_WEIGHT[priority] × max(0, retention − R_exam)` for a card; for a
- * unit, `PRIORITY_WEIGHT[priority] × retention × its card count` (R_exam = 0).
+ * An item's value through the shared `valueOf`: a card at its `R_exam`; a unit as its card count
+ * of new cards (R_exam = 0).
  */
 export function itemValue(item: PlanItem, retention: number): number {
-	const weight = PRIORITY_WEIGHT[item.priority];
 	switch (item.type) {
 		case 'card':
-			return weight * Math.max(0, retention - item.rExam);
+			return valueOf({ priority: item.priority, rExam: item.rExam }, retention);
 		case 'unit':
-			return weight * retention * item.cards.length;
+			return valueOf({ priority: item.priority, rExam: 0, cards: item.cards.length }, retention);
 	}
 }
 
