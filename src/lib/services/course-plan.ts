@@ -6,7 +6,8 @@ import type { ReviewEvent, StudyEvent } from '#lib/db/schemas/event.ts';
 import type { Availability, Settings } from '#lib/db/schemas/kv.ts';
 import type { AcqCard, AcqUnit } from '#lib/engine/acquisition.ts';
 import type { CramCard, CramPlanInput } from '#lib/engine/cram.ts';
-import type { Calibration } from '#lib/engine/estimate.ts';
+import { secondsPerAttempt, type Calibration } from '#lib/engine/estimate.ts';
+import { longtermNewPerDay } from '#lib/engine/mode-select.ts';
 import { currentKind } from '#lib/engine/exercise-kinds.ts';
 import type { FsrsConfig } from '#lib/engine/fsrs.ts';
 import {
@@ -126,6 +127,29 @@ export function readNewCandidates(data: CourseData): CardId[] {
 	return liveCards(data)
 		.filter((card) => card.status === 'unseen' && topics.get(card.noteId)?.placement === 'read')
 		.map((card) => card.id);
+}
+
+/**
+ * How many new cards today's long-term session takes: the planner's share sets it when the exam is
+ * further than cram range (`longtermNewPerDay`), else `LONGTERM_NEW_PER_DAY`.
+ */
+export function longtermNewToday(
+	data: CourseData,
+	env: PlanEnv,
+	daysToExam: number | null,
+	share: readonly number[] | null
+): number {
+	const ids = new Set(readNewCandidates(data));
+	const fresh = liveCards(data).filter((card) => ids.has(card.id));
+	const seconds = fresh.map((card) =>
+		secondsPerAttempt(currentKind(card.path, card.pathStep, card.accuracy), env.calibration)
+	);
+	return longtermNewPerDay({
+		nNew: fresh.length,
+		daysToExam,
+		shareMinutes: share?.[0] ?? null,
+		meanSecPerAttempt: seconds.reduce((a, b) => a + b, 0) / Math.max(1, seconds.length)
+	}).result;
 }
 
 /** When the exam starts, or `null` with no date. */

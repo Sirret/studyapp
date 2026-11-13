@@ -21,6 +21,7 @@ import {
 	dayMinutesFrom,
 	examDayOf,
 	morningCheckCards,
+	longtermNewToday,
 	readNewCandidates,
 	reviewCards,
 	type CourseData,
@@ -259,7 +260,8 @@ export class CoursePlanService {
 		const ids = longtermCards({
 			cards: reviewCards(data, env.now),
 			newCandidates: readNewCandidates(data),
-			now: env.now
+			now: env.now,
+			newPerDay: longtermNewToday(data, env, modes.daysToExam, loaded.share)
 		}).result;
 		return { kind: 'longterm' as const, cards: ids.map((id) => ({ id })), minutes: 0, cram: null };
 	}

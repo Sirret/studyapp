@@ -1,4 +1,3 @@
-import { SAFETY_MARGIN } from '#lib/config/defaults.ts';
 import type { ChunkRepo, CourseRepo, TopicRepo } from '#lib/db/repos/content-repos.ts';
 import type { KvRepo } from '#lib/db/repos/kv-repo.ts';
 import type { CourseId } from '#lib/db/schemas/common.ts';
@@ -8,7 +7,8 @@ import { triage } from '#lib/engine/cram.ts';
 import { EMPTY_CALIBRATION } from '#lib/engine/estimate.ts';
 import { retrievabilityAt } from '#lib/engine/fsrs.ts';
 import type { PlanCourse, PlanItem } from '#lib/engine/planner.ts';
-import { dayIndex, MS_PER_MINUTE } from '#lib/engine/time.ts';
+import { studyMinutesOn } from '#lib/engine/study-time.ts';
+import { dayIndex } from '#lib/engine/time.ts';
 import { openUnits, pathFor, unitView } from './course-learn.ts';
 import {
 	cramInput,
@@ -65,15 +65,9 @@ export async function loadCourseData(
 	return { material, topics, chunks, events };
 }
 
-/** Minutes of study logged today: Σ `responseMs` of today's answers. */
+/** Minutes studied today: session wall time with idle gaps capped (`studyMinutesOn`). */
 export function studiedMinutes(events: readonly StudyEvent[], env: PlanEnv): number {
-	const today = dayIndex(env.now, env.tzOffsetMin);
-	let ms = 0;
-	for (const event of events) {
-		if (!('responseMs' in event) || dayIndex(event.ts, env.tzOffsetMin) !== today) continue;
-		ms += event.responseMs;
-	}
-	return ms / MS_PER_MINUTE;
+	return studyMinutesOn(events, dayIndex(env.now, env.tzOffsetMin), env.tzOffsetMin).result;
 }
 
 /** Review cards: standing from cram triage, recall at the exam with no further review. */
@@ -101,10 +95,9 @@ function unitItems(data: CourseData, env: PlanEnv, today: number, examDay: numbe
 	return open.units.map((unit) => ({
 		type: 'unit',
 		id: unit.key,
-		// `unitView` includes the safety margin; `courseWork` applies it, so take it out here.
-		learnMinutes:
-			unitView(data, env, { unit, all: open.units, cards: open.cards, path }).minutes /
-			SAFETY_MARGIN,
+		// Without the margin: `courseWork` applies `SAFETY_MARGIN` once to the whole course.
+		learnMinutes: unitView(data, env, { unit, all: open.units, cards: open.cards, path })
+			.workMinutes,
 		cards: unit.cardIds.flatMap((id) => {
 			const card = byId.get(id);
 			return card ? [{ kind: card.kind, noteType: card.noteType, fsrs: null }] : [];

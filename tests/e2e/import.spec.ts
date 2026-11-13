@@ -105,7 +105,7 @@ test.describe('import screen', () => {
 		// Problems are one plain line each, with the details folded away (Decisions log: import preview).
 		await page.getByText("1 part couldn't be read").click();
 		await expect(page.getByRole('button', { name: /^Line 8: Expected/ })).toBeVisible();
-		await expect(page.getByText('1 key terms · 1 facts · 1 fill-in sentences')).toBeVisible();
+		await expect(page.getByText('1 key term · 1 fact · 1 fill-in sentence')).toBeVisible();
 		await page.getByText("1 card the chatbot wasn't sure about").click();
 		await expect(page.getByText('TCP :: reliable', { exact: true })).toBeVisible();
 		await page.getByText('Details', { exact: true }).click();
@@ -148,6 +148,27 @@ test.describe('import screen', () => {
 		expect(await readTable(page, 'cards')).toHaveLength(4);
 	});
 
+	test('after adding, offers Start studying and Import more (SESSION_NOTES B)', async ({
+		page
+	}) => {
+		await openWithCourse(page);
+		await pasteArea(page).fill(SAMPLE);
+		await page.getByRole('button', { name: 'Check' }).click();
+		await page.getByRole('button', { name: 'Add to course' }).click();
+		await expect(page.getByRole('status')).toBeVisible();
+
+		await page.getByRole('button', { name: 'Import more' }).click();
+		await expect(page.getByRole('status')).toHaveCount(0);
+		await expect(pasteArea(page)).toBeFocused();
+		await expect(page.getByRole('link', { name: 'Start studying' })).toHaveCount(0);
+
+		await pasteArea(page).fill('@deck Networking\n@scenario\nvideo call :: UDP');
+		await page.getByRole('button', { name: 'Check' }).click();
+		await page.getByRole('button', { name: 'Add to course' }).click();
+		await page.getByRole('link', { name: 'Start studying' }).click();
+		await expect(page).toHaveURL(/\/course\/[0-9a-f-]+$/);
+	});
+
 	test('the course survives a reload, and a later import adds to its topic', async ({ page }) => {
 		await openWithCourse(page);
 		await pasteArea(page).fill('@deck Networking');
@@ -161,7 +182,7 @@ test.describe('import screen', () => {
 		await page.getByRole('button', { name: 'Check' }).click();
 		await expect(page.getByText('Adds to this topic · 1 card')).toBeVisible();
 		await page.getByRole('button', { name: 'Add to course' }).click();
-		await expect(page.getByRole('status')).toContainText('Added 1 notes');
+		await expect(page.getByRole('status')).toContainText('Added 1 note and');
 		expect(await readTable(page, 'topics')).toHaveLength(1);
 	});
 
@@ -210,7 +231,7 @@ test.describe('import images', () => {
 		await pasteArea(page).fill('@deck A\n@occlusion pasted-1.png');
 		await page.getByRole('button', { name: 'Check' }).click();
 		await page.getByRole('button', { name: 'Add to course' }).click();
-		await expect(page.getByRole('status')).toContainText('Added 1 notes');
+		await expect(page.getByRole('status')).toContainText('Added 1 note and');
 	});
 
 	test('offers the camera for a photo', async ({ page }) => {
@@ -256,7 +277,7 @@ test.describe('import images', () => {
 		await expect(page.getByText('Attached: slide.png')).toBeVisible();
 		await page.getByRole('button', { name: 'Check' }).click();
 		await page.getByRole('button', { name: 'Add to course' }).click();
-		await expect(page.getByRole('status')).toContainText('Added 1 notes');
+		await expect(page.getByRole('status')).toContainText('Added 1 note and');
 		expect(await readTable(page, 'media')).toHaveLength(1);
 	});
 
@@ -285,7 +306,7 @@ test.describe('import offline', () => {
 		await pasteArea(page).fill('@deck A\n@scenario\na :: b');
 		await page.getByRole('button', { name: 'Check' }).click();
 		await page.getByRole('button', { name: 'Add to course' }).click();
-		await expect(page.getByRole('status')).toContainText('Added 1 notes');
+		await expect(page.getByRole('status')).toContainText('Added 1 note and');
 		await context.setOffline(false);
 	});
 });

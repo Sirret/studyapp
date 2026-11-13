@@ -119,6 +119,11 @@
 				{#snippet actions()}<Button full>Try again</Button>{/snippet}
 			</FeedbackPanel>
 		</div>
+		<div class="wide">
+			<FeedbackPanel correct={true} typo="Encryption" reveal={['Encryption']}>
+				{#snippet actions()}<Button full>Continue</Button>{/snippet}
+			</FeedbackPanel>
+		</div>
 	</GuideRow>
 	<GuideRow label="Import preview (sample: one skipped part, one unsure card, cut-off warning)">
 		<div class="wide">

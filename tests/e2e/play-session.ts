@@ -75,9 +75,14 @@ export async function playOpenSession(page: Page): Promise<Set<string>> {
 	const summary = page.locator('[data-session-summary]');
 	const round = page.locator('[data-round-summary]');
 	const interstitial = page.locator('[data-interstitial]');
+	// A step inside a Learn unit has no summary: the session goes straight back to the unit.
+	const backInUnit = page
+		.locator('[data-step-heading]')
+		.or(page.getByRole('link', { name: 'Back to the course' }));
 	for (let step = 0; step < MAX_STEPS; step += 1) {
-		await expect(check.or(summary).or(round).or(interstitial).first()).toBeVisible();
+		await expect(check.or(summary).or(round).or(interstitial).or(backInUnit).first()).toBeVisible();
 		if (await summary.isVisible()) return seen;
+		if (await backInUnit.first().isVisible()) return seen;
 		const before = await stepOf(page);
 		if (await round.isVisible()) {
 			await round.getByRole('button', { name: 'Continue' }).click();

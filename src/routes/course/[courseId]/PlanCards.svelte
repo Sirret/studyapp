@@ -7,6 +7,7 @@
 	import Stack from '#lib/ui/layout/Stack.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Card from '#lib/ui/primitives/Card.svelte';
+	import { countOf } from '#lib/util/plural.ts';
 
 	/** Today's review and learning for a course, each with its cost and a start button. @see BUILD_PLAN §6.6–§6.8 */
 	let {
@@ -49,8 +50,10 @@
 	<Stack gap="md">
 		<h2>{reviewTitle}</h2>
 		<p>
-			{#if today.review.cards === 0}Nothing to review right now.{:else}{today.review.cards} cards{today
-					.review.minutes > 0
+			{#if today.review.cards === 0}
+				Nothing to review right now. Cards come here once you've learnt a part or marked a topic as
+				read.
+			{:else}{countOf(today.review.cards, 'card')}{today.review.minutes > 0
 					? ` · ~${today.review.minutes} min`
 					: ''}{/if}
 		</p>
@@ -76,13 +79,11 @@
 				</ul>
 			</Disclosure>
 		{/if}
-		<Button
-			full
-			disabled={today.review.cards === 0}
-			loading={starting === 'review'}
-			onclick={onreview}
-			data-start-review>Start review</Button
-		>
+		{#if today.review.cards > 0}
+			<Button full loading={starting === 'review'} onclick={onreview} data-start-review
+				>Start review</Button
+			>
+		{/if}
 	</Stack>
 </Card>
 
@@ -137,13 +138,15 @@
 					>
 				</Row>
 			{/each}
-			<Button
-				full
-				disabled={night.block2Cards === 0}
-				loading={starting === 'block2'}
-				onclick={onblocktwo}
-				data-block-two>Re-quiz everything from tonight ({night.block2Cards} cards)</Button
-			>
+			{#if night.block2Cards > 0}
+				<Button full loading={starting === 'block2'} onclick={onblocktwo} data-block-two
+					>Re-quiz everything from tonight ({countOf(night.block2Cards, 'card')})</Button
+				>
+			{:else}
+				<p data-block-two-waiting>
+					The re-quiz of everything from tonight opens once you've learnt a part.
+				</p>
+			{/if}
 		</Stack>
 	</Card>
 {/if}

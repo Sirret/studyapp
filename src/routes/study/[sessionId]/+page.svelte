@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { STREAK_FOR_FLURRY } from '#lib/config/defaults.ts';
@@ -148,6 +149,27 @@
 			: `Added "${typed}", but it's another card's answer, so this one stays wrong.`;
 	}
 
+	/**
+	 * Inside a Learn unit there is no ceremony (SESSION_NOTES B): a round that ends carries straight
+	 * on, and the end of the step goes straight back to the unit.
+	 */
+	let leaving = false;
+	$effect(() => {
+		if (!data.inUnit || !view || !service) return;
+		const current = view;
+		// `untrack`: `act` reads and writes `busy`, which must not re-run this effect.
+		untrack(() => {
+			if (current.ended && !leaving) {
+				leaving = true;
+				void leave();
+			} else if (current.round && !current.ended) {
+				void act(() =>
+					(service as Service).continueRound(current.sessionId, { afterBreak: false })
+				);
+			}
+		});
+	});
+
 	async function act(change: () => Promise<StudyView>): Promise<void> {
 		if (busy) return;
 		busy = true;
@@ -186,7 +208,11 @@
 		{#snippet top()}
 			{#if view && !view.ended}<SessionTop {view} {yuki} {companion} />{/if}
 		{/snippet}
-		{#if view.ended && view.summary}
+		{#if data.inUnit && (view.ended || view.round)}
+			<EmptyState message="Back to the part…" companion={false}>
+				{#snippet action()}<PawLoader />{/snippet}
+			</EmptyState>
+		{:else if view.ended && view.summary}
 			<SessionSummary
 				practised={view.summary.practised}
 				ready={view.summary.ready}
@@ -238,6 +264,7 @@
 								correct={answer.verdict.correct}
 								reveal={answer.verdict.reveal}
 								contrast={answer.verdict.contrast}
+								typo={answer.verdict.typo}
 								note={accepted ?? undefined}
 							>
 								{#snippet actions()}

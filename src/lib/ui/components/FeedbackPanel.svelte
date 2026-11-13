@@ -1,7 +1,8 @@
 <!--
 	Feedback panel (DESIGN §5): slides up under the card after every answer, right or wrong
-	(feedback always shows the answer). Correct: ✓ and the answer. Wrong: ✕, the right answer and,
-	when the pick was another card's answer, the contrastive line. Actions come from the caller.
+	(feedback always shows the answer). Correct: ✓ and the answer; when a typo was let through,
+	a line asking to check the spelling. Wrong: ✕, the right answer and, when the pick was another
+	card's answer, the contrastive line. Actions come from the caller.
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
@@ -10,12 +11,15 @@
 		correct,
 		reveal,
 		contrast,
+		typo,
 		note,
 		actions
 	}: {
 		correct: boolean | null;
 		reveal: string[];
 		contrast?: { chosen: string; answers: string };
+		/** Counted as right despite a typo: the spelling it matched, shown with a note. */
+		typo?: string;
 		note?: string;
 		actions: Snippet;
 	} = $props();
@@ -39,6 +43,11 @@
 	{#if contrast}
 		<p class="contrast">
 			You chose <em>{contrast.chosen}</em> — that's the answer to <em>{contrast.answers}</em>.
+		</p>
+	{/if}
+	{#if typo && correct === true}
+		<p class="contrast" data-typo>
+			Counted as right, with a small typo. It's spelled <em>{typo}</em>.
 		</p>
 	{/if}
 	<div class="reveal">

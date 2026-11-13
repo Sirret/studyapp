@@ -40,10 +40,29 @@ export function openUnits(
 	return { units, cards };
 }
 
-/** A unit's title: its topic, and the part number when the topic has several units. */
+/** The unit's section name: the first `@tag` among its cards' notes, in card order, or null. */
+export function unitSection(data: CourseData, unit: AcqUnit): string | null {
+	const { cards, notes } = data.material;
+	const byId = new Map(cards.map((card) => [card.id, card]));
+	for (const id of unit.cardIds) {
+		const card = byId.get(id);
+		const tag = card ? notes.get(card.noteId)?.tags[0] : undefined;
+		if (tag !== undefined && tag.trim() !== '') return tag;
+	}
+	return null;
+}
+
+/**
+ * A unit's title: its topic; when the topic has several units, the section's `@tag` name, else
+ * the part number.
+ *
+ * @see Decisions log (Fix pass: section names from @tag)
+ */
 export function unitTitle(data: CourseData, unit: AcqUnit, all: readonly AcqUnit[]): string {
 	const topic = data.topics.find((candidate) => candidate.id === unit.topicId)?.name ?? 'Topic';
 	const siblings = all.filter((other) => other.topicId === unit.topicId);
+	const section = unitSection(data, unit);
+	if (section !== null && section !== topic) return `${topic} · ${section}`;
 	if (siblings.length < 2) return topic;
 	return `${topic} · part ${siblings.indexOf(unit) + 1}`;
 }
@@ -74,7 +93,9 @@ export function unitView(
 	return {
 		key: input.unit.key,
 		title: unitTitle(data, input.unit, input.all),
+		section: unitSection(data, input.unit),
 		minutes: Math.ceil(cost.minutes),
+		workMinutes: cost.workMinutes,
 		steps: cost.steps,
 		cards: input.unit.cardIds.length
 	};

@@ -8,6 +8,7 @@
 	import type { Placement } from '#lib/db/schemas/common.ts';
 	import type { NoteType } from '#lib/db/schemas/note.ts';
 	import type { ImportPreview, TopicPreview } from '#lib/services/import-service.ts';
+	import { countOf } from '#lib/util/plural.ts';
 	import Disclosure from '../components/Disclosure.svelte';
 	import StickyNote from '../components/StickyNote.svelte';
 	import Row from '../layout/Row.svelte';
@@ -25,27 +26,28 @@
 
 	let { preview, placements, onPlacement, onJumpToLine }: Props = $props();
 
+	/** The singular of each note type; `countOf` adds the plural. */
 	const NOTE_LABELS: Record<NoteType, string> = {
-		keyterm: 'key terms',
-		fact: 'facts',
-		cloze: 'fill-in sentences',
-		sequence: 'sequences',
-		example: 'worked examples',
-		compare: 'comparison tables',
-		scenario: 'scenarios',
-		diagram: 'diagrams',
-		occlusion: 'image cards'
+		keyterm: 'key term',
+		fact: 'fact',
+		cloze: 'fill-in sentence',
+		sequence: 'sequence',
+		example: 'worked example',
+		compare: 'comparison table',
+		scenario: 'scenario',
+		diagram: 'diagram',
+		occlusion: 'image card'
 	};
 	const PLACEMENTS = [
 		{ value: 'unread', label: "Haven't read" },
 		{ value: 'read', label: 'Read it' }
 	] as const;
 
-	const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+	const plural = countOf;
 	const kinds = $derived(
 		(Object.keys(NOTE_LABELS) as NoteType[])
 			.filter((type) => preview.noteCounts[type])
-			.map((type) => `${preview.noteCounts[type]} ${NOTE_LABELS[type]}`)
+			.map((type) => countOf(preview.noteCounts[type] ?? 0, NOTE_LABELS[type]))
 			.join(' · ')
 	);
 	const hasDetails = $derived(

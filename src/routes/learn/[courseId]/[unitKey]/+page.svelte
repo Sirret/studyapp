@@ -16,6 +16,7 @@
 	import TopBar from '#lib/ui/layout/TopBar.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Card from '#lib/ui/primitives/Card.svelte';
+	import { countOf } from '#lib/util/plural.ts';
 	import type { PageProps } from './$types';
 
 	/** One acquisition (or one-night) unit, step by step. @see BUILD_PLAN §6.7, CONCEPT §8 */
@@ -88,7 +89,7 @@
 			const back = `${stepUrl(data.step + 1)}${quiz}`;
 			const study = resolve('/study/[sessionId]', { sessionId: view.sessionId });
 			// eslint-disable-next-line svelte/no-navigation-without-resolve -- resolve()d path plus a query
-			await goto(`${study}?back=${encodeURIComponent(back)}`);
+			await goto(`${study}?unit=1&back=${encodeURIComponent(back)}`);
 		} finally {
 			starting = false;
 		}
@@ -133,6 +134,9 @@
 		</EmptyState>
 	{:else if !current}
 		<StickyNote title="Part done">
+			<span data-unit-summary
+				>You've met {countOf(unit.unit.cards, 'card')} in {unit.unit.title}.</span
+			>
 			{unit.mode === 'onenight'
 				? 'When every part is done, take the break, then re-quiz everything from tonight.'
 				: "Tomorrow's retest is where it counts. It'll be the first thing in your review."}
@@ -142,9 +146,11 @@
 		</StickyNote>
 	{:else}
 		<p>Step {data.step + 1} of {unit.steps.length} · ~{unit.unit.minutes} min in all</p>
-		<Card label={titles[current.step]}>
+		{@const heading =
+			current.step === 'read' ? (unit.unit.section ?? unit.unit.title) : titles[current.step]}
+		<Card label={heading}>
 			<Stack gap="md">
-				<h2>{titles[current.step]}</h2>
+				<h2 data-step-heading>{heading}</h2>
 				{#if current.step === 'read'}
 					{#if current.generated}
 						<Banner tone="warning">Written by a chatbot. Check it against your syllabus.</Banner>

@@ -18,8 +18,9 @@
 	}
 
 	@media (min-width: 1024px) {
+		/* minmax(0, …): a column never grows past its share to fit an input's intrinsic width. */
 		.cols-2 {
-			grid-template-columns: 1fr 1fr;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
 		}
 	}
 </style>

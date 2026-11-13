@@ -38,7 +38,12 @@ export interface CramView {
 export interface UnitView {
 	key: string;
 	title: string;
+	/** The section's `@tag` name (the reader's heading), or null when its notes have none. */
+	section: string | null;
+	/** Whole minutes, with the safety margin, as the screen shows them. */
 	minutes: number;
+	/** Unrounded minutes without the margin, for the planner (which applies the margin once). */
+	workMinutes: number;
 	steps: number;
 	cards: number;
 }

@@ -51,7 +51,7 @@ afterEach(async () => {
 	await db.delete();
 });
 
-async function setup() {
+async function setup(text = COURSE_TEXT) {
 	db = createDb(`plan-${randomUUID()}`);
 	let tick = start;
 	const clock = () => (tick += 1000);
@@ -83,7 +83,7 @@ async function setup() {
 	const plans = new CoursePlanService({ repos, events, kv, study, replayConfig, clock, logger });
 	const importer = new ImportService(new ContentStore(db, context), encoder, randomUUID, logger);
 	const course = await importer.createCourse('Networking');
-	const preview = await importer.preview(course.id, COURSE_TEXT, []);
+	const preview = await importer.preview(course.id, text, []);
 	expect(preview.errors).toStrictEqual([]);
 	expect((await importer.commit(course.id, preview, new Map())).ok).toBe(true);
 	const advanceDays = (days: number): void => {
@@ -157,6 +157,28 @@ describe(
 	'CoursePlanService (BUILD_PLAN §6.6–§6.8, Decisions log Phase 7)',
 	{ timeout: SESSION_TEST_MS },
 	() => {
+		it('names each unit after its @tag section, and the reader heading uses it (SESSION_NOTES B)', async () => {
+			const env = await setup(`@deck Security
+@tag Malware
+@read
+A virus attaches itself to a host program and spreads when that program runs.
+@fact
+Virus :: malware that attaches to a host program
+@tag Firewalls
+@read
+A firewall filters traffic between networks using rules about addresses and ports.
+@fact
+Firewall :: filters traffic between networks by rules
+@end
+`);
+			const today = await env.plans.today(env.courseId);
+			if (today.learn?.mode !== 'acquisition') throw new Error('expected acquisition');
+			const titles = today.learn.units.map((unit) => unit.title);
+			expect(titles).toStrictEqual(['Security · Malware', 'Security · Firewalls']);
+			expect(today.learn.units.map((unit) => unit.section)).toStrictEqual(['Malware', 'Firewalls']);
+			expect(titles.join(' ')).not.toContain('part');
+		});
+
 		it('with no exam and unread topics: long-term review has nothing yet, acquisition lists units', async () => {
 			const env = await setup();
 			const today = await env.plans.today(env.courseId);

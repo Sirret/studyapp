@@ -6,6 +6,7 @@
 	import type { Course } from '#lib/db/schemas/course.ts';
 	import type { ImageSource, ImportPreview, PreparedImage } from '#lib/services/import-service.ts';
 	import { CHATBOT_PROMPT, importService } from '#lib/services/import-wiring.ts';
+	import { countOf } from '#lib/util/plural.ts';
 	import { ArrowLeft } from '@lucide/svelte';
 	import Banner from '#lib/ui/components/Banner.svelte';
 	import Disclosure from '#lib/ui/components/Disclosure.svelte';
@@ -32,6 +33,8 @@
 	let preview = $state.raw<ImportPreview | undefined>();
 	const placements = new SvelteMap<string, Placement>();
 	let notice = $state('');
+	/** The course the last import went into, for "Start studying"; cleared by any new work. */
+	let added = $state<CourseId | null>(null);
 	let isBusy = $state(false);
 	let pasteCount = 0;
 	let textArea: HTMLTextAreaElement | undefined = $state();
@@ -63,6 +66,7 @@
 	function textChanged(): void {
 		preview = undefined;
 		notice = '';
+		added = null;
 	}
 
 	/** Prepares images and adds them, replacing any earlier image with the same name. */
@@ -133,12 +137,20 @@
 			return;
 		}
 		const { notes, cards, topics } = result.value;
-		notice = `Added ${notes} notes and ${cards} cards across ${topics} topics.`;
+		notice = `Added ${countOf(notes, 'note')} and ${countOf(cards, 'card')} across ${countOf(topics, 'topic')}.`;
+		added = courseId;
 		text = '';
 		images = [];
 		imageErrors = [];
 		preview = undefined;
 		placements.clear();
+	}
+
+	/** Back to an empty paste box for the next chatbot reply, same course. */
+	function importMore(): void {
+		added = null;
+		notice = '';
+		textArea?.focus();
 	}
 
 	function jumpToLine(line: number): void {
@@ -250,5 +262,13 @@
 
 	{#if notice}
 		<Banner tone="success">{notice}</Banner>
+	{/if}
+	{#if added}
+		<Row gap="sm">
+			<Button href={resolve('/course/[courseId]', { courseId: added })} data-start-studying>
+				Start studying
+			</Button>
+			<Button variant="secondary" onclick={importMore} data-import-more>Import more</Button>
+		</Row>
 	{/if}
 </Screen>

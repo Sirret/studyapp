@@ -48,7 +48,11 @@
 		--input-bg: var(--surface-alt);
 		--input-radius: var(--r-sm);
 
+		/* Shrink inside grids and rows instead of pushing them wider (SESSION_NOTES B, 1024 px). */
+		min-width: 0;
+
 		display: grid;
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--gap-xs);
 	}
 

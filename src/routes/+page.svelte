@@ -162,17 +162,28 @@
 							<Icon icon={X} />
 						</Button>
 					</Row>
-					<Row gap="md">
-						<ReadinessRing percent={course.readiness * 100} color={course.color} size={56} />
+					{#if course.daysToExam === null}
+						<!-- No exam date: no readiness to show (it means "ready for the exam"). -->
 						<Stack gap="xs">
-							<strong data-planned={course.name}>
-								{course.plannedMinutes === null
-									? 'Keep it fresh'
-									: `${course.plannedMinutes} min today`}
-							</strong>
-							<span>{examLine(course)} · {workLine(course)}</span>
+							<strong data-planned={course.name}>No exam date yet</strong>
+							<span>{workLine(course)}</span>
+							<span data-no-exam-hint={course.name}
+								>Set an exam date on the course page to get a plan.</span
+							>
 						</Stack>
-					</Row>
+					{:else}
+						<Row gap="md">
+							<ReadinessRing percent={course.readiness * 100} color={course.color} size={56} />
+							<Stack gap="xs">
+								<strong data-planned={course.name}>
+									{course.plannedMinutes === null
+										? 'Keep it fresh'
+										: `${course.plannedMinutes} min today`}
+								</strong>
+								<span>{examLine(course)} · {workLine(course)}</span>
+							</Stack>
+						</Row>
+					{/if}
 					{#if course.dueCards > 0}
 						<Button
 							full

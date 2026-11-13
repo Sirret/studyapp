@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { randomUUID } from 'node:crypto';
 import { afterEach, describe, expect, it } from 'vitest';
-import { DAILY_FLOOR_MIN, PLAN_FORECAST_DAYS } from '#lib/config/defaults.ts';
+import { CRAM_MAX_DAYS, DAILY_FLOOR_MIN, PLAN_FORECAST_DAYS } from '#lib/config/defaults.ts';
 import {
 	CardRepo,
 	ChunkRepo,
@@ -93,10 +93,13 @@ async function setup() {
 		shares: (id, events) => planner.shareOf(id, events)
 	});
 	const importer = new ImportService(new ContentStore(db, context), encoder, randomUUID, logger);
-	const addCourse = async (name: string): Promise<CourseId> => {
+	const addCourse = async (name: string, read = false): Promise<CourseId> => {
 		const course = await importer.createCourse(name);
 		const preview = await importer.preview(course.id, TEXT(name), []);
-		expect((await importer.commit(course.id, preview, new Map())).ok).toBe(true);
+		const placements = new Map(
+			read ? preview.topics.map((topic) => [topic.name, 'read' as const]) : []
+		);
+		expect((await importer.commit(course.id, preview, placements)).ok).toBe(true);
 		return course.id as CourseId;
 	};
 	const today = dayIndex(start, 0);
@@ -107,7 +110,32 @@ async function setup() {
 			examFormat: 'mixed'
 		});
 	};
-	return { planner, plans, repos, events, kv, addCourse, examIn, today };
+	/**
+	 * Logs `minutes` of study in one session: an answer every 30 s (under `IDLE_CAP_SEC`), so the
+	 * session's wall time is what counts as studied.
+	 */
+	const studyFor = async (
+		minutes: number,
+		sessionId = randomUUID() as SessionId
+	): Promise<void> => {
+		const card = (await repos.cards.listByCourse((await repos.courses.list())[0]!.id))[0];
+		const step = 30_000;
+		for (let elapsed = 0; elapsed < minutes * MS_PER_MINUTE; elapsed += step) {
+			tick += step - 1000;
+			await events.append({
+				type: 'pretest',
+				cardId: card?.id as CardId,
+				sessionId,
+				skipped: false,
+				responseMs: step
+			});
+		}
+	};
+	/** Time passes with nothing logged. */
+	const idle = (ms: number): void => {
+		tick += ms;
+	};
+	return { planner, plans, repos, events, kv, addCourse, examIn, today, studyFor, idle };
 }
 
 const minutesEvery = (minutes: number): Availability => ({
@@ -198,17 +226,56 @@ describe('PlannerService (BUILD_PLAN §6.9)', { timeout: 30_000 }, () => {
 	it("today's minutes shrink by what was already studied today", async () => {
 		const env = await setup();
 		await env.planner.setAvailability(minutesEvery(60));
-		const card = (await env.repos.cards.listByCourse(await env.addCourse('Networks')))[0];
-		await env.events.append({
-			type: 'pretest',
-			cardId: card?.id as CardId,
-			sessionId: randomUUID() as SessionId,
-			skipped: false,
-			responseMs: 20 * MS_PER_MINUTE
-		});
+		await env.addCourse('Networks');
+		await env.studyFor(20);
 		const week = await env.planner.week();
 		expect(week.days[0]?.capMinutes).toBe(40);
 		expect((await env.planner.today()).studiedMinutes).toBe(20);
+	});
+
+	it('an idle gap inside a session counts only up to IDLE_CAP_SEC', async () => {
+		const env = await setup();
+		await env.planner.setAvailability(minutesEvery(60));
+		await env.addCourse('Networks');
+		const session = randomUUID() as SessionId;
+		await env.studyFor(5, session);
+		expect((await env.planner.today()).studiedMinutes).toBe(5);
+		// The phone sits on the table for 20 minutes mid-session, then two more answers 30 s apart:
+		// 5 + 1 (the gap, capped) + 0.5 = 6.5, shown rounded.
+		env.idle(20 * MS_PER_MINUTE);
+		await env.studyFor(1, session);
+		expect((await env.planner.today()).studiedMinutes).toBe(7);
+	});
+
+	it('a long-term course with a far exam takes its new cards per day from its planner share', async () => {
+		const env = await setup();
+		const courseId = await env.addCourse('Networks', true);
+		await env.planner.setAvailability(minutesEvery(600));
+		const free = (await env.plans.today(courseId)).review;
+		expect(free.kind).toBe('longterm');
+		expect(free.cards).toBeGreaterThan(1);
+		await env.examIn(courseId, CRAM_MAX_DAYS + 12);
+		// Two minutes a day leave room for about one new card (NEW_SHARE_MAX of the trials).
+		await env.planner.setAvailability(minutesEvery(2));
+		const tight = (await env.plans.today(courseId)).review;
+		expect(tight.kind).toBe('longterm');
+		expect(tight.cards).toBeLessThan(free.cards);
+		await env.planner.setAvailability(minutesEvery(0));
+		expect((await env.plans.today(courseId)).review.cards).toBe(0);
+	});
+
+	it("exam tomorrow: every read-but-unseen card is in tonight's review (SESSION_NOTES A5)", async () => {
+		const env = await setup();
+		const courseId = await env.addCourse('Networks', true);
+		await env.planner.setAvailability(minutesEvery(600));
+		await env.examIn(courseId, 1);
+		const today = await env.plans.today(courseId);
+		expect(today.review.kind).toBe('cram');
+		const unseen = (await env.repos.cards.listByCourse(courseId)).filter(
+			(card) => card.status === 'unseen' && !card.suspended
+		);
+		expect(unseen.length).toBeGreaterThan(1);
+		expect(today.review.cards).toBe(unseen.length);
 	});
 
 	it("a course's share is its split minutes plus an even part of the free minutes, one entry per day before the exam", async () => {
@@ -246,15 +313,8 @@ describe('PlannerService (BUILD_PLAN §6.9)', { timeout: 30_000 }, () => {
 
 	it('is done once studying used up a day that had time, never on a day off', async () => {
 		const env = await setup();
-		const card = (await env.repos.cards.listByCourse(await env.addCourse('Networks')))[0];
-		const study = (minutes: number) =>
-			env.events.append({
-				type: 'pretest',
-				cardId: card?.id as CardId,
-				sessionId: randomUUID() as SessionId,
-				skipped: false,
-				responseMs: minutes * MS_PER_MINUTE
-			});
+		await env.addCourse('Networks');
+		const study = env.studyFor;
 		const courseId = (await env.planner.today()).courses[0]?.id as CourseId;
 		await env.examIn(courseId, 3);
 		await env.planner.setAvailability(minutesEvery(0));

@@ -46,6 +46,24 @@ async function courseWithExam(page: Page, name: string, days: number): Promise<v
 test.describe('planner', () => {
 	test.use({ reducedMotion: 'reduce', actionTimeout: 10_000 });
 
+	test('the availability form fits a 1024 px window (SESSION_NOTES B)', async ({ page }) => {
+		await page.setViewportSize({ width: 1024, height: 768 });
+		await page.goto('/planner');
+		const form = page.locator('[aria-label="Your study time"]');
+		await expect(page.locator('[data-weekday="6"]')).toBeVisible();
+		const box = await form.boundingBox();
+		expect(box).not.toBeNull();
+		for (let day = 0; day < 7; day += 1) {
+			const input = await page.locator(`[data-weekday="${day}"]`).boundingBox();
+			expect(input).not.toBeNull();
+			expect(input!.x + input!.width).toBeLessThanOrEqual(box!.x + box!.width + 0.5);
+		}
+		const overflow = await page.evaluate(
+			() => document.documentElement.scrollWidth - document.documentElement.clientWidth
+		);
+		expect(overflow).toBeLessThanOrEqual(0);
+	});
+
 	test('shares today across exams, then flags a shortfall when no time is set', async ({
 		page
 	}) => {

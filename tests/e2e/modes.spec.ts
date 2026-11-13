@@ -68,9 +68,12 @@ test.describe('modes', () => {
 			await startStep.click();
 			await page.waitForURL(/\/study\//);
 			await playOpenSession(page);
-			await page.locator('[data-session-continue]').click();
+			// Inside a unit: no round or session summary, straight back to the unit.
 			await page.waitForURL(/\/learn\//);
+			await expect(page.locator('[data-session-summary]')).toHaveCount(0);
 		}
+		// One summary, at the end of the unit.
+		await expect(page.locator('[data-unit-summary]')).toContainText("You've met");
 		await page.getByRole('link', { name: 'Back to the course' }).click();
 		await page.waitForURL(/\/course\//);
 		await expect(page.getByRole('heading', { name: 'Learn new material' })).toHaveCount(0);
@@ -85,6 +88,8 @@ test.describe('modes', () => {
 		await page.locator('[data-exam-date]').fill(localDate(1));
 		await page.locator('[data-save-exam]').click();
 		await expect(page.getByRole('heading', { name: 'One-night triage' })).toBeVisible();
-		await expect(page.locator('[data-block-two]')).toBeDisabled();
+		// Nothing learnt tonight yet: no dead button, a line saying when the re-quiz opens.
+		await expect(page.locator('[data-block-two]')).toHaveCount(0);
+		await expect(page.locator('[data-block-two-waiting]')).toBeVisible();
 	});
 });

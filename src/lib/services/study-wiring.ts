@@ -28,10 +28,11 @@ const repos = {
 	notes: new NoteRepo(db, context),
 	cards: new CardRepo(db, context)
 };
-const events = new EventRepo(db, { clock, newId, device });
+const tzOffsetMin = (): number => -new Date().getTimezoneOffset();
+const events = new EventRepo(db, { clock, newId, device, tzOffsetMin });
 const kv = new KvRepo(db);
 /** Minutes east of UTC, as the engine counts study days (BUILD_PLAN §6.1). */
-const replayConfig = kvReplayConfig(kv, () => -new Date().getTimezoneOffset());
+const replayConfig = kvReplayConfig(kv, tzOffsetMin);
 const replay = new ReplayService(events, repos.cards, logger, replayConfig);
 const sessions = new SessionService({
 	sessions: new SessionRepo(db),
