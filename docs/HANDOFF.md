@@ -4,11 +4,11 @@ The working notes passed from one phase to the next. Unlike `PROGRESS.md` (a his
 
 ## Current state
 
-- **Phase order (BUILD_PLAN Decisions log, 2026-11-13): Fix pass → Import v2 → 8.5 → 8.6 → 6 → 9 → 10 → 11.** `docs/PROMPTS.md` and `docs/SESSION_NOTES.md` are newer than CONCEPT/BUILD_PLAN and win where they disagree. Before starting Phase 6, confirm with the user that the phases before it are done.
+- **Phase order (BUILD_PLAN Decisions log, 2026-11-13): Import v2 → 8.5 → 8.6 → 6 → 9 → 10 → 11** (the Fix pass before it is done). `docs/PROMPTS.md` and `docs/SESSION_NOTES.md` are newer than CONCEPT/BUILD_PLAN and win where they disagree. Before starting Phase 6, confirm with the user that the phases before it are done.
 
 - **Done:** Phases 0–5, 7, 8 and the **Fix pass** (SESSION_NOTES §A and §B, all 18 items; Decisions log rows "Fix pass"). **Next: Import v2** (`docs/PROMPTS.md`; SESSION_NOTES §E, §M). The `reviewer` (Sonnet, diff-only) runs at the end of Phase 9, and again only if it found blockers.
-- **Exists:** tooling, CI, data layer, import, cardgen, grading, distractors, the engine core with full `replay()`, the design system and every non-diagram exercise (Phase 5); the modes (Phase 7: `estimate.ts`, `cram.ts`, `acquisition.ts`, `onenight.ts`, `mode-select.ts`, `CoursePlanService`, `/course/[courseId]`, `/learn/[courseId]/[unitKey]`); and the planner (Phase 8): engine `planner-work.ts` (items, value, `courseWork`, `demandCheck`), `planner-cuts.ts` (`planCuts`), `planner-split.ts` (`dailySplit`), `planner.ts` (`planDays`); `PlannerService` (`planner-service.ts`, inputs in `planner-inputs.ts`, UI types in `planner-types.ts`): `today`, `week`, `availability`/`setAvailability`, `shareOf`. Screens: Today (`/`) is the planner's day (minutes per course, readiness ring, Start review, shortfall note, rest when done); `/planner` (day bars, feasibility per exam with suggested cuts, availability calendar). Component `DayBar`.
-- **Not wired yet / partial:** Long-term courses (no exam ahead) stay outside the split. Planner cuts are suggestions only. `relearningSessionsAhead` is set only for cram. Off-path kinds (`matching`, `blurt`, `explainIt`, …) are still only scheduled by the harness. Forced first-showing kinds live in `StudyService` memory (lost on reload mid-step). The split prompt has no editor yet (8.5's card list). The sleep reminder shows after a planned session from the course page, and Today's rest state when today's minutes are used up, not at a clock time. Diagram and occlusion kinds still fall back (Phase 6). No Courses/Settings routes yet (SESSION_NOTES A11; `BottomNav` isn't mounted, Today links to `/planner`). `PlannerService` re-loads every course per call (fine now; cache it if many courses get slow). Deferred: `/dev/ui` visual-regression screenshots and drag gestures.
+- **Exists:** tooling, CI, data layer, import, cardgen, grading, distractors, the engine core with full `replay()`, the design system and every non-diagram exercise (Phase 5); the modes (Phase 7: `estimate.ts`, `cram.ts`, `acquisition.ts`, `onenight.ts`, `mode-select.ts`, `CoursePlanService`, `/course/[courseId]`, `/learn/[courseId]/[unitKey]`); and the planner (Phase 8): engine `planner-work.ts` (items, value, `courseWork`, `demandCheck`), `planner-cuts.ts` (`planCuts`), `planner-split.ts` (`dailySplit`), `planner.ts` (`planDays`); `PlannerService` (`planner-service.ts`, inputs in `planner-inputs.ts`, UI types in `planner-types.ts`): `today`, `week`, `availability`/`setAvailability`, `shareOf`. Screens: Today (`/`) is the planner's day (minutes per course, readiness ring, Start review, shortfall note, rest when done); `/planner` (day bars, feasibility per exam with suggested cuts, availability calendar). Component `DayBar`. Fix pass: `engine/value.ts`, `engine/study-time.ts`, replay order by device `seq` with per-event `tzOffsetMin`, `util/plural.ts`, answer kind `cell`, typo spelling in feedback, no summaries inside a Learn unit.
+- **Not wired yet / partial:** **One-night minimum block (SESSION_NOTES A1) is half done:** `planOneNight` plans the `ONENIGHT_MIN_BLOCK_MIN` block and sets `minimumBlock`, but `OneNightView` (`services/course-types.ts`, built in `course-learn.ts` `oneNight`) doesn't carry the flag, so the course page doesn't show the sleep reminder with it yet. Pass it through and show the reminder in `PlanCards.svelte` (+ an e2e). Long-term courses (no exam ahead) stay outside the split. Planner cuts are suggestions only. `relearningSessionsAhead` is set only for cram. Off-path kinds (`matching`, `blurt`, `explainIt`, …) are still only scheduled by the harness. Forced first-showing kinds live in `StudyService` memory (lost on reload mid-step). The split prompt has no editor yet (8.5's card list). The sleep reminder shows after a planned session from the course page, and Today's rest state when today's minutes are used up, not at a clock time. Diagram and occlusion kinds still fall back (Phase 6). No Courses/Settings routes yet (SESSION_NOTES A11; `BottomNav` isn't mounted, Today links to `/planner`). `PlannerService` re-loads every course per call (fine now; cache it if many courses get slow). Deferred: `/dev/ui` visual-regression screenshots and drag gestures.
 
 ## How data works here (reuse this; don't reinvent it)
 
@@ -16,7 +16,7 @@ The working notes passed from one phase to the next. Unlike `PROGRESS.md` (a his
 | --- | --- | --- |
 | Create or change content | `CourseRepo`, `TopicRepo`, `ChunkRepo`, `NoteRepo`, `CardRepo`, `MediaRepo` in `db/repos/content-repos.ts`, built on `ContentRepo` | Touch a Dexie table directly |
 | Delete content | `repo.softDelete(id)`; reads already hide tombstones | Hard delete, except archive or replace import |
-| Record study history | `EventRepo.append(fields)`; it adds `id`, `ts`, `deviceId`, `seq`. An answer plus its session snapshot: `appendWithSession` (one transaction) | Update or delete an event |
+| Record study history | `EventRepo.append(fields)`; it adds `id`, `ts`, `deviceId`, `seq` and `tzOffsetMin`. An answer plus its session snapshot: `appendWithSession` (one transaction) | Update or delete an event |
 | Update card scheduling | Extend `replayCard()` in `engine/replay-card.ts`; `ReplayService.rebuildAll()` or `rebuildCards(ids)` stores the result via `CardRepo.applyReplay`. Criterion counting in both replay and planning goes through `recordCriterion` / `criterionHistory` in `engine/criterion-history.ts` (uses each event's `required`; derives it when absent) | Write `fsrs`, `due`, `status`, `fragile`, `weak`, `daysCorrect`, `pathStep` or `accuracy` anywhere else |
 | Read or write settings | `KvRepo.get/set`, validated against `KV_SCHEMAS` | Touch `db.kv` directly |
 | Write across several tables, all or nothing | Build records with `repo.draft` and `repo.draftChange`, then `ContentStore.writeBatch`, which is one transaction | Open a Dexie transaction around repository calls |
@@ -57,21 +57,17 @@ The working notes passed from one phase to the next. Unlike `PROGRESS.md` (a his
 
 ## What each phase reads
 
-Read these sections, plus this file and the Decisions log. Open anything else only when a question needs it.
+Done phases are left out. Read these sections, plus this file and the Decisions log. Open anything else only when a question needs it.
 
 | Phase | `BUILD_PLAN.md` | Other docs |
 | --- | --- | --- |
-| 2 Import | §4, §5 | `DATA_MODEL` §3.2–§3.5, §3.8, §4 |
-| 3 Cards & grading | §5, §6.10, §6.11 | `DATA_MODEL` §4.2, §4.3 |
-| 4 Engine core | §3.3, §6.1–§6.5, §6.12, §13 | `DATA_MODEL` §3.5–§3.7, §4.5; `CONCEPT` §5, §6 |
-| 5 Design & exercises (done) | §3.3, §5.1, §9 | `DESIGN` in full; `CONCEPT` §4 |
-| 6 Diagrams | §7, §14 | `CONCEPT` §13; `DATA_MODEL` §4.2 |
-| 7 Modes (done) | §6.6–§6.8 | `CONCEPT` §7–§9 |
-| 8 Planner (done) | §6.9 | `CONCEPT` §10, §11; `DATA_MODEL` §5 |
-| Import v2 (next) | §4 is history only | `PROMPTS.md` in full; `SESSION_NOTES` §E, §F, §M; `DATA_MODEL` §3.4, §3.5. Code: `src/lib/import/`, `services/import-service.ts`, `import/prompt.ts`, `routes/import` |
-| 8.5 Cards & import fixes | §4, §10 row 8.5, Decisions log rows "import preview" and "Phase 8.5" | `DATA_MODEL` §3.4, §3.5; `DESIGN` §6 Import, §13. Code: `services/import-service.ts`, `services/course-plan-service.ts` (split prompts), `routes/course/[courseId]` |
+| Import v2 (**next**) | §4 is history only | `PROMPTS.md` in full; `SESSION_NOTES` §E, §F, §M; `DATA_MODEL` §3.4, §3.5. Code: `src/lib/import/`, `services/import-service.ts`, `import/prompt.ts`, `routes/import` |
+| 8.5 Cards & import fixes | §10 row 8.5 (§4 is superseded by `PROMPTS.md`), Decisions log rows "import preview" and "Phase 8.5" | `DATA_MODEL` §3.4, §3.5; `DESIGN` §6 Import, §13. Code: `services/import-service.ts`, `services/course-plan-service.ts` (split prompts), `routes/course/[courseId]` |
+| 8.6 Learn & Practice | §10 row 8.6 | `SESSION_NOTES` §C, §D, §J, §K; `DESIGN` §6, §13 |
+| 6 Diagrams | §7, §14 | `CONCEPT` §13; `DATA_MODEL` §4.2; Decisions log row "Phase 6 must also close the import prompt's gaps" |
 | 9 Transfer & offline | §8, §11.5 | `CONCEPT` §18, §19; `DATA_MODEL` §7 |
-| 10 Polish & ship | §10, §11 | `DESIGN` §9 |
+| 10 Polish & ship | §10, §11 | `DESIGN` §9 (done-when includes Android install, used offline) |
+| 11 Play | §10 row 11 | `GAMES.md` |
 
 ## End-of-phase handoff (what every phase leaves behind)
 
