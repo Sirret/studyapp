@@ -6,11 +6,14 @@ An offline-first study app (SvelteKit PWA) for CS/IS students. Web in a laptop o
 
 **Resuming unfinished work:** if `docs/WIP.md` exists, a task was interrupted (usage limit, closed chat). Run `npm run wip` first and continue from its checkpoint before anything else (rule 21). Every phase is meant to be doable in a fresh chat: `WIP.md` carries a task across chats mid-way, and `HANDOFF.md` carries the project from one phase to the next.
 
-**Starting a session:** read `docs/HANDOFF.md` (current state, how data works here, and which sections each phase reads), then the Decisions log at the bottom of `BUILD_PLAN.md`, which overrides older text. Then read only the sections listed for the current phase. Don't read every doc in full; open others when a question needs them. The code and tests show what already exists.
+**Starting a session:** read the last entry of `docs/PROGRESS.md`, plus only the doc sections the current task names (`docs/HANDOFF.md` and the Decisions log at the bottom of `BUILD_PLAN.md` list them; the Decisions log overrides older text). Do not read every doc in full each session; open others only when a question needs them. The code and tests show what already exists.
 
 The docs, for reference:
 
-- `docs/CONCEPT.md` — what the app does and why (the source of truth for behaviour).
+- `docs/PROMPTS.md` — the import format (Import v2) and the chatbot prompt. Newer than CONCEPT/BUILD_PLAN. Where they disagree, PROMPTS.md (import format, chatbot prompt) and SESSION_NOTES.md (decisions) win.
+- `docs/SESSION_NOTES.md` — decisions, fixes and open questions since the original plan (sections A–M). Newer than CONCEPT/BUILD_PLAN. Where they disagree, PROMPTS.md (import format, chatbot prompt) and SESSION_NOTES.md (decisions) win.
+- `docs/GAMES.md` — Phase 11, Play (study games).
+- `docs/CONCEPT.md` — what the app does and why (the source of truth for behaviour, except where PROMPTS.md or SESSION_NOTES.md is newer).
 - `docs/BUILD_PLAN.md` — how to build it: stack, data model, engine specs, phases, defaults.
 - `docs/DATA_MODEL.md` — every stored field, the ER diagram and the export format. The source of truth for data.
 - `docs/DESIGN.md` — the look and feel: tokens, components, screens, and Yuki the wolf companion (reference art in `docs/design/`).
@@ -78,4 +81,4 @@ Agents are helpers giving a different point of view, not supervisors: give them 
 
 ## When unsure
 
-If the concept and the plan disagree, follow `CONCEPT.md` and update `BUILD_PLAN.md`. If neither covers a case, choose the option that keeps the engine deterministic and testable, and note the decision at the bottom of `BUILD_PLAN.md` under a "Decisions log" heading.
+`PROMPTS.md` and `SESSION_NOTES.md` override both `CONCEPT.md` and `BUILD_PLAN.md`. Otherwise, if the concept and the plan disagree, follow `CONCEPT.md` and update `BUILD_PLAN.md`. If neither covers a case, choose the option that keeps the engine deterministic and testable, and note the decision at the bottom of `BUILD_PLAN.md` under a "Decisions log" heading.
