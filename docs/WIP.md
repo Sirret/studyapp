@@ -14,6 +14,7 @@
 | 2026-11-14 | Import v2 | 4 (reconciled) | claude-haiku-5-5 | WIP was stale: implementation already in 771609b. Verified: check 0 errors, full test 1664 pass, only import coverage threshold fails. Checklist 4 marked done, 4b added | 1 | Step 2: spec-test-writer on the brief (WIP "spec-test-writer brief") | eb0569f |
 | 2026-11-14 | Import v2 | 4b (acquisition) | claude-haiku-5-5 | Read step skipped for a chunk with no words; unit section prefers stored chunk title; 3 tests added (full unit suite 72 files / 1733 pass); 2 Decisions rows | 6 | Step 5: UI (intake, preview, course page, /dev/ui states) | 9ca0119 |
 | 2026-11-14 | Import v2 | 5a (intake) | claude-haiku-5-5 | PromptIntake (4 questions, buildPrompt copy, PDF tip) replaces the v1 prompt on /import; v1 prompt.ts removed; /dev/ui state; e2e copy test on v2 prompt; full suite 72 files / 1732 pass; e2e import 29/29 after rebuild | 9 | Step 5b: preview checklist/missing/warnings/resume prompt; pass intake goal to commit; exam-date field is planner-only (not yet) | 98d41d7 |
+| 2026-11-14 | Import v2 | 5b (preview checklist, resume, goal) | claude-haiku-5-5 | ImportChecklist + resume prompt copy + warnings in the preview; intake goal reaches commit; /dev/ui resume sample. `npm run check` 0 errors; import+service unit tests 257 pass; import e2e 29/30 (offline test fails on laptop, also on the pre-change build: pre-existing timing, see Progress) | 6 | Step 5c: course page (bigpicture, habit, @cheat), tokens only | 5f781c2 |
 
 ## Committed 2026-11-13 with audit 1.1, 1.5, 1.6 (one commit; hash in AUDIT.md)
 
@@ -70,7 +71,7 @@
 - [x] 3 Data model + Dexie v2 migration + DATA_MODEL (one commit) — commit: 771609b
 - [x] 4 Implement parser/build/prompt; services (preview checklist, missing, resume, from: matching, commit new fields) — commit: 771609b (code in that commit; spec tests for it are step 2, still open). Not yet: acquisition skip for empty `text` (step 4b below).
 - [x] 4b Acquisition: skip read step for empty section text (`engine/acquisition.ts`); `services/course-learn.ts` unitSection prefers chunk `title` — commit: 9ca0119. Tests: acquisition-steps.test.ts (+1), tests/unit/services/course-learn-section.test.ts (new, 4)
-- [~] 5 UI. 5a DONE (intake + Copy prompt + PDF tip, v1 prompt removed; commit 98d41d7). 5b TODO: preview checklist/missing/warnings/"Copy resume prompt" (ImportPreviewPanel; resumePrompt in import/prompt-v2.ts; wiring re-exports prompt helpers, UI must not import engine/import directly); pass intake goal to commit; course page bigpicture/habit/cheat. Exam date: planner-only, later.
+- [~] 5 UI. 5a DONE (intake + Copy prompt + PDF tip, v1 prompt removed; commit 98d41d7). 5b DONE (commit 5f781c2): `ImportChecklist.svelte` (N of M topics imported, @missing), "Copy the resume prompt" + shown text in `ImportPreviewPanel.svelte`, status note for `stopped`/`cut`, warnings disclosure; `PromptIntake` goal is `bind:goal`, page passes it to `commit`; /dev/ui has `SAMPLE_IMPORT_RESUME`. 5c TODO: course page (`routes/course/[courseId]/*`): bigpicture, habit questions, @cheat table (simple), tokens only. Exam date: planner-only, later. e2e for checklist/resume/goal goes in step 6.
 - [ ] 6 e2e; verify; reviewer; PROGRESS; HANDOFF; Decisions log; delete WIP
 
 ## Progress
@@ -78,6 +79,8 @@
 - (nothing committed yet for this task)
 - Interface written (uncommitted; the pre-commit hook runs changed tests, so it is committed together with the agent's tests and the implementation): schemas (`course.ts` CourseMap/Topic/Chunk, `note.ts` fact keyWords/list), `db/schema.ts` `upgradeToV2` + version 2, DATA_MODEL §3.1–§3.4, §4.2, §4.6, `ast.ts` new blocks + isAdded, `lexer.ts` [ADDED], `parser.ts` warnings + `MAP_BLOCK_PARSERS`, `build.ts` plan types + `applyV2Block` stub, stubs in `source.ts`, `lectures.ts`, `key-words.ts`, `completeness.ts`, `build-map.ts`, `validate.ts`, `map-parsers.ts`, `prompt-v2.ts`; `import-batch.ts` writes `from`. Test `tests/unit/db/migration-v2.test.ts` (passes). Decisions log: 10 rows "Import v2: …".
 - spec-test-writer LAUNCHED (brief below). Owns: `tests/unit/import/**` (incl. parser.test.ts), `tests/unit/engine/cardgen.test.ts`, `tests/golden/import/**`. Don't edit those while it runs.
+
+- **Open item (pre-existing, not from 5b):** `tests/e2e/import.spec.ts` "import offline › works with no network once the app has loaded" hits the 30 s test timeout on laptop (38 s on the pre-5b build; mobile 26–30 s, borderline). The import itself succeeds (the page shows "Added 1 note and 1 card"). Do not raise the timeout (rule 15). Fix at phase end: make the test lighter (drop the redundant `page.goto('/')` warm-up or wait on the service worker once) and re-run, or ask the user before changing it.
 
 ### spec-test-writer brief (Import v2 parser)
 
