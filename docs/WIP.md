@@ -12,7 +12,7 @@
 | 2026-11-13 | audit | 2.2 | claude-haiku-5-5 | Tokens-only UI rule in WIP.md, DESIGN.md status paragraph, CLAUDE.md rule 20 | 4 | audit 2.3 | b263e15 |
 | 2026-11-14 | Import v2 | 2 (spec tests) | claude-sonnet-5-5 (spec-test-writer) | 214 import tests pass; 3 SPEC-GAPs decided and logged | 6 | Step 3: implementation details (4b acquisition, then UI 5) | 9151d33 |
 | 2026-11-14 | Import v2 | 4 (reconciled) | claude-haiku-5-5 | WIP was stale: implementation already in 771609b. Verified: check 0 errors, full test 1664 pass, only import coverage threshold fails. Checklist 4 marked done, 4b added | 1 | Step 2: spec-test-writer on the brief (WIP "spec-test-writer brief") | eb0569f |
-| 2026-11-14 | Import v2 | 4b (acquisition) | claude-haiku-5-5 | Read step skipped for a chunk with no words; unit section prefers stored chunk title; 3 tests added (full unit suite 72 files / 1733 pass); 2 Decisions rows | 6 | Step 5: UI (intake, preview, course page, /dev/ui states) | pending (this commit) |
+| 2026-11-14 | Import v2 | 4b (acquisition) | claude-haiku-5-5 | Read step skipped for a chunk with no words; unit section prefers stored chunk title; 3 tests added (full unit suite 72 files / 1733 pass); 2 Decisions rows | 6 | Step 5: UI (intake, preview, course page, /dev/ui states) | 9ca0119 |
 
 ## Committed 2026-11-13 with audit 1.1, 1.5, 1.6 (one commit; hash in AUDIT.md)
 
@@ -68,7 +68,7 @@
 - [x] 2 spec tests: spec-test-writer (Sonnet) wrote tests/unit/import/{parser,build,lectures}.test.ts + cardgen.test.ts extension; part A already matched the spec. 214/214 import tests pass; eslint clean. 3 SPEC-GAPs decided, recorded in BUILD_PLAN Decisions log (text before @ = one warning; @link = scenario notes; @end between topics = early @end). Commit: pending (this commit). Test code is ~530 lines, over the 400 cap set in the brief; kept, not trimmed.
 - [x] 3 Data model + Dexie v2 migration + DATA_MODEL (one commit) — commit: 771609b
 - [x] 4 Implement parser/build/prompt; services (preview checklist, missing, resume, from: matching, commit new fields) — commit: 771609b (code in that commit; spec tests for it are step 2, still open). Not yet: acquisition skip for empty `text` (step 4b below).
-- [x] 4b Acquisition: skip read step for empty section text (`engine/acquisition.ts`); `services/course-learn.ts` unitSection prefers chunk `title` — commit: pending (this commit). Tests: acquisition-steps.test.ts (+1), tests/unit/services/course-learn-section.test.ts (new, 4)
+- [x] 4b Acquisition: skip read step for empty section text (`engine/acquisition.ts`); `services/course-learn.ts` unitSection prefers chunk `title` — commit: 9ca0119. Tests: acquisition-steps.test.ts (+1), tests/unit/services/course-learn-section.test.ts (new, 4)
 - [ ] 5 UI: intake + Copy prompt + PDF tip; preview checklist/missing/resume; course page bigpicture/habit/cheat
 - [ ] 6 e2e; verify; reviewer; PROGRESS; HANDOFF; Decisions log; delete WIP
 
