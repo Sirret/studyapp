@@ -124,7 +124,8 @@ export class CoursePlanService {
 				cram: review.cram ? cramView(review.cram) : null
 			},
 			learn: this.learnPlan(loaded),
-			splitPrompts: splitPrompts(data, env)
+			splitPrompts: splitPrompts(data, env),
+			map: course.map ?? null
 		};
 	}
 

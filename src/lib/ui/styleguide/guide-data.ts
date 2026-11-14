@@ -1,4 +1,5 @@
 import type { CardStatus } from '#lib/db/schemas/common.ts';
+import type { CourseMap } from '#lib/db/schemas/course.ts';
 import type { ImportPreview } from '#lib/services/import-service.ts';
 
 /** Every card status, for the style guide. @see DATA_MODEL §4.4 */
@@ -50,6 +51,23 @@ export const SAMPLE_IMPORT_RESUME = {
 	missing: ['Slides 14 to 16 (too blurry to read)'],
 	resumePrompt: 'Continue my study pack for this course from "Lecture 3: Joins".'
 } satisfies ImportPreview;
+
+/** A course map for the style guide: big picture, habit questions and a small cheat table. */
+export const SAMPLE_COURSE_MAP: CourseMap = {
+	bigpicture: ['Routing gets packets between networks; transport gets them between programs.'],
+	habit: ['Why does DNS use UDP but a file transfer use TCP?'],
+	topics: [],
+	links: [],
+	cheat: {
+		name: 'Cheat table: transport protocols',
+		items: ['TCP', 'UDP'],
+		rows: [
+			{ attribute: 'Connection', values: ['Yes', 'No'] },
+			{ attribute: 'Delivery', values: ['Guaranteed', 'Best effort'] }
+		]
+	},
+	missing: []
+};
 
 /** A few lines of import text, for the paste-area sample. */
 export const SAMPLE_IMPORT_TEXT = [

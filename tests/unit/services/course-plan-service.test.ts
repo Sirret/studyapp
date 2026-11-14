@@ -1,5 +1,6 @@
 import 'fake-indexeddb/auto';
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
 	CardRepo,
@@ -280,6 +281,23 @@ Firewall :: filters traffic between networks by rules
 			const reviews = (await env.events.list()).filter((event) => event.type === 'review');
 			for (const event of reviews)
 				expect(event).toMatchObject({ mode: 'onenight', credited: true });
+		});
+
+		it('exposes the course map of a v2 reply on today(), and null for a legacy @deck course', async () => {
+			const legacy = await setup();
+			expect((await legacy.plans.today(legacy.courseId)).map).toBeNull();
+			const reply = readFileSync(
+				new URL('../../fixtures/import/security_reply.txt', import.meta.url),
+				'utf8'
+			);
+			const env = await setup(reply);
+			const { map } = await env.plans.today(env.courseId);
+			expect(map?.topics).toHaveLength(8);
+			expect(map?.links).toHaveLength(12);
+			expect(map?.missing).toHaveLength(2);
+			expect(map?.cheat?.rows).toHaveLength(11);
+			expect(map?.bigpicture.length).toBeGreaterThan(0);
+			expect(map?.habit.length).toBeGreaterThan(0);
 		});
 	}
 );

@@ -6,6 +6,7 @@
 	import type { CourseToday } from '#lib/services/course-types.ts';
 	import { prefs } from '#lib/services/preferences.svelte.ts';
 	import EmptyState from '#lib/ui/components/EmptyState.svelte';
+	import CourseMapPanel from '#lib/ui/course-map/CourseMapPanel.svelte';
 	import SpeechBubble from '#lib/ui/components/SpeechBubble.svelte';
 	import StatusBadge from '#lib/ui/components/StatusBadge.svelte';
 	import StickyNote from '#lib/ui/components/StickyNote.svelte';
@@ -134,6 +135,9 @@
 			onreview={() => start('review')}
 			onblocktwo={() => start('block2')}
 		/>
+		{#if today.map}
+			<CourseMapPanel map={today.map} />
+		{/if}
 		<Stack gap="md">
 			{#key `${today.course.examDate}-${today.course.examTime}-${today.course.examFormat}`}
 				<ExamForm

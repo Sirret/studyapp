@@ -6,6 +6,7 @@ import type {
 	ExamFormat,
 	ExerciseKind
 } from '#lib/db/schemas/common.ts';
+import type { CourseMap } from '#lib/db/schemas/course.ts';
 
 /**
  * What the course page and the learn screen show. Plain types, so UI code needn't import the
@@ -77,6 +78,8 @@ export interface CourseToday {
 		| null;
 	/** Chunks still weak at their next-day retest: suggest splitting them. */
 	splitPrompts: { chunkId: ChunkId; title: string }[];
+	/** The course map from the chatbot import (big picture, habit, cheat table), or `null`. */
+	map: CourseMap | null;
 }
 
 /** One step of a unit, as the learn screen runs it. */
