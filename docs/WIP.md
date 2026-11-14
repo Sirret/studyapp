@@ -9,6 +9,7 @@
 | 2026-11-13 | audit | 1.4 | claude-haiku-5-5 | Reviewer runs once per phase (CLAUDE.md step 5, reviewer.md, HANDOFF) | 4 | audit 1.7 | 9b8bc6c |
 | 2026-11-13 | audit | 1.7 | claude-haiku-5-5 | Checkpoint rule in CLAUDE.md; checkpoint log started | 6 | audit 2.1 | cf56b14 |
 | 2026-11-13 | audit | 3.3 | claude-haiku-5-5 | Cozy decision at the top of SESSION_NOTES §G (mockups only); HANDOFF design line | 3 | audit 2.2 | fdcfef0 |
+| 2026-11-13 | audit | 2.2 | claude-haiku-5-5 | Tokens-only UI rule in WIP.md, DESIGN.md status paragraph, CLAUDE.md rule 20 | 4 | audit 2.3 | b263e15 |
 
 ## Committed 2026-11-13 with audit 1.1, 1.5, 1.6 (one commit; hash in AUDIT.md)
 

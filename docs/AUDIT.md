@@ -207,7 +207,7 @@ Tier 2 — High (do before 8.5)
 
     Effort: S.
 
-    Status: [x] — commit: (this commit). Evidence now matches: SESSION_NOTES §G is decided (cozy, fdcfef0). Added: the WIP UI rule, the DESIGN.md status paragraph, and the rule 20 note in CLAUDE.md. Propagate to PROGRESS skipped: there is no Import v2 entry yet (written at phase end, CLAUDE step 6).
+    Status: [x] — commit: b263e15. Evidence now matches: SESSION_NOTES §G is decided (cozy, fdcfef0). Added: the WIP UI rule, the DESIGN.md status paragraph, and the rule 20 note in CLAUDE.md. Propagate to PROGRESS skipped: there is no Import v2 entry yet (written at phase end, CLAUDE step 6).
 
 [ ] 2.3 — SESSION_NOTES section F: record the provisional PDF decision
 
