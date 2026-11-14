@@ -21,7 +21,8 @@ export interface UndoSummary {
 
 /**
  * Undoes a course's latest import (`course.lastImport`): tombstones every topic, section, note,
- * card and image carrying its `importId` (images only when no other note uses them), puts back
+ * card and image carrying its `importId` (images only when no other note uses them), plus every
+ * card of a removed note even without the ID (cards added later by editing that note), puts back
  * the topics it changed and the course map as they were, and clears `lastImport`, all in one
  * transaction. Review events are never touched (rule 5).
  *

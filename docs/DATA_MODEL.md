@@ -124,7 +124,7 @@ Not shown: singleton key-value records (`kv`, §5) and the app log (`logs`, §6)
 | `color` | `'lavender' \| 'peach' \| 'sage' \| 'sky' \| 'rose' \| 'butter'` | ✓ | assigned in order on creation; editable | Course colour (DESIGN §3.1) |
 | `settingsOverride` | `Partial<Settings>` | — | keys from `kv.settings` | Per-course setting overrides (exercise toggles, spelling mode…) |
 | `map` | `CourseMap` | — | §4.6; from an Import v2 reply | How the topics connect, exam habit questions, planned topics, links, cheat table, missing content, resume point |
-| `lastImport` | `{ importId: ID; at: number; topicsBefore: TopicBeforeImport[]; mapBefore: CourseMap | null }` | — | replaced by each import; removed by its undo | What undoing the course's latest import needs: the ID on the records it created, each topic it changed as it was before (`id, placement, priority` and the optional `key, from, summary, partial`), and the course map before (`null` = none). Only the latest import can be undone |
+| `lastImport` | `{ importId: ID; at: number; topicsBefore: TopicBeforeImport[]; mapBefore: CourseMap | null }` | — | replaced by each import; removed by its undo | What undoing the course's latest import needs: the ID on the records it created (undo also removes cards an edit later added to a removed note, which carry no ID), each topic it changed as it was before (`id, placement, priority` and the optional `key, from, summary, partial`), and the course map before (`null` = none). Only the latest import can be undone |
 
 Indexes: `id, status, examDate, updatedAt`.
 

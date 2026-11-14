@@ -4,8 +4,8 @@
 
 | Date | Phase | Step | Model | Done | Files | Next | Commit |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 2026-11-14 | 8.5 | 0 do-first cleanups | Opus 5.5 | HANDOFF "do first" items 1–4 | 8 | Step 1: interface for the card list + import fixes | bdf57a8 |
-| 2026-11-14 | 8.5 | 1 interface | Opus 5.5 | importId + course.lastImport schema/DATA_MODEL; stubs for card-regen, duplicates, fix-prompt, card list, import undo | 14 | Step 2: tests (spec-test-writer for duplicates + card-regen; direct for services) | 601f819 |
+| 2026-11-14 | 8.5 | 0 do-first cleanups | Sonnet 5.5 | HANDOFF "do first" items 1–4 | 8 | Step 1: interface for the card list + import fixes | bdf57a8 |
+| 2026-11-14 | 8.5 | 1 interface | Sonnet 5.5 | importId + course.lastImport schema/DATA_MODEL; stubs for card-regen, duplicates, fix-prompt, card list, import undo | 14 | Step 2: tests (spec-test-writer for duplicates + card-regen; direct for services) | 601f819 |
 
 ## Task and spec
 
@@ -18,13 +18,14 @@
 - [x] 0. HANDOFF "do first" cleanups: `DEFAULT_IMPORT_GOAL` in `config/defaults.ts` (used by `routes/import/+page.svelte`, `PromptIntake.svelte`); `CourseMapPanel` uses the global token-based `.sr-only`; shared `util/clipboard.ts` `copyText` (used by `ImportPreviewPanel`, `PromptIntake`); `tests/unit/services/import-wiring.test.ts` for `ensureSampleCourse`.
 - [x] 1. Interface (checkpoint a). Stubs (`throw new Error('not implemented')`):
   - `engine/card-regen.ts` `planCardRegen(note, existing)` → keep/add/remove by variant (rule 7).
-  - `import/duplicates.ts` `noteFingerprint`, `dropDuplicateNotes(topics, existing)` (course-wide + within the paste; image notes never duplicates).
+  - `import/duplicates.ts` `noteFingerprint`, `sectionFingerprint`, `dropDuplicateNotes(topics, existing)` (course-wide + within the paste; image notes never duplicates; the drafter reuses same-fingerprint sections of the matched topic).
   - `import/fix-prompt.ts` `buildFixPrompt(errors, source)`.
   - `services/card-list-types.ts` (view types), `services/card-list.ts` `toCardList`, `filterCardList(view, query, filter)`.
   - `services/card-list-service.ts` `CardListService(store, replay, logger)`: `list`, `editNote`, `deleteNote`, `flag`, `unflag`.
   - `services/import-undo.ts` `ImportUndoService(store, logger)`: `lastImport`, `undo`.
   - Schemas: `ImportIdSchema` (common), optional `importId` on topics/chunks/notes/cards/media, `Course.lastImport` (`LastImportSchema`, `TopicBeforeImportSchema`). DATA_MODEL §3.1–3.5, §3.8 updated. No Dexie bump.
   - Still to wire at step 3: `ImportService.commit` sets `importId` on drafted records and writes `course.lastImport`; preview counts duplicates (`ImportPreview.duplicates`); `OneNightView.minimumBlock` (step 4).
+- [x] 1b. Opus recheck of steps 0–1 (user asked): added `sectionFingerprint` (re-import was going to copy sections even with notes de-duplicated); undo must also remove cards an edit added to a removed note (they carry no `importId`); `editNote` keeps the note's type. Step 3 must also split `services/import-service.ts` (already 305 lines, limit 300) before adding the importId/lastImport/duplicate wiring.
 - [ ] 2. Tests: plumbing (card-list service, undo) written directly; duplicate-skip in the import pipeline → `spec-test-writer` (Sonnet). **Checkpoint (b).**
 - [ ] 3. Implement + screens: "See all cards" (after an import and on the course page), styling first; skipped/unsure items link into the list; fix-it prompt for skipped parts; check which of preview on paste / numbered steps / Start studying / paste more / sample cards already exist and finish the rest. **Checkpoint (c)** per module.
 - [ ] 4. One-night minimum block: pass `OneNightPlan.minimumBlock` through `OneNightView` (`services/course-types.ts`, built in `course-learn.ts` `oneNight`) to `PlanCards.svelte`, show the sleep reminder, + e2e.

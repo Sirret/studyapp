@@ -28,8 +28,9 @@ export class CardListService {
 	/**
 	 * Saves an edited note: cards are regenerated keeping IDs by variant (`planCardRegen`), lost
 	 * variants are tombstoned, new ones added, and kept cards whose path changed are replayed.
-	 * Editing clears the flag and un-pauses the note's cards. Fails (writing nothing) when the
-	 * content is invalid for its type or makes no cards.
+	 * Editing clears the flag and un-pauses the note's cards. The note keeps its type. Fails
+	 * (writing nothing) when `content.type` differs from the note's, the payload is invalid for
+	 * its type, or it makes no cards.
 	 */
 	async editNote(_noteId: NoteId, _content: NoteContent): Promise<Result<void, string>> {
 		throw new Error('not implemented');
