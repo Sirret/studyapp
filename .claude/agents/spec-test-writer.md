@@ -33,3 +33,5 @@ You write tests that check the **specification**, not the code. You are delibera
 - A table: spec rule → test name(s).
 - Every `SPEC-GAP` with the question it raises.
 - Confirmation that the tests compile and currently fail only with `not implemented`.
+
+Your summary must fit in 25 lines; the lead copies its one-line result into the WIP Checkpoint log.

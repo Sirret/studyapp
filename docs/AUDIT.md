@@ -94,7 +94,7 @@ In .claude/agents/reviewer.md, replace the description's "Run once at the end of
 
     Effort: S.
 
-    Status: [x] — commit: (this commit). Evidence matched; CLAUDE.md step 5, reviewer.md description and HANDOFF timing updated.
+    Status: [x] — commit: 9b8bc6c. Evidence matched; CLAUDE.md step 5, reviewer.md description and HANDOFF timing updated.
 
 [x] 1.5 — Add two ReviewEvent fields for Phase 8.6 before Import v2 commits
 
@@ -139,7 +139,7 @@ verdictKind: z.enum(['exact', 'fuzzy', 'ideaUnit', 'listN']).optional(),
 
     Status: [x] — commit: 771609b (with 1.1 and 1.5). Import coverage is below 80% until Import v2 is implemented (recorded, threshold not lowered). The WIP and HANDOFF hash backfill lands in the next commit.
 
-[ ] 1.7 — Add a "checkpoint and pause" rule to the workflow (saves usage, makes progress trackable)
+[x] 1.7 — Add a "checkpoint and pause" rule to the workflow (saves usage, makes progress trackable)
 
     Where: CLAUDE.md (repo root), the "Workflow for every phase" section; docs/WIP.md (top); docs/HANDOFF.md "Current state".
 
@@ -166,7 +166,7 @@ verdictKind: z.enum(['exact', 'fuzzy', 'ideaUnit', 'listN']).optional(),
 
     Effort: S.
 
-    Status: [ ] — commit: _
+    Status: [x] — commit: (this commit). Evidence anchors found. Checkpoint rule added to CLAUDE.md; checkpoint log started in WIP.md with the four commits from this session.
 
 Tier 2 — High (do before 8.5)
 [ ] 2.1 — Spec-test-writer: scope the brief, not the test execution

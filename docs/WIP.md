@@ -1,5 +1,13 @@
 # WIP — Import v2
 
+## Checkpoint log
+| Date | Phase | Step | Model | Done | Files | Next | Commit |
+|------|-------|------|-------|------|-------|------|--------|
+| 2026-11-13 | Import v2 (audit 1.5, 1.6) | interface + Dexie v2 | claude-haiku-5-5 | Import v2 interface and Dexie v2 committed with audit 1.1, 1.5, 1.6; 19 import tests to PROMPTS §7 | 40 | Parser, builder and UI (WIP checklist 4) | 771609b |
+| 2026-11-13 | audit | 1.2 | claude-haiku-5-5 | SESSION_NOTES §B marked by status (8 ✅, D2/D3 ⏳ 8.6) | 4 | audit 1.3 | 0a252e8 |
+| 2026-11-13 | audit | 1.3 | claude-haiku-5-5 | BUILD_PLAN §10 Phase status table; HANDOFF pointer | 3 | audit 1.4 | c00ccbb |
+| 2026-11-13 | audit | 1.4 | claude-haiku-5-5 | Reviewer runs once per phase (CLAUDE.md step 5, reviewer.md, HANDOFF) | 4 | audit 1.7 | 9b8bc6c |
+
 ## Committed 2026-11-13 with audit 1.1, 1.5, 1.6 (one commit; hash in AUDIT.md)
 
 - **Gap decisions (user, confirmed):** PROMPTS §7 "Robust parsing" now says: unknown directives are skipped with a warning, never an error, and the lines under them with them; directive names are case-insensitive; `ParseOutput` has `warnings` next to `errors`; an empty paste gives no errors and no warnings ("Nothing to import").

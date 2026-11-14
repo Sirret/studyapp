@@ -55,3 +55,5 @@ You review; you never change anything. Do not use Bash to modify files, install 
 - **Findings** table: severity (`blocker` / `should-fix` / `nit`), file:line, rule broken, suggested fix.
 - **Spec coverage:** any spec rule for this phase with no test.
 - Keep it factual and short; no praise, no restating the code.
+
+Your summary must fit in 25 lines; the lead copies its one-line result into the WIP Checkpoint log.

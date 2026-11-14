@@ -68,6 +68,16 @@ The docs, for reference:
 
 Agents are helpers giving a different point of view, not supervisors: give them the specifics they need so they don't read everything. Steps 1–3 repeat per module inside a phase; steps 4–6 run once at the end of the phase. UI-only work (screens, styling) skips step 2 but still gets e2e tests.
 
+**Checkpoints.** Stop at the end of each of these, in every phase (including Fix pass, Import v2, 8.5, 8.6): (a) interface committed, (b) spec tests written, (c) one module implemented and its tests green, (d) verify passing, (e) review done, (f) PROGRESS logged. Also stop if a single step has touched more than ~15 files or the session has run long. At each checkpoint:
+1. Commit the work (never leave a checkpoint with uncommitted changes).
+2. Update the "Checkpoint log" at the top of `docs/WIP.md` with one row: date · phase · step · model · what was done (one line) · files touched (count) · what's next (one line) · commit hash.
+3. Print exactly:
+   `CHECKPOINT — <phase> / <step> done (<commit>). Next: <next step>.`
+   `Type /clear, then: Continue from docs/WIP.md`
+4. Stop. Do not start the next step in the same session.
+
+On "Continue from docs/WIP.md": read only the Checkpoint log's last row, the WIP checklist item it points to, and the files that item names. Do not re-read docs that the last row didn't name.
+
 ## Commands (set up in Phase 0)
 
 - `npm run dev` — dev server
