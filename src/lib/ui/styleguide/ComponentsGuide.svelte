@@ -1,6 +1,6 @@
 <!-- Layer 6 in the style guide: every component in its states. Dev builds only. -->
 <script lang="ts">
-	import { CARD_STATUSES, SAMPLE_IMPORT_PREVIEW } from './guide-data.ts';
+	import { CARD_STATUSES, SAMPLE_IMPORT_PREVIEW, SAMPLE_IMPORT_RESUME } from './guide-data.ts';
 	import ImportPreviewPanel from '../import-screen/ImportPreviewPanel.svelte';
 	import PromptIntake from '../import-screen/PromptIntake.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
@@ -130,6 +130,18 @@
 		<div class="wide">
 			<ImportPreviewPanel
 				preview={SAMPLE_IMPORT_PREVIEW}
+				{placements}
+				onPlacement={(name, placement) => placements.set(name, placement)}
+				onJumpToLine={noop}
+			/>
+		</div>
+	</GuideRow>
+	<GuideRow
+		label="Import preview, resume (sample: stopped at a topic break, checklist, missing part, resume prompt)"
+	>
+		<div class="wide">
+			<ImportPreviewPanel
+				preview={SAMPLE_IMPORT_RESUME}
 				{placements}
 				onPlacement={(name, placement) => placements.set(name, placement)}
 				onJumpToLine={noop}

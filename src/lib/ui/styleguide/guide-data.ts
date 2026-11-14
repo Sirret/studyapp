@@ -36,6 +36,21 @@ export const SAMPLE_IMPORT_PREVIEW = {
 	starredGaps: []
 } satisfies ImportPreview;
 
+/** The resume state: a reply that stopped at a topic break, with a checklist, a missing part and a warning. */
+export const SAMPLE_IMPORT_RESUME = {
+	...SAMPLE_IMPORT_PREVIEW,
+	status: 'stopped',
+	ended: true,
+	warnings: [{ line: 4, message: 'Unknown directive "@exam". The line is skipped.' }],
+	checklist: [
+		{ key: 'lecture-1', title: 'Lecture 1: Introduction', imported: true, partial: false },
+		{ key: 'lecture-2', title: 'Lecture 2: Relational Algebra', imported: true, partial: true },
+		{ key: 'lecture-3', title: 'Lecture 3: Joins', imported: false, partial: false }
+	],
+	missing: ['Slides 14 to 16 (too blurry to read)'],
+	resumePrompt: 'Continue my study pack for this course from "Lecture 3: Joins".'
+} satisfies ImportPreview;
+
 /** A few lines of import text, for the paste-area sample. */
 export const SAMPLE_IMPORT_TEXT = [
 	'@deck Lecture 1',

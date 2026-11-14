@@ -16,6 +16,7 @@
 	import Button from '../primitives/Button.svelte';
 	import Card from '../primitives/Card.svelte';
 	import Segmented from '../primitives/Segmented.svelte';
+	import ImportChecklist from './ImportChecklist.svelte';
 
 	interface Props {
 		preview: ImportPreview;
@@ -63,6 +64,19 @@
 	function setAll(placement: Placement): void {
 		for (const topic of preview.topics) onPlacement(topic.name, placement);
 	}
+
+	/** Copies the resume prompt; the text is also shown below, so it can be copied by hand. */
+	async function copyResume(): Promise<void> {
+		if (!preview.resumePrompt) return;
+		try {
+			await navigator.clipboard.writeText(preview.resumePrompt);
+			resumeNote = 'Copied. Paste it into a new chat with your chatbot.';
+		} catch {
+			resumeNote = 'Copying was blocked. Open "Show the resume prompt" below and copy it by hand.';
+		}
+	}
+
+	let resumeNote = $state('');
 </script>
 
 <section aria-label="Preview">
@@ -80,11 +94,43 @@
 			</Stack>
 		</Card>
 
-		{#if !preview.ended}
+		{#if preview.status === 'cut'}
 			<StickyNote title="Your chatbot may have stopped early">
 				The reply doesn't end with @end. In the chatbot, type "continue", then paste the rest at the
 				end of your text here.
 			</StickyNote>
+		{:else if preview.status === 'stopped'}
+			<StickyNote title="This reply ends at a topic break">
+				Nothing is missing from what's here. For the next topics, copy the resume prompt into a new
+				chat.
+			</StickyNote>
+		{/if}
+
+		<ImportChecklist checklist={preview.checklist} missing={preview.missing} />
+
+		{#if preview.resumePrompt}
+			<Stack gap="sm">
+				<Button variant="secondary" full onclick={copyResume}>Copy the resume prompt</Button>
+				{#if resumeNote}<p class="muted" role="status">{resumeNote}</p>{/if}
+				<Disclosure summary="Show the resume prompt" preformatted>{preview.resumePrompt}</Disclosure
+				>
+			</Stack>
+		{/if}
+
+		{#if preview.warnings.length > 0}
+			<Disclosure
+				summary="{plural(
+					preview.warnings.length,
+					'line',
+					'lines'
+				)} the app didn't recognise were skipped. Nothing else changes."
+			>
+				{#each preview.warnings as warning (`${warning.line}:${warning.message}`)}
+					<Button variant="ghost" onclick={() => onJumpToLine(warning.line)}>
+						Line {warning.line}: {warning.message}
+					</Button>
+				{/each}
+			</Disclosure>
 		{/if}
 
 		{#if preview.errors.length > 0}

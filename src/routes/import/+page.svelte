@@ -3,7 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { SvelteMap } from 'svelte/reactivity';
 	import type { CourseId, Placement } from '#lib/db/schemas/common.ts';
-	import type { Course } from '#lib/db/schemas/course.ts';
+	import type { Course, ImportGoal } from '#lib/db/schemas/course.ts';
 	import type { ImageSource, ImportPreview, PreparedImage } from '#lib/services/import-service.ts';
 	import { importService } from '#lib/services/import-wiring.ts';
 	import { countOf } from '#lib/util/plural.ts';
@@ -31,6 +31,8 @@
 	let images = $state.raw<PreparedImage[]>([]);
 	let imageErrors = $state.raw<string[]>([]);
 	let preview = $state.raw<ImportPreview | undefined>();
+	/** The intake's goal (PROMPTS §2); the commit saves it on the course map. */
+	let goal = $state<ImportGoal | undefined>('learn');
 	const placements = new SvelteMap<string, Placement>();
 	let notice = $state('');
 	/** The course the last import went into, for "Start studying"; cleared by any new work. */
@@ -127,7 +129,7 @@
 	async function commitImport(): Promise<void> {
 		if (!courseId || !preview) return;
 		isBusy = true;
-		const result = await importService.commit(courseId, preview, placements);
+		const result = await importService.commit(courseId, preview, placements, goal ?? 'learn');
 		isBusy = false;
 		if (!result.ok) {
 			notice = result.error;
@@ -198,7 +200,7 @@
 	</Card>
 
 	<Card tag="section" label="Chatbot prompt">
-		<PromptIntake onCopied={promptCopied} />
+		<PromptIntake onCopied={promptCopied} bind:goal />
 	</Card>
 
 	<Card tag="section" label="Text and images">

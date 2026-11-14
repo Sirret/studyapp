@@ -16,10 +16,13 @@
 	import TextArea from '#lib/ui/primitives/TextArea.svelte';
 
 	let {
-		onCopied
+		onCopied,
+		goal = $bindable<ImportGoal | undefined>('learn')
 	}: {
 		/** Called after the copy attempt: true when the clipboard took the prompt. */
 		onCopied: (copied: boolean) => void;
+		/** The goal the student picked; the import saves it on the course map. */
+		goal?: ImportGoal | undefined;
 	} = $props();
 
 	const GIVINGS = Object.entries(GIVING_LABELS) as [Giving, string][];
@@ -30,7 +33,6 @@
 	];
 
 	let giving = $state<Giving | undefined>('lecture');
-	let goal = $state<ImportGoal | undefined>('learn');
 	let syllabus = $state('');
 
 	const prompt = $derived(
