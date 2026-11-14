@@ -83,6 +83,14 @@ describe('prompt-v2', () => {
 		expect(BASE_PROMPT).toBe(fenced[0]);
 	});
 
+	/** BUILD_PLAN §10 row 8.5 prompt rule; starred list facts stay (SESSION_NOTES D4). */
+	it('turns answers of 3 or more items into starred lists, sequences or separate cards', () => {
+		expect(BASE_PROMPT).toContain('An answer of 3 or more items is never a plain comma list');
+		expect(BASE_PROMPT).toContain(
+			'a @sequence when the items\n  have an order, or else one card per item'
+		);
+	});
+
 	it('has each GOAL block word for word from PROMPTS §4', () => {
 		expect(GOAL_BLOCKS.learn).toBe(fenced.find((block) => block.startsWith('GOAL: learn')));
 		expect(GOAL_BLOCKS.study).toBe(fenced.find((block) => block.startsWith('GOAL: I already')));

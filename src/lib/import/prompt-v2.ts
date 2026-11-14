@@ -69,6 +69,10 @@ CARD RULES
   answer must contain. Use * only for this, never for maths.
 - Lists to name: the question says how many, and every item is starred:
   Six network threats :: *malware*, *phishing*, *DoS*, *unauthorized access*, *eavesdropping*, *spoofing*
+- An answer of 3 or more items is never a plain comma list. Make it a starred
+  list @fact (above) when I must name the whole set, a @sequence when the items
+  have an order, or else one card per item:
+  In a DBMS, the storage manager part that caches disk pages :: buffer manager
 - Cards must drill every @habit question (e.g. "Port number: which layer?").
 - @cloze hides 1-3 key words with {{ }}; never hide one item of a list (several
   answers would be right).
