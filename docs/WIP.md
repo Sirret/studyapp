@@ -10,6 +10,7 @@
 | 2026-11-13 | audit | 1.7 | claude-haiku-5-5 | Checkpoint rule in CLAUDE.md; checkpoint log started | 6 | audit 2.1 | cf56b14 |
 | 2026-11-13 | audit | 3.3 | claude-haiku-5-5 | Cozy decision at the top of SESSION_NOTES §G (mockups only); HANDOFF design line | 3 | audit 2.2 | fdcfef0 |
 | 2026-11-13 | audit | 2.2 | claude-haiku-5-5 | Tokens-only UI rule in WIP.md, DESIGN.md status paragraph, CLAUDE.md rule 20 | 4 | audit 2.3 | b263e15 |
+| 2026-11-14 | Import v2 | 4 (reconciled) | claude-haiku-5-5 | WIP was stale: implementation already in 771609b. Verified: check 0 errors, full test 1664 pass, only import coverage threshold fails. Checklist 4 marked done, 4b added | 1 | Step 2: spec-test-writer on the brief (WIP "spec-test-writer brief") | pending (this commit) |
 
 ## Committed 2026-11-13 with audit 1.1, 1.5, 1.6 (one commit; hash in AUDIT.md)
 
@@ -36,7 +37,7 @@
 
 ## PAUSED 2026-11-13 (user asked to pause; usage limit hit) — resume here
 
-**Nothing of Import v2 is committed yet.** Last commit: fc36dd9. All work below is in the working tree (see `git status`). Don't commit piecemeal: the pre-commit hook runs changed tests, and 19 older tests still fail on intended spec changes until the test agent updates them.
+**RECONCILED 2026-11-14 (supersedes the pause note):** everything listed under "Done (uncommitted)" below is in commit **771609b** (the commit message says interface only; it holds the implementation too). Working tree clean at the start of this session. Checked: `npm run check` 0 errors; `npm run test` 70 files / 1664 tests pass; the only failure is the coverage threshold for `src/lib/import/**` (75.7% lines / 64% branches, needs spec tests from step 2). Steps 1 and 4 are therefore done; step 2 (spec tests) is still open.
 
 **Also pending from the user's latest requests (do after Import v2 is green):**
 - A **default course auto-imported** on first run, built from `tests/fixtures/import/` (security and/or datacomms reply) — e.g. a service that imports it once when there are no courses (KV flag so it never re-imports after the student deletes it). Not started.
@@ -64,8 +65,8 @@
 - [x] 1 Interface: schemas, AST types, module signatures (stubs) — commit: 771609b. event.ts fields for 8.6 included (ReviewEvent `hinted`, `verdictKind`).
 - [ ] 2 spec-test-writer on the import modules (brief below once written)
 - [x] 3 Data model + Dexie v2 migration + DATA_MODEL (one commit) — commit: 771609b
-- [ ] 4 Implement parser/build/prompt; services (preview checklist, missing, resume, from: matching, commit new fields)
-- [ ] 5 UI: intake + Copy prompt + PDF tip; preview checklist/missing/resume; course page bigpicture/habit/cheat
+- [x] 4 Implement parser/build/prompt; services (preview checklist, missing, resume, from: matching, commit new fields) — commit: 771609b (code in that commit; spec tests for it are step 2, still open). Not yet: acquisition skip for empty `text` (step 4b below).
+- [ ] 4b Acquisition: skip read step for empty section text (`engine/acquisition.ts`); `services/course-learn.ts` unitSection prefers chunk `title`- [ ] 5 UI: intake + Copy prompt + PDF tip; preview checklist/missing/resume; course page bigpicture/habit/cheat
 - [ ] 6 e2e; verify; reviewer; PROGRESS; HANDOFF; Decisions log; delete WIP
 
 ## Progress
