@@ -64,7 +64,8 @@ export class CardListService {
 				note: this.store.notes.draftChange(note, patch, deviceId),
 				cards: this.draftCards(note, existing, plan, deviceId)
 			};
-		} catch {
+		} catch (error) {
+			this.logger.warn(LOG_AREA, 'note edit rejected', { noteId, error: String(error), trace });
 			return { ok: false, error: 'Some fields of this note are missing or wrong.' };
 		}
 		await this.store.putBatch({ notes: [changed.note], cards: changed.cards });
@@ -99,7 +100,8 @@ export class CardListService {
 
 	private async setFlag(noteId: NoteId, flagged: boolean): Promise<void> {
 		const note = await this.store.notes.get(noteId);
-		if (!note) return;
+		// Only un-pause cards the flag paused: an unflagged note's paused cards stay paused.
+		if (!note || (!flagged && !note.check)) return;
 		const cards = await this.store.cards.listByNote(noteId);
 		const deviceId = await this.store.getDeviceId();
 		await this.store.putBatch({
@@ -119,10 +121,13 @@ export class CardListService {
 		deviceId: DeviceId
 	): Card[] {
 		const byId = new Map(existing.map((card) => [card.id, card]));
+		// Saving an edit clears the flag, so it un-pauses only when the note was flagged.
+		const unpause = note.check === true;
 		const kept = plan.keep.flatMap((k) => {
 			const card = byId.get(k.cardId);
-			if (!card || (!k.pathChanged && !card.suspended)) return [];
-			return [this.store.cards.draftChange(card, { path: k.path, suspended: false }, deviceId)];
+			if (!card || (!k.pathChanged && !(unpause && card.suspended))) return [];
+			const suspended = unpause ? false : card.suspended;
+			return [this.store.cards.draftChange(card, { path: k.path, suspended }, deviceId)];
 		});
 		const added = plan.add.map((spec) =>
 			this.store.cards.draft(

@@ -269,6 +269,14 @@ describe('buildPlan: Import v2', () => {
 		expect(topics.map((topic) => topic.key)).toEqual(['osi', 'b']);
 	});
 
+	it('attaches @keyterms to an open @section that the next @read fills', () => {
+		const { chunks, notes } = onlyTopic(
+			`${TOPIC}@section One\n@keyterms\nk :: m\n@read\nbody\n${TWO}@end`
+		);
+		expect(chunks).toHaveLength(2);
+		expect(notes[0]?.chunkIndex).toBe(0);
+	});
+
 	it('makes a chunk per @section with its title, priority, reading and tip', () => {
 		const { chunks } = onlyTopic(
 			`${TOPIC}@section One\n@priority high\n@read\nbody\n@tip\nA trick\n${TWO}@end`

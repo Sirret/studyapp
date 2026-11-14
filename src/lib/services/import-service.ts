@@ -18,7 +18,7 @@ import { parseImport } from '#lib/import/parser.ts';
 import { fileKey, readImportZip } from '#lib/import/zip.ts';
 import type { Logger } from '#lib/log/logger.ts';
 import type { Result } from '#lib/util/result.ts';
-import { ImportBatchDrafter } from './import-batch.ts';
+import { addsRecords, ImportBatchDrafter } from './import-batch.ts';
 import {
 	checkedItems,
 	countNoteTypes,
@@ -262,7 +262,11 @@ export class ImportService {
 				topicsBefore: drafter.topicsBefore(),
 				mapBefore: course.map ?? null
 			};
-			const changes = { ...(map ? { map } : {}), lastImport };
+			// A paste whose every note was a duplicate adds nothing to undo: keep the previous lastImport.
+			const changes = {
+				...(map ? { map } : {}),
+				...(addsRecords(batch, importId) ? { lastImport } : {})
+			};
 			batch.courses = [this.store.courses.draftChange(course, changes, deviceId)];
 			await this.store.writeBatch(batch);
 			const summary = {

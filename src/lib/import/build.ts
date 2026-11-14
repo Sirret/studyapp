@@ -1,7 +1,8 @@
 import type { Chunk } from '#lib/db/schemas/course.ts';
 import type { Priority } from '#lib/db/schemas/common.ts';
 import { generateCards, type CardSpec, type NoteContent } from '#lib/engine/cardgen.ts';
-import type { Block, ImportDocument, ImportError, PairEntry } from './ast.ts';
+import type { Block, ImportDocument, ImportError } from './ast.ts';
+import { toDrafts, type NoteBlock } from './build-drafts.ts';
 import { collectMap, type PlannedMap } from './build-map.ts';
 import {
 	applyStructure,
@@ -16,7 +17,6 @@ import {
 	type ReplyStatus,
 	type ResumePoint
 } from './completeness.ts';
-import { readKeyWords } from './key-words.ts';
 import { fileKey } from './zip.ts';
 
 /** A note's content before its image exists in `media`: occlusion names the file instead. */
@@ -80,101 +80,7 @@ export interface BuildContext {
 	newId: () => string;
 }
 
-type NoteBlock = Exclude<Block, { kind: StructureKind }>;
-
-/** A note's content before the sticky state is applied. */
-interface Draft {
-	line: number;
-	content: PlannedContent;
-	isChecked: boolean;
-	isAdded?: boolean;
-	sourceFile?: string;
-}
-
 const NOT_A_NOTE_BLOCK = new Set<Block['kind']>(['tag', 'priority', 'keyterms']);
-
-function pairDrafts(
-	block: { entries: PairEntry[] },
-	toContent: (left: string, right: string) => PlannedContent
-): Draft[] {
-	return block.entries.map(({ line, left, right, isChecked, isAdded }) => ({
-		line,
-		isChecked,
-		isAdded,
-		content: toContent(left, right)
-	}));
-}
-
-function diagramContent(
-	block: Extract<Block, { kind: 'diagramStack' | 'diagramFlow' }>,
-	newId: () => string
-): PlannedContent {
-	if (block.kind === 'diagramStack') {
-		const nodes = block.layers.map((layer) => ({ id: newId(), ...layer }));
-		return { type: 'diagram', payload: { kind: 'stack', name: block.name, nodes, edges: [] } };
-	}
-	const ids = new Map<string, string>();
-	for (const { from, to } of block.edges) {
-		for (const label of [from, to]) if (!ids.has(label)) ids.set(label, newId());
-	}
-	const nodes = [...ids].map(([label, id]) => ({ id, label }));
-	const edges = block.edges.map(({ from, to, label }) => ({
-		id: newId(),
-		from: ids.get(from) ?? '',
-		to: ids.get(to) ?? '',
-		...(label ? { label } : {})
-	}));
-	return { type: 'diagram', payload: { kind: 'flow', name: block.name, nodes, edges } };
-}
-
-/** Blocks that make one note per line. */
-function draftsPerLine(block: Extract<NoteBlock, { entries: unknown }>): Draft[] {
-	switch (block.kind) {
-		case 'keyterms':
-			return pairDrafts(block, (term, meaning) => ({
-				type: 'keyterm',
-				payload: { term, meaning }
-			}));
-		case 'fact':
-			return pairDrafts(block, (term, definition) => ({
-				type: 'fact',
-				payload: factPayload(term, definition)
-			}));
-		case 'link':
-		case 'scenario':
-			return pairDrafts(block, (situation, answer) => ({
-				type: 'scenario',
-				payload: { situation, answer }
-			}));
-		case 'cloze':
-			return block.entries.map(({ line, text, isChecked, isAdded }) => ({
-				line,
-				isChecked,
-				isAdded,
-				content: { type: 'cloze', payload: { text } }
-			}));
-	}
-}
-
-/** Blocks that make one note in all. */
-function singleContent(
-	block: Exclude<NoteBlock, { entries: unknown }>,
-	newId: () => string
-): PlannedContent {
-	switch (block.kind) {
-		case 'sequence':
-			return { type: 'sequence', payload: { name: block.name, steps: block.steps } };
-		case 'example':
-			return { type: 'example', payload: { name: block.name, steps: block.steps } };
-		case 'compare':
-			return { type: 'compare', payload: { items: block.items, rows: block.rows } };
-		case 'occlusion':
-			return { type: 'occlusion', file: block.file };
-		case 'diagramStack':
-		case 'diagramFlow':
-			return diagramContent(block, newId);
-	}
-}
 
 /** The image a block needs: reported and skipped when it isn't attached. */
 function hasRequiredImage(state: BuildState, block: NoteBlock): boolean {
@@ -187,18 +93,6 @@ function hasRequiredImage(state: BuildState, block: NoteBlock): boolean {
 	if (file === undefined || state.context.files.has(fileKey(file))) return true;
 	state.errors.push({ line: block.line, message: `Image "${file}" is not attached.` });
 	return false;
-}
-
-function toDrafts(block: NoteBlock, newId: () => string): Draft[] {
-	if ('entries' in block) return draftsPerLine(block);
-	return [
-		{
-			line: block.line,
-			isChecked: block.isChecked,
-			content: singleContent(block, newId),
-			...('sourceFile' in block && block.sourceFile ? { sourceFile: block.sourceFile } : {})
-		}
-	];
 }
 
 /**
@@ -217,7 +111,10 @@ function chunkFor(
 	upcoming: Extract<Block, { kind: 'read' }> | undefined
 ): { chunkIndex?: number; isGenerated: boolean } {
 	if (block.kind === 'keyterms' && upcoming) {
-		return { chunkIndex: topic.chunks.length, isGenerated: upcoming.isGenerated };
+		// The `@read` fills an open `@section` rather than adding a chunk.
+		const open = state.sectionOpen && state.chunkIndex !== undefined;
+		const chunkIndex = open ? state.chunkIndex : topic.chunks.length;
+		return { chunkIndex, isGenerated: upcoming.isGenerated };
 	}
 	if (state.chunkIndex === undefined) return { isGenerated: false };
 	const chunk = topic.chunks[state.chunkIndex];
@@ -263,20 +160,6 @@ const STRUCTURE_KINDS = new Set<Block['kind']>([
 
 function isStructure(block: Block): block is StructureBlock {
 	return STRUCTURE_KINDS.has(block.kind);
-}
-
-/** A `@fact` with its `*key words*` read: shown without markers, a starred list makes one card. */
-function factPayload(
-	term: string,
-	definition: string
-): Extract<PlannedContent, { type: 'fact' }>['payload'] {
-	const { text, keyWords, list } = readKeyWords(definition);
-	return {
-		term,
-		definition: text,
-		...(keyWords.length > 0 ? { keyWords } : {}),
-		...(list ? { list: true as const } : {})
-	};
 }
 
 /** Marks the topic the reply stopped or was cut in as partial. */

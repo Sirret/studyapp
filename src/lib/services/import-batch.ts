@@ -64,6 +64,19 @@ function snapshot(topic: Topic): TopicBeforeImport {
 }
 
 /**
+ * Whether the batch creates anything the import's undo could remove. Changed existing topics do not
+ * count: a paste whose every note was a duplicate still touches its matched topic.
+ *
+ * @see BUILD_PLAN Decisions log "Phase 8.5 review: a no-op import keeps the previous lastImport"
+ */
+export function addsRecords(batch: ContentBatch, importId: ImportId): boolean {
+	return (
+		batch.media.length + batch.chunks.length + batch.notes.length + batch.cards.length > 0 ||
+		batch.topics.some((topic) => topic.importId === importId)
+	);
+}
+
+/**
  * Builds the records an import will write, reading what it needs but storing nothing, so the write
  * itself can be one transaction. New records carry the import's `importId`; topics it changes are
  * remembered as they were (`topicsBefore`), so the import can be undone. A planned section that the

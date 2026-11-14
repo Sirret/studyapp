@@ -203,5 +203,23 @@ describe('CardListService', () => {
 			expect(note.check).toBe(true);
 			expect((await cardsOf(note.id)).every((card) => !card.suspended)).toBe(true);
 		});
+
+		it('unflag and saving an edit leave a card paused some other way paused', async () => {
+			await env.importText('@deck A\n@fact\nTCP :: reliable');
+			const note = await env.noteWith('TCP');
+			const [card] = await cardsOf(note.id);
+			const deviceId = await env.store.getDeviceId();
+			await env.store.putBatch({
+				cards: [env.store.cards.draftChange(card!, { suspended: true }, deviceId)]
+			});
+
+			await env.cardList.unflag(note.id);
+			await env.cardList.editNote(note.id, {
+				type: 'fact',
+				payload: { term: 'TCP', definition: 'reliable transport' }
+			});
+
+			expect((await env.store.cards.get(card!.id))?.suspended).toBe(true);
+		});
 	});
 });

@@ -227,4 +227,16 @@ describe('ImportService: re-import adds no duplicates', () => {
 		const cards = await env.store.cards.listByCourse(env.courseId);
 		expect(cards.every((card) => card.importId === importId)).toBe(true);
 	});
+
+	it('keeps the previous lastImport when a re-import adds nothing, so it can still be undone', async () => {
+		const text = `${OSI}${ONE}@end`;
+		await env.importText(text);
+		const first = (await env.store.courses.get(env.courseId))?.lastImport;
+
+		await env.importText(text);
+
+		expect((await env.store.courses.get(env.courseId))?.lastImport).toEqual(first);
+		const result = await env.undo.undo(env.courseId);
+		expect(result.ok && result.value.notes).toBeGreaterThan(0);
+	});
 });
