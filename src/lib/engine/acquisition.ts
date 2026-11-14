@@ -168,7 +168,7 @@ function quizCards(cards: readonly AcqCard[]): { id: CardId; kind: ExerciseKind 
 /**
  * A unit's steps: pretrain (its `keyterm` cards, if any) → pretest (full path with the pretest on:
  * up to `PRETEST_MAX` `fact` cards, then `cloze` cards, in card order; none → no step) → read (when
- * the unit has a chunk) → quiz (its other cards, `quizKind` each; recall-format cards first, then
+ * the unit has a chunk with text, i.e. `words > 0`) → quiz (its other cards, `quizKind` each; recall-format cards first, then
  * the rest, each keeping card order; none → no step).
  */
 export function unitSteps(input: {
@@ -186,7 +186,8 @@ export function unitSteps(input: {
 		steps.push({ step: 'pretrain', cardIds: keyterms.map((card) => card.id) });
 	const pretest = input.path === 'full' && input.pretestOn ? pretestCards(others) : [];
 	if (pretest.length > 0) steps.push({ step: 'pretest', cardIds: pretest });
-	if (input.unit.chunkId !== null) steps.push({ step: 'read', chunkId: input.unit.chunkId });
+	if (input.unit.chunkId !== null && input.unit.words > 0)
+		steps.push({ step: 'read', chunkId: input.unit.chunkId });
 	const quiz = quizCards(others);
 	if (quiz.length > 0) steps.push({ step: 'quiz', cards: quiz });
 	return {

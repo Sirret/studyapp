@@ -40,8 +40,15 @@ export function openUnits(
 	return { units, cards };
 }
 
-/** The unit's section name: the first `@tag` among its cards' notes, in card order, or null. */
+/**
+ * The unit's section name: the chunk's stored title (Import v2 `@section`), else the first `@tag`
+ * among its cards' notes, in card order, or null.
+ *
+ * @see PROMPTS §3 (@section), DATA_MODEL §3.4 (Chunk.title)
+ */
 export function unitSection(data: CourseData, unit: AcqUnit): string | null {
+	const stored = data.chunks.find((chunk) => chunk.id === unit.chunkId)?.title;
+	if (stored !== undefined && stored.trim() !== '') return stored;
 	const { cards, notes } = data.material;
 	const byId = new Map(cards.map((card) => [card.id, card]));
 	for (const id of unit.cardIds) {

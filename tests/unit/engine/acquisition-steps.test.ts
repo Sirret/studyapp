@@ -71,6 +71,12 @@ describe('unitSteps: order and presence', () => {
 		]);
 	});
 
+	it('has no read step for a chunk with no text (a Just study or Cram reply has no @read)', () => {
+		const unit: AcqUnit = { ...unitOf(deck), words: 0 };
+		const steps = unitSteps({ unit, cards: deck, path: 'full', pretestOn: true }).result;
+		expect(names(steps)).toStrictEqual(['pretrain', 'pretest', 'quiz']);
+	});
+
 	it('leaves out an empty pretrain step', () => {
 		expect(names(stepsFor([fact(2), card(3)]))).toStrictEqual(['pretest', 'read', 'quiz']);
 	});
