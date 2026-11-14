@@ -4,6 +4,7 @@ import {
 	CourseColorSchema,
 	CourseIdSchema,
 	ExamFormatSchema,
+	ImportIdSchema,
 	LocalDateSchema,
 	LocalTimeSchema,
 	MediaIdSchema,
@@ -52,6 +53,36 @@ export const CourseMapSchema = z.object({
 });
 export type CourseMap = z.infer<typeof CourseMapSchema>;
 
+/**
+ * A topic as it was before an import changed it: only the fields an import writes.
+ *
+ * @see DATA_MODEL §3.1 (`lastImport`)
+ */
+export const TopicBeforeImportSchema = z.object({
+	id: TopicIdSchema,
+	placement: PlacementSchema,
+	priority: PrioritySchema,
+	key: z.string().min(1).optional(),
+	from: z.array(z.string()).optional(),
+	summary: z.string().optional(),
+	partial: z.literal(true).optional()
+});
+export type TopicBeforeImport = z.infer<typeof TopicBeforeImportSchema>;
+
+/**
+ * What undoing the course's latest import needs: its ID (the records it created carry it), the
+ * topics it changed as they were before, and the course map before (`null`: there was none).
+ *
+ * @see DATA_MODEL §3.1
+ */
+export const LastImportSchema = z.object({
+	importId: ImportIdSchema,
+	at: z.number(),
+	topicsBefore: z.array(TopicBeforeImportSchema),
+	mapBefore: CourseMapSchema.nullable()
+});
+export type LastImport = z.infer<typeof LastImportSchema>;
+
 /** @see DATA_MODEL §3.1 */
 export const CourseSchema = MetaSchema.extend({
 	id: CourseIdSchema,
@@ -62,7 +93,9 @@ export const CourseSchema = MetaSchema.extend({
 	examFormat: ExamFormatSchema,
 	color: CourseColorSchema,
 	settingsOverride: SettingsSchema.partial().optional(),
-	map: CourseMapSchema.optional()
+	map: CourseMapSchema.optional(),
+	/** The latest import, until it is undone or another import replaces it. */
+	lastImport: LastImportSchema.optional()
 });
 export type Course = z.infer<typeof CourseSchema>;
 
@@ -80,7 +113,9 @@ export const TopicSchema = MetaSchema.extend({
 	from: z.array(z.string()).optional(),
 	summary: z.string().optional(),
 	/** Some of its sections are still to come (cut-off reply). */
-	partial: z.literal(true).optional()
+	partial: z.literal(true).optional(),
+	/** The import that created it; absent for topics made by hand or before Phase 8.5. */
+	importId: ImportIdSchema.optional()
 });
 export type Topic = z.infer<typeof TopicSchema>;
 
@@ -104,7 +139,9 @@ export const ChunkSchema = MetaSchema.extend({
 	priority: PrioritySchema.optional(),
 	tip: z.string().optional(),
 	/** The "Added by the chatbot (check these)" section: reviewed by the student, kept apart. */
-	added: z.literal(true).optional()
+	added: z.literal(true).optional(),
+	/** The import that created it. */
+	importId: ImportIdSchema.optional()
 });
 export type Chunk = z.infer<typeof ChunkSchema>;
 
@@ -117,6 +154,8 @@ export const MediaSchema = MetaSchema.extend({
 	height: z.number().int().positive(),
 	bytes: z.number().int().min(0),
 	blob: z.instanceof(Blob),
-	fileName: z.string().optional()
+	fileName: z.string().optional(),
+	/** The import that stored it. */
+	importId: ImportIdSchema.optional()
 });
 export type Media = z.infer<typeof MediaSchema>;

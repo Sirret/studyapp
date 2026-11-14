@@ -124,6 +124,7 @@ Not shown: singleton key-value records (`kv`, §5) and the app log (`logs`, §6)
 | `color` | `'lavender' \| 'peach' \| 'sage' \| 'sky' \| 'rose' \| 'butter'` | ✓ | assigned in order on creation; editable | Course colour (DESIGN §3.1) |
 | `settingsOverride` | `Partial<Settings>` | — | keys from `kv.settings` | Per-course setting overrides (exercise toggles, spelling mode…) |
 | `map` | `CourseMap` | — | §4.6; from an Import v2 reply | How the topics connect, exam habit questions, planned topics, links, cheat table, missing content, resume point |
+| `lastImport` | `{ importId: ID; at: number; topicsBefore: TopicBeforeImport[]; mapBefore: CourseMap | null }` | — | replaced by each import; removed by its undo | What undoing the course's latest import needs: the ID on the records it created, each topic it changed as it was before (`id, placement, priority` and the optional `key, from, summary, partial`), and the course map before (`null` = none). Only the latest import can be undone |
 
 Indexes: `id, status, examDate, updatedAt`.
 
@@ -141,6 +142,7 @@ Indexes: `id, status, examDate, updatedAt`.
 | `from` | `string[]` | — | normalised `Lecture I`; absent = none | Lectures it came from (`from:`); re-imports match on these |
 | `summary` | `string` | — | from `@summary` | The topic's essence (first screen of Learn) |
 | `partial` | `true` | — | | Its reply was cut off inside it; more sections to come |
+| `importId` | `ID` | — | UUID, one per import commit | The import that created it; undo of the latest import tombstones what carries it (Phase 8.5). Absent on records made by hand or before 8.5 |
 
 Indexes: `id, courseId, [courseId+order], updatedAt`.
 
@@ -163,6 +165,7 @@ A chunk is a section: `@section` (Import v2), or a legacy `@read` (titled by its
 | `check` | `true` | — | from `[CHECK]` | Had a `[CHECK]` marker; shown flagged |
 | `splitFlag` | `true` | — | set by acquisition | Chunk quiz < 75%; re-check next day |
 | `reported` | `true` | — | set by "report wrong" | Hidden from study until edited |
+| `importId` | `ID` | — | UUID, one per import commit | The import that created it; undo of the latest import tombstones what carries it (Phase 8.5). Absent on records made by hand or before 8.5 |
 
 Indexes: `id, topicId, [topicId+order], updatedAt`.
 
@@ -182,8 +185,9 @@ Indexes: `id, topicId, [topicId+order], updatedAt`.
 | `priority` | `'high' \| 'normal'` | ✓ | from `@priority` | Planner value weight |
 | `tags` | `string[]` | ✓ | may be empty | From `@tag` |
 | `generated` | `boolean` | ✓ | | Came from an `[ADDED]`/`[GENERATED]` section, or its line ended with `[ADDED]` |
-| `check` | `boolean` | ✓ | | Had a `[CHECK]` marker; shown flagged |
+| `check` | `boolean` | ✓ | | Flagged: had a `[CHECK]` marker, failed the starred-words check, or the student tapped "This card looks wrong" in the card list (which also suspends its cards; editing the note or un-flagging clears both) |
 | `accept` | `Record<string, string[]>` | ✓ | key = card `variant`; may be empty | Grow-as-you-go accepted synonyms |
+| `importId` | `ID` | — | UUID, one per import commit | The import that created it; undo of the latest import tombstones what carries it (Phase 8.5). Absent on records made by hand or before 8.5 |
 
 Indexes: `id, courseId, topicId, chunkId, type, updatedAt`.
 
@@ -197,6 +201,7 @@ Indexes: `id, courseId, topicId, chunkId, type, updatedAt`.
 | `variant` | `string` | ✓ | content | §4.3; unique per note | Which part of the note this card tests |
 | `path` | `ExerciseKind[]` | ✓ | content | ≥ 1; fixed per variant (plan §5) | Format sequence |
 | `suspended` | `boolean` | ✓ | content | default `false` | Excluded from study |
+| `importId` | `ID` | — | content | UUID, one per import commit | The import that created it; undo of the latest import tombstones what carries it (Phase 8.5). Absent on records made by hand or before 8.5 |
 | `fsrs` | `FsrsCardState \| null` | ✓ | cache | `null` until first credited review | ts-fsrs card state |
 | `due` | `number` | — | cache | epoch ms | Next due time: FSRS's `due`; for a card met only in acquisition (no FSRS state yet), the start of the next study day after its last acquisition review (BUILD_PLAN §6.7 handoff) |
 | `status` | `CardStatus` | ✓ | cache | §4.4 | Shown label |
@@ -320,8 +325,11 @@ Not exported (events keep `sessionId` for grouping).
 | `bytes` | `number` | ✓ | | Size, for storage display |
 | `blob` | `Blob` | ✓ | | The image |
 | `fileName` | `string` | — | | Original name (for `@occlusion` matching on import) |
+| `importId` | `ID` | — | UUID, one per import commit | The import that stored it; undo of the latest import tombstones what carries it (Phase 8.5). Absent on records made by hand or before 8.5 |
 
 Indexes: `id, hash`.
+
+**`importId` and `lastImport`** (Phase 8.5) are optional and unindexed, so there is no Dexie version bump: undo finds an import's records through the existing `courseId` / `topicId` indexes and filters on `importId`.
 
 ---
 

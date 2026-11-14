@@ -4,6 +4,7 @@ import {
 	CardStatusSchema,
 	CourseIdSchema,
 	ExerciseKindSchema,
+	ImportIdSchema,
 	MetaSchema,
 	NoteIdSchema
 } from './common.ts';
@@ -63,6 +64,8 @@ export const CardSchema = MetaSchema.extend({
 	courseId: CourseIdSchema,
 	variant: z.string().min(1),
 	path: z.array(ExerciseKindSchema).min(1),
-	suspended: z.boolean()
+	suspended: z.boolean(),
+	/** The import that created it; cards added later by an edit have none. */
+	importId: ImportIdSchema.optional()
 }).extend(CardCachesSchema.shape);
 export type Card = z.infer<typeof CardSchema>;

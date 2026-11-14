@@ -10,6 +10,8 @@ export const EventIdSchema = z.uuid().brand<'EventId'>();
 export const SessionIdSchema = z.uuid().brand<'SessionId'>();
 export const MediaIdSchema = z.uuid().brand<'MediaId'>();
 export const DeviceIdSchema = z.uuid().brand<'DeviceId'>();
+/** One import commit; set on the records it created, so the latest import can be undone. */
+export const ImportIdSchema = z.uuid().brand<'ImportId'>();
 export type CourseId = z.infer<typeof CourseIdSchema>;
 export type TopicId = z.infer<typeof TopicIdSchema>;
 export type ChunkId = z.infer<typeof ChunkIdSchema>;
@@ -19,6 +21,7 @@ export type EventId = z.infer<typeof EventIdSchema>;
 export type SessionId = z.infer<typeof SessionIdSchema>;
 export type MediaId = z.infer<typeof MediaIdSchema>;
 export type DeviceId = z.infer<typeof DeviceIdSchema>;
+export type ImportId = z.infer<typeof ImportIdSchema>;
 
 /** Fields on every content record, apart from its typed `id`. @see DATA_MODEL §2 */
 export const MetaSchema = z.object({

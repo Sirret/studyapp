@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
 	ChunkIdSchema,
 	CourseIdSchema,
+	ImportIdSchema,
 	MediaIdSchema,
 	MetaSchema,
 	NoteIdSchema,
@@ -73,7 +74,9 @@ const NoteBaseSchema = MetaSchema.extend({
 	tags: z.array(z.string()),
 	generated: z.boolean(),
 	check: z.boolean(),
-	accept: z.record(z.string(), z.array(z.string()))
+	accept: z.record(z.string(), z.array(z.string())),
+	/** The import that created it. */
+	importId: ImportIdSchema.optional()
 }).extend({ id: NoteIdSchema });
 
 /**
