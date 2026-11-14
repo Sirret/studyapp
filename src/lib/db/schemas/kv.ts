@@ -89,6 +89,8 @@ export const KV_SCHEMAS = {
 		p0: z.partialRecord(MaterialSchema, z.number())
 	}),
 	lastExportAt: z.number(),
+	/** The first-run sample course was decided (added, or skipped): never run again. @see sample-course.ts */
+	sampleCourseSeeded: z.literal(true),
 	offline: z.object({ persisted: z.boolean(), checkedAt: z.number() })
 };
 export type KvKey = keyof typeof KV_SCHEMAS;

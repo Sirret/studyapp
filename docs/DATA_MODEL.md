@@ -419,6 +419,7 @@ From an Import v2 reply (docs/PROMPTS.md §3 FORMAT, §6).
 | `calibration` | `{ secPerAttempt: Partial<Record<ExerciseKind, number>>; p0: Partial<Record<Material, number>> }` | cache | Rolling medians / measured accuracy; a missing key uses the default |
 | `lastExportAt` | `number` | local | For the backup reminder |
 | `offline` | `{ persisted: boolean; checkedAt: number }` | local | "Ready offline" status |
+| `sampleCourseSeeded` | `true` | local | The first-run sample course was decided (added, or skipped because the student had courses). Never set back; a deleted sample is not re-added (BUILD_PLAN Decisions log, "Default course") |
 
 `Settings`:
 

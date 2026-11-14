@@ -775,7 +775,7 @@ Rows are in build order. Order and status are maintained here. The table below i
 | 7 | Modes | Done | BUILD_PLAN §6.6–§6.8 + Decisions log |
 | 8 | Planner | Done | BUILD_PLAN §6.9 |
 | — | Fix pass (tech-check + live bugs) | Done | SESSION_NOTES §A (A1–A10), §B |
-| — | Import v2 | In progress | PROMPTS.md |
+| — | Import v2 | Done | PROMPTS.md |
 | 8.5 | Cards & import fixes | Next | BUILD_PLAN §10 row 8.5 + SESSION_NOTES |
 | 8.6 | Learn & Practice | Pending | SESSION_NOTES §C, §D, §J, §K |
 | 6 | Diagrams | Outstanding | BUILD_PLAN §7 |
@@ -1165,4 +1165,5 @@ Choices this plan makes where the concept was silent. Add new ones here.
 | Import v2 SPEC-GAP 3 (step 2): **an `@end` between topics** (the security fixture has one after every topic) is an early `@end`: no error, the later topics are kept. The fixture is treated as a valid paste | PROMPTS §3 says no `@end` between topics; the fixture is what users actually get back |
 | Import v2 (step 2): **`from:` normalisation** happens in build and `collectMap`, not in the parser block; the parser keeps the text as written | Keeps parser output the same as the paste (PROMPTS §7) |
 | Import v2 (step 4b): **no read step for a chunk with no text** (`words === 0`, e.g. a Just study / Cram reply with no `@read`); the unit's section name prefers the chunk's stored `title` over note tags | A Just study section has nothing to read; the title is now stored, so the tag guess is only the fallback |
+| Default course: **a built-in sample course** (the security reply, `src/lib/content/sample-course.ts`, generated from the fixture and tested for drift) is added once on the first run when the student has no courses (`services/sample-course.ts`, called from the home page). The kv flag `sampleCourseSeeded` is set when decided, so a deleted sample never comes back. A student who already has a course keeps it and gets no sample | Gives a first-time student something to try (SESSION_NOTES K: "Try a sample course") without a payment-style push; lazy module keeps the shell small (CLAUDE.md rule 9) |
 | Import v2 (step 4): **a legacy `@deck` paste without `@end`** is reported as cut, but nothing is dropped | Old pastes predate `@end`; dropping their last section would lose content the student already has (`completeness.ts`) |
