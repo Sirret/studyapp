@@ -763,6 +763,26 @@ Mobile-first, one-handed, minimum 44 px touch targets, works at 360 px wide, all
 
 Each phase ends with its tests green. Later phases never require rewriting earlier ones. Every phase follows the workflow in `CLAUDE.md` (interface → `spec-test-writer` agent → implement → `verify` → `reviewer` agent → log), using the agent definitions in `.claude/agents/`.
 
+### Phase status (authoritative — overrides the table below)
+
+Rows are in build order. Order and status are maintained here. The table below is the original plan; where they disagree, this table wins.
+
+| # | Phase | Status | Spec authority |
+|---|-------|--------|----------------|
+| 0–5 | Setup … Design system & exercises UI | Done | BUILD_PLAN |
+| 7 | Modes | Done | BUILD_PLAN §6.6–§6.8 + Decisions log |
+| 8 | Planner | Done | BUILD_PLAN §6.9 |
+| — | Fix pass (tech-check + live bugs) | Done | SESSION_NOTES §A (A1–A10), §B |
+| — | Import v2 | In progress | PROMPTS.md |
+| 8.5 | Cards & import fixes | Next | BUILD_PLAN §10 row 8.5 + SESSION_NOTES |
+| 8.6 | Learn & Practice | Pending | SESSION_NOTES §C, §D, §J, §K |
+| 6 | Diagrams | Outstanding | BUILD_PLAN §7 |
+| 9 | Transfer & offline | Not started | BUILD_PLAN §8 |
+| 10 | Polish & ship | Not started | BUILD_PLAN §10 + §11 |
+| 11 | Play | Not started | GAMES.md |
+
+**Design status:** `DESIGN.md` describes a previous direction. The cozy direction (SESSION_NOTES §G) is being prepared but DESIGN.md has not been rewritten, and its current prose is not authoritative. Until the rewrite, every new screen uses design tokens only (`src/lib/design/tokens/*`, `themes/*`) and adds new components to `/dev/ui` before using them on a screen. See section 15 and CLAUDE.md rule 20.
+
 | #   | Phase                            | Deliverables                                                                                                                                                                                                                                                                                   | Done when                                                                                                                                                                                           |
 | --- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 0   | **Setup**                        | SvelteKit + TS strict, adapter-static SPA, Vitest (+ coverage, JUnit/JSON reporters), Playwright (traces, screenshots, video on failure), PWA plugin, Dexie, `defaults.ts`, ESLint/Prettier, git hooks, CI workflow, `test-summary` and `bundle-check` scripts, app logger, `docs/PROGRESS.md` | App opens offline in a browser (empty shell); a push runs CI green and uploads reports; a deliberately failing test blocks the commit                                           |

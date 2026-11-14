@@ -40,9 +40,9 @@ Order note (user decision): items 1.5 and 1.6 go first as one commit, and 1.1 sh
 
     Effort: S.
 
-    Status: [x] — commit: (this commit). Section B: 8 bullets ✅, the typed paraphrase and Meet the terms bullets ⏳ 8.6 (D3, D2), the @coverage bullet superseded by @missing. Evidence mismatch resolved with the user, 2026-11-13.
+    Status: [x] — commit: 0a252e8. Section B: 8 bullets ✅, the typed paraphrase and Meet the terms bullets ⏳ 8.6 (D3, D2), the @coverage bullet superseded by @missing. Evidence mismatch resolved with the user, 2026-11-13.
 
-[ ] 1.3 — Add a "Phase status" table to BUILD_PLAN section 10
+[x] 1.3 — Add a "Phase status" table to BUILD_PLAN section 10
 
     Where: docs/BUILD_PLAN.md, section 10, immediately above the existing phase table.
 
@@ -76,7 +76,7 @@ Rows are in build order. Order and status are maintained here. The table below i
 
     Effort: S.
 
-    Status: [ ] — commit: _
+    Status: [x] — commit: (this commit). Evidence matched. The HANDOFF line was present and is replaced.
 
 [ ] 1.4 — Update CLAUDE.md's reviewer rule to match practice
 
