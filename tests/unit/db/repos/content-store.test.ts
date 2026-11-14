@@ -115,4 +115,35 @@ describe('ContentStore', () => {
 		const [card] = batch().cards;
 		expect(card).toMatchObject({ status: 'unseen', fsrs: null, pathStep: 0 });
 	});
+
+	it('putBatch changes, adds and tombstones records across tables', async () => {
+		const first = batch();
+		await store.writeBatch(first);
+		const [note] = first.notes;
+		const [card] = first.cards;
+		if (!note || !card) throw new Error('No note or card');
+		now = LATER;
+		const added = store.cards.draft(
+			{ noteId: note.id, courseId: card.courseId, variant: 'rev', path: ['mc'], suspended: false },
+			deviceId
+		);
+		await store.putBatch({
+			notes: [store.notes.draftChange(note, { check: true }, deviceId)],
+			cards: [store.cards.draftDelete(card, deviceId), added]
+		});
+		expect(await store.notes.get(note.id)).toMatchObject({ check: true, updatedAt: LATER });
+		expect((await store.cards.listByNote(note.id)).map((c) => c.id)).toEqual([added.id]);
+		expect(await db.cards.get(card.id)).toMatchObject({ deleted: true, updatedAt: LATER });
+	});
+
+	it('putBatch writes nothing when one record fails', async () => {
+		const first = batch();
+		await store.writeBatch(first);
+		const [note] = first.notes;
+		if (!note) throw new Error('No note');
+		const changed = store.notes.draftChange(note, { check: true }, deviceId);
+		const broken = { ...store.cards.draft(first.cards[0] as never, deviceId), id: undefined };
+		await expect(store.putBatch({ notes: [changed], cards: [broken as never] })).rejects.toThrow();
+		expect((await store.notes.get(note.id))?.check).toBe(false);
+	});
 });

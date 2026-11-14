@@ -4,20 +4,29 @@ import {
 	CourseColorSchema,
 	type CourseColor,
 	type CourseId,
+	type ImportId,
 	type Placement
 } from '#lib/db/schemas/common.ts';
-import type { Course, ImportGoal, Topic } from '#lib/db/schemas/course.ts';
-import type { NoteType } from '#lib/db/schemas/note.ts';
+import type { Course, ImportGoal, LastImport, Topic } from '#lib/db/schemas/course.ts';
+import type { Note, NoteType } from '#lib/db/schemas/note.ts';
 import type { ImportError } from '#lib/import/ast.ts';
 import { buildPlan, type ImportPlan } from '#lib/import/build.ts';
 import type { ReplyStatus } from '#lib/import/completeness.ts';
+import { dropDuplicateNotes, type SkippedDuplicate } from '#lib/import/duplicates.ts';
 import { starredGaps, type StarredGap } from '#lib/import/validate.ts';
-import { readLine, splitLines } from '#lib/import/lexer.ts';
 import { parseImport } from '#lib/import/parser.ts';
 import { fileKey, readImportZip } from '#lib/import/zip.ts';
 import type { Logger } from '#lib/log/logger.ts';
 import type { Result } from '#lib/util/result.ts';
 import { ImportBatchDrafter } from './import-batch.ts';
+import {
+	checkedItems,
+	countNoteTypes,
+	flagGaps,
+	referencedFiles,
+	sha256Hex,
+	type CheckedItem
+} from './import-preview-parts.ts';
 import {
 	mapChecklist,
 	matchTopic,
@@ -62,12 +71,6 @@ export interface TopicPreview {
 	cards: number;
 }
 
-/** A line the chatbot marked `[CHECK]`. */
-export interface CheckedItem {
-	line: number;
-	text: string;
-}
-
 /** Everything the preview screen shows, and what a commit writes. @see DESIGN Import */
 export interface ImportPreview {
 	plan: ImportPlan;
@@ -96,6 +99,8 @@ export interface ImportPreview {
 	resumePrompt: string | null;
 	/** Cards whose starred words their reading doesn't say; their notes are flagged. */
 	starredGaps: StarredGap[];
+	/** Notes left out because the course (or an earlier line of the paste) already has them. */
+	duplicates: SkippedDuplicate[];
 }
 
 /** What a commit wrote. */
@@ -105,51 +110,6 @@ export interface ImportSummary {
 	notes: number;
 	cards: number;
 	images: number;
-}
-
-async function sha256Hex(blob: Blob): Promise<string> {
-	const digest = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
-	return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
-}
-
-/** The file keys a plan needs images for. */
-function referencedFiles(plan: ImportPlan): Set<string> {
-	const files = plan.topics
-		.flatMap((topic) => topic.notes)
-		.flatMap((note) => [
-			...(note.content.type === 'occlusion' ? [note.content.file] : []),
-			...(note.sourceFile ? [note.sourceFile] : [])
-		]);
-	return new Set(files.map(fileKey));
-}
-
-function countNoteTypes(plan: ImportPlan): Partial<Record<NoteType, number>> {
-	const counts: Partial<Record<NoteType, number>> = {};
-	for (const note of plan.topics.flatMap((topic) => topic.notes)) {
-		counts[note.content.type] = (counts[note.content.type] ?? 0) + 1;
-	}
-	return counts;
-}
-
-function checkedItems(plan: ImportPlan, text: string): CheckedItem[] {
-	const sourceLines = splitLines(text);
-	const fromNotes = plan.topics
-		.flatMap((topic) => topic.notes)
-		.filter((note) => note.isChecked)
-		.map(({ line }) => ({ line, text: readLine(sourceLines[line - 1] ?? '').text }));
-	const fromChunks = plan.topics
-		.flatMap((topic) => topic.chunks)
-		.filter((chunk) => chunk.check)
-		.map(({ line, text: chunkText }) => ({ line, text: chunkText.split('\n')[0] ?? '' }));
-	return [...fromNotes, ...fromChunks].sort((a, b) => a.line - b.line);
-}
-
-/** Flags the notes of cards whose starred words their reading doesn't say (preview shows them). */
-function flagGaps(plan: ImportPlan, gaps: readonly StarredGap[]): void {
-	const lines = new Set(gaps.map((gap) => gap.line));
-	for (const note of plan.topics.flatMap((topic) => topic.notes)) {
-		if (lines.has(note.line)) note.isChecked = true;
-	}
 }
 
 /**
@@ -222,6 +182,8 @@ export class ImportService {
 			newId: this.newId
 		});
 		const { plan } = built;
+		const deduped = dropDuplicateNotes(plan.topics, await this.courseNotes(courseId));
+		plan.topics = deduped.result.topics;
 		const gaps = starredGaps(plan);
 		flagGaps(plan, gaps);
 		const existing = await this.store.topics.listByCourse(courseId);
@@ -257,8 +219,16 @@ export class ImportService {
 			checklist,
 			missing: map?.missing ?? [],
 			resumePrompt: resumeFor(map, checklist, plan),
-			starredGaps: gaps
+			starredGaps: gaps,
+			duplicates: deduped.result.skipped
 		};
+	}
+
+	/** The course's live notes, which a new import must not repeat. */
+	private async courseNotes(courseId: CourseId): Promise<Note[]> {
+		const topics = await this.store.topics.listByCourse(courseId);
+		const perTopic = await Promise.all(topics.map((t) => this.store.notes.listByTopic(t.id)));
+		return perTopic.flat();
 	}
 
 	/**
@@ -276,7 +246,9 @@ export class ImportService {
 		const course = await this.store.courses.get(courseId);
 		if (!course) return { ok: false, error: 'That course no longer exists.' };
 		try {
-			const drafter = new ImportBatchDrafter(this.store, await this.store.getDeviceId());
+			const deviceId = await this.store.getDeviceId();
+			const importId = this.newId() as ImportId;
+			const drafter = new ImportBatchDrafter(this.store, deviceId, importId);
 			const batch = await drafter.draft({
 				courseId,
 				topics: preview.plan.topics,
@@ -284,8 +256,14 @@ export class ImportService {
 				placements
 			});
 			const map = nextCourseMap(course, preview.plan, goal);
-			const deviceId = await this.store.getDeviceId();
-			if (map) batch.courses = [this.store.courses.draftChange(course, { map }, deviceId)];
+			const lastImport: LastImport = {
+				importId,
+				at: this.store.now(),
+				topicsBefore: drafter.topicsBefore(),
+				mapBefore: course.map ?? null
+			};
+			const changes = { ...(map ? { map } : {}), lastImport };
+			batch.courses = [this.store.courses.draftChange(course, changes, deviceId)];
 			await this.store.writeBatch(batch);
 			const summary = {
 				topics: preview.topics.length,

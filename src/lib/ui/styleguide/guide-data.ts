@@ -34,7 +34,8 @@ export const SAMPLE_IMPORT_PREVIEW = {
 	checklist: [],
 	missing: [],
 	resumePrompt: null,
-	starredGaps: []
+	starredGaps: [],
+	duplicates: []
 } satisfies ImportPreview;
 
 /** The resume state: a reply that stopped at a topic break, with a checklist, a missing part and a warning. */

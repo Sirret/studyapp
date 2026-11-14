@@ -1,7 +1,15 @@
 import type { ContentBatch, ContentStore } from '#lib/db/repos/content-store.ts';
-import type { CourseId, DeviceId, MediaId, Placement, TopicId } from '#lib/db/schemas/common.ts';
-import type { Topic } from '#lib/db/schemas/course.ts';
+import type {
+	CourseId,
+	DeviceId,
+	ImportId,
+	MediaId,
+	Placement,
+	TopicId
+} from '#lib/db/schemas/common.ts';
+import type { Topic, TopicBeforeImport } from '#lib/db/schemas/course.ts';
 import type { PlannedTopic } from '#lib/import/build.ts';
+import { sectionFingerprint } from '#lib/import/duplicates.ts';
 import { fileKey } from '#lib/import/zip.ts';
 import { matchTopic } from './import-map.ts';
 import { toNoteFields } from './import-notes.ts';
@@ -41,11 +49,28 @@ function topicV2Fields(planned: PlannedTopic, topic?: Topic): Partial<Topic> {
 	};
 }
 
+/** What undo puts back on a topic the import changed. @see DATA_MODEL §3.1 `lastImport` */
+function snapshot(topic: Topic): TopicBeforeImport {
+	const { id, placement, priority, key, from, summary, partial } = topic;
+	return {
+		id,
+		placement,
+		priority,
+		...(key === undefined ? {} : { key }),
+		...(from === undefined ? {} : { from }),
+		...(summary === undefined ? {} : { summary }),
+		...(partial === undefined ? {} : { partial })
+	};
+}
+
 /**
  * Builds the records an import will write, reading what it needs but storing nothing, so the write
- * itself can be one transaction.
+ * itself can be one transaction. New records carry the import's `importId`; topics it changes are
+ * remembered as they were (`topicsBefore`), so the import can be undone. A planned section that the
+ * matched topic already has (same `sectionFingerprint`) is reused, not copied.
  *
  * @see BUILD_PLAN §4.1 and §4.2
+ * @see BUILD_PLAN §10 row 8.5
  */
 export class ImportBatchDrafter {
 	private readonly batch: ContentBatch = {
@@ -56,11 +81,18 @@ export class ImportBatchDrafter {
 		cards: []
 	};
 	private readonly mediaIds = new Map<string, MediaId>();
+	private readonly before = new Map<TopicId, TopicBeforeImport>();
 
 	constructor(
 		private readonly store: ContentStore,
-		private readonly deviceId: DeviceId
+		private readonly deviceId: DeviceId,
+		private readonly importId: ImportId
 	) {}
+
+	/** The existing topics this import changes, as they were before it. */
+	topicsBefore(): TopicBeforeImport[] {
+		return [...this.before.values()];
+	}
 
 	/** Drafts every record of the import. */
 	async draft(input: ImportDraftInput): Promise<ContentBatch> {
@@ -85,7 +117,16 @@ export class ImportBatchDrafter {
 			stored ??
 			this.batch.media.find((candidate) => candidate.hash === hash) ??
 			this.store.media.draft(
-				{ hash, mime: 'image/webp', width, height, bytes: blob.size, blob, fileName },
+				{
+					hash,
+					mime: 'image/webp',
+					width,
+					height,
+					bytes: blob.size,
+					blob,
+					fileName,
+					importId: this.importId
+				},
 				this.deviceId
 			);
 		if (!stored && !this.batch.media.includes(media)) this.batch.media.push(media);
@@ -100,7 +141,8 @@ export class ImportBatchDrafter {
 				order,
 				placement: input.placements.get(planned.name) ?? 'unread',
 				priority: planned.priority,
-				...topicV2Fields(planned)
+				...topicV2Fields(planned),
+				importId: this.importId
 			},
 			this.deviceId
 		);
@@ -113,6 +155,7 @@ export class ImportBatchDrafter {
 		planned: PlannedTopic,
 		placements: ReadonlyMap<string, Placement>
 	): TopicId {
+		if (!this.before.has(topic.id)) this.before.set(topic.id, snapshot(topic));
 		const changes = topicChanges(topic, planned, placements.get(planned.name));
 		this.batch.topics.push(this.store.topics.draftChange(topic, changes, this.deviceId));
 		return topic.id;
@@ -123,25 +166,30 @@ export class ImportBatchDrafter {
 		topicId: TopicId,
 		planned: PlannedTopic
 	): Promise<void> {
-		const firstChunk = nextOrder(await this.store.chunks.listByTopic(topicId));
-		const chunks = planned.chunks.map(({ line: _line, ...section }, index) =>
-			this.store.chunks.draft({ topicId, order: firstChunk + index, ...section }, this.deviceId)
-		);
-		this.batch.chunks.push(...chunks);
+		const stored = await this.store.chunks.listByTopic(topicId);
+		const reusable = new Map(stored.map((chunk) => [sectionFingerprint(chunk), chunk.id]));
+		let chunkOrder = nextOrder(stored);
+		const chunkIds = planned.chunks.map(({ line: _line, ...section }) => {
+			const reused = reusable.get(sectionFingerprint(section));
+			if (reused) return reused;
+			const fields = { topicId, order: chunkOrder++, ...section, importId: this.importId };
+			const chunk = this.store.chunks.draft(fields, this.deviceId);
+			this.batch.chunks.push(chunk);
+			return chunk.id;
+		});
 		const firstNote = nextOrder(await this.store.notes.listByTopic(topicId));
 		planned.notes.forEach((planNote, index) => {
-			const chunkId =
-				planNote.chunkIndex === undefined ? undefined : chunks[planNote.chunkIndex]?.id;
+			const chunkId = planNote.chunkIndex === undefined ? undefined : chunkIds[planNote.chunkIndex];
 			const place = { courseId, topicId, chunkId, order: firstNote + index };
 			const note = this.store.notes.draft(
-				toNoteFields(planNote, place, this.mediaIds),
+				{ ...toNoteFields(planNote, place, this.mediaIds), importId: this.importId },
 				this.deviceId
 			);
 			this.batch.notes.push(note);
 			for (const { variant, path } of planNote.cards) {
 				this.batch.cards.push(
 					this.store.cards.draft(
-						{ noteId: note.id, courseId, variant, path, suspended: false },
+						{ noteId: note.id, courseId, variant, path, suspended: false, importId: this.importId },
 						this.deviceId
 					)
 				);

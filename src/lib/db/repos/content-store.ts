@@ -56,6 +56,11 @@ export class ContentStore {
 		return this.context.getDeviceId();
 	}
 
+	/** The repositories' clock, for times stored inside a record (such as `course.lastImport.at`). */
+	now(): number {
+		return this.context.clock();
+	}
+
 	/**
 	 * Writes a batch in one transaction: if any write fails, nothing stays. Read and validate first,
 	 * then call this. Don't wrap repository calls in your own Dexie transaction: awaiting an async
@@ -70,6 +75,25 @@ export class ContentStore {
 			await chunks.bulkAdd(batch.chunks);
 			await notes.bulkAdd(batch.notes);
 			await cards.bulkAdd(batch.cards);
+		});
+	}
+
+	/**
+	 * Writes new, changed and tombstoned records (built with `draft`, `draftChange` and
+	 * `draftDelete`) in one transaction, overwriting by ID: if any write fails, nothing stays. For
+	 * edits that touch several tables, such as a note and its cards, or undoing an import.
+	 *
+	 * @see CLAUDE.md rule 6
+	 */
+	putBatch(batch: Partial<ContentBatch>): Promise<void> {
+		const { courses, media, topics, chunks, notes, cards } = this.db;
+		return this.db.transaction('rw', [courses, media, topics, chunks, notes, cards], async () => {
+			await courses.bulkPut(batch.courses ?? []);
+			await media.bulkPut(batch.media ?? []);
+			await topics.bulkPut(batch.topics ?? []);
+			await chunks.bulkPut(batch.chunks ?? []);
+			await notes.bulkPut(batch.notes ?? []);
+			await cards.bulkPut(batch.cards ?? []);
 		});
 	}
 

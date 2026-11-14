@@ -51,6 +51,11 @@ export class ContentRepo<T extends Meta & { id: string }, F> {
 		});
 	}
 
+	/** Builds the tombstone of a record without storing it, for `ContentStore.putBatch`. */
+	draftDelete(existing: T, deviceId: DeviceId): T {
+		return { ...existing, deleted: true, updatedAt: this.context.clock(), deviceId };
+	}
+
 	/** Creates a record with a new ID. */
 	async create(fields: F): Promise<T> {
 		const record = this.draft(fields, await this.context.getDeviceId());

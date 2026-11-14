@@ -17,14 +17,36 @@ export interface DuplicateSplit {
 }
 
 /**
+ * Any run of characters that are not letters or digits at either end of a text, which a
+ * fingerprint ignores (Decisions log, Phase 8.5 step 2 SPEC-GAPs).
+ */
+const END_NOISE = /^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu;
+
+function normaliseText(text: string): string {
+	return text.toLowerCase().replace(/\s+/g, ' ').replace(END_NOISE, '');
+}
+
+/** The value with every string normalised and object keys sorted, so key order never matters. */
+function canonical(value: unknown): unknown {
+	if (typeof value === 'string') return normaliseText(value);
+	if (Array.isArray(value)) return value.map(canonical);
+	if (value !== null && typeof value === 'object') {
+		const entries = Object.entries(value).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+		return Object.fromEntries(entries.map(([key, inner]) => [key, canonical(inner)]));
+	}
+	return value;
+}
+
+/**
  * A key that two notes share exactly when they ask the same thing: the note type and its payload
  * with text normalised (case, spacing, punctuation at the ends). `null` for image notes
  * (occlusion, diagram), which are never treated as duplicates.
  *
  * @see BUILD_PLAN §10 row 8.5 ("skip duplicate notes on re-import")
  */
-export function noteFingerprint(_content: NoteContent | PlannedContent): string | null {
-	throw new Error('not implemented');
+export function noteFingerprint(content: NoteContent | PlannedContent): string | null {
+	if (content.type === 'occlusion' || content.type === 'diagram') return null;
+	return JSON.stringify([content.type, canonical(content.payload)]);
 }
 
 /**
@@ -35,8 +57,8 @@ export function noteFingerprint(_content: NoteContent | PlannedContent): string 
  *
  * @see BUILD_PLAN §10 row 8.5
  */
-export function sectionFingerprint(_chunk: Pick<PlannedChunk, 'title' | 'text'>): string {
-	throw new Error('not implemented');
+export function sectionFingerprint(chunk: Pick<PlannedChunk, 'title' | 'text'>): string {
+	return JSON.stringify([normaliseText(chunk.title ?? ''), normaliseText(chunk.text)]);
 }
 
 /**
@@ -47,8 +69,30 @@ export function sectionFingerprint(_chunk: Pick<PlannedChunk, 'title' | 'text'>)
  * @see BUILD_PLAN §10 row 8.5
  */
 export function dropDuplicateNotes(
-	_topics: readonly PlannedTopic[],
-	_existing: readonly NoteContent[]
+	topics: readonly PlannedTopic[],
+	existing: readonly NoteContent[]
 ): Traced<DuplicateSplit> {
-	throw new Error('not implemented');
+	const seen = new Set<string>();
+	for (const content of existing) {
+		const print = noteFingerprint(content);
+		if (print !== null) seen.add(print);
+	}
+	const skipped: SkippedDuplicate[] = [];
+	const kept = topics.map((topic) => ({
+		...topic,
+		notes: topic.notes.filter((note) => {
+			const print = noteFingerprint(note.content);
+			if (print === null) return true;
+			if (seen.has(print)) {
+				skipped.push({ line: note.line, topic: topic.name });
+				return false;
+			}
+			seen.add(print);
+			return true;
+		})
+	}));
+	return {
+		result: { topics: kept, skipped },
+		trace: [{ rule: 'skip-duplicate-notes', existing: existing.length, skipped: skipped.length }]
+	};
 }
