@@ -10,6 +10,7 @@
 | 2026-11-13 | audit | 1.7 | claude-haiku-5-5 | Checkpoint rule in CLAUDE.md; checkpoint log started | 6 | audit 2.1 | cf56b14 |
 | 2026-11-13 | audit | 3.3 | claude-haiku-5-5 | Cozy decision at the top of SESSION_NOTES §G (mockups only); HANDOFF design line | 3 | audit 2.2 | fdcfef0 |
 | 2026-11-13 | audit | 2.2 | claude-haiku-5-5 | Tokens-only UI rule in WIP.md, DESIGN.md status paragraph, CLAUDE.md rule 20 | 4 | audit 2.3 | b263e15 |
+| 2026-11-14 | Import v2 | 2 (spec tests) | claude-sonnet-5-5 (spec-test-writer) | 214 import tests pass; 3 SPEC-GAPs decided and logged | 6 | Step 3: implementation details (4b acquisition, then UI 5) | pending (this commit) |
 | 2026-11-14 | Import v2 | 4 (reconciled) | claude-haiku-5-5 | WIP was stale: implementation already in 771609b. Verified: check 0 errors, full test 1664 pass, only import coverage threshold fails. Checklist 4 marked done, 4b added | 1 | Step 2: spec-test-writer on the brief (WIP "spec-test-writer brief") | pending (this commit) |
 
 ## Committed 2026-11-13 with audit 1.1, 1.5, 1.6 (one commit; hash in AUDIT.md)
@@ -63,7 +64,7 @@
 **UI rule (temporary until DESIGN.md is rewritten):** every new screen (routes/import/*, routes/course/[courseId]/*) uses tokens only (src/lib/design/tokens/*, themes/*). No raw hex, no off-scale px, no invented layout. If a component is missing, add it to src/lib/ui/ and to /dev/ui before using it on a screen. Re-theming later must be a token swap only; a screen edit means this rule was broken.
 
 - [x] 1 Interface: schemas, AST types, module signatures (stubs) — commit: 771609b. event.ts fields for 8.6 included (ReviewEvent `hinted`, `verdictKind`).
-- [ ] 2 spec-test-writer on the import modules (brief below once written)
+- [x] 2 spec tests: spec-test-writer (Sonnet) wrote tests/unit/import/{parser,build,lectures}.test.ts + cardgen.test.ts extension; part A already matched the spec. 214/214 import tests pass; eslint clean. 3 SPEC-GAPs decided, recorded in BUILD_PLAN Decisions log (text before @ = one warning; @link = scenario notes; @end between topics = early @end). Commit: pending (this commit). Test code is ~530 lines, over the 400 cap set in the brief; kept, not trimmed.
 - [x] 3 Data model + Dexie v2 migration + DATA_MODEL (one commit) — commit: 771609b
 - [x] 4 Implement parser/build/prompt; services (preview checklist, missing, resume, from: matching, commit new fields) — commit: 771609b (code in that commit; spec tests for it are step 2, still open). Not yet: acquisition skip for empty `text` (step 4b below).
 - [ ] 4b Acquisition: skip read step for empty section text (`engine/acquisition.ts`); `services/course-learn.ts` unitSection prefers chunk `title`- [ ] 5 UI: intake + Copy prompt + PDF tip; preview checklist/missing/resume; course page bigpicture/habit/cheat

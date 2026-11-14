@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { BlockSchema, type Block } from '#lib/import/ast.ts';
@@ -312,5 +313,153 @@ describe('@end (Decisions log: import preview)', () => {
 
 	it('takes no argument', () => {
 		expect(parseImport('@deck A\n@end now').errors).toHaveLength(1);
+	});
+});
+
+/** @see docs/PROMPTS.md §3 FORMAT and §7 */
+describe('Import v2 directives', () => {
+	it('reads @map as the course name', () => {
+		expect(blockOf('@map Network Security', 'map').name).toBe('Network Security');
+	});
+
+	it('reads the lines under @bigpicture and the questions under @habit', () => {
+		expect(blockOf('@bigpicture\nA leads to B.\nB leads to C.', 'bigpicture').lines).toEqual([
+			'A leads to B.',
+			'B leads to C.'
+		]);
+		expect(blockOf('@habit\nWhich layer?\nWhich device?', 'habit').questions).toEqual([
+			'Which layer?',
+			'Which device?'
+		]);
+	});
+
+	it('reads @topic with section lines under it as a map entry', () => {
+		const topic = blockOf('@topic osi The OSI Model | from: Lecture I\nLayers\nPDUs', 'topic');
+		expect(topic).toMatchObject({
+			key: 'osi',
+			title: 'The OSI Model',
+			sections: ['Layers', 'PDUs']
+		});
+		expect(topic.from).toHaveLength(1);
+	});
+
+	it('reads @topic with no lines under it as a content topic, with or without from:', () => {
+		expect(blockOf('@topic osi The OSI Model', 'topic')).toMatchObject({
+			key: 'osi',
+			title: 'The OSI Model',
+			sections: [],
+			from: []
+		});
+	});
+
+	it('splits each @links line at the first " : " only', () => {
+		expect(
+			blockOf('@links\na -> b : needs b: really : yes\nb -> c : feeds', 'links').links
+		).toEqual([
+			{ from: 'a', to: 'b', how: 'needs b: really : yes' },
+			{ from: 'b', to: 'c', how: 'feeds' }
+		]);
+	});
+
+	it('reads @cheat as a named table with column names and rows', () => {
+		const cheat = blockOf('@cheat Layers\n| | PDU | Device |\n| L2 | Frame | Switch |', 'cheat');
+		expect(cheat).toMatchObject({ name: 'Layers', items: ['PDU', 'Device'] });
+		expect(cheat.rows).toEqual([{ attribute: 'L2', values: ['Frame', 'Switch'] }]);
+	});
+
+	it('reads @missing lines, and "none" as nothing missing', () => {
+		expect(blockOf('@missing\nSlide 3: a diagram\nSlide 9: blank', 'missing').items).toHaveLength(
+			2
+		);
+		expect(blockOf('@missing\nnone', 'missing').items).toEqual([]);
+	});
+
+	it('reads @summary, @section and @tip', () => {
+		expect(blockOf('@summary\nLine one.\nLine two.', 'summary').text).toContain('Line two.');
+		expect(blockOf('@section Layers and PDUs', 'section').title).toBe('Layers and PDUs');
+		expect(blockOf('@tip\nAll People Seem To Need Data Processing', 'tip').text).toContain(
+			'People'
+		);
+	});
+
+	it('reads @link as a topic key with question :: answer entries', () => {
+		const link = blockOf('@link osi\nWhy does X need Y? :: because Z', 'link');
+		expect(link.topicKey).toBe('osi');
+		expect(link.entries).toMatchObject([{ left: 'Why does X need Y?', right: 'because Z' }]);
+	});
+
+	it('reads @next as a topic key with an optional section title', () => {
+		expect(blockOf('@next osi Layers and PDUs', 'next')).toMatchObject({
+			topicKey: 'osi',
+			section: 'Layers and PDUs'
+		});
+		expect(blockOf('@next osi', 'next').section).toBeUndefined();
+	});
+
+	it('makes the @compare title optional', () => {
+		const compare = blockOf('@compare\n| | TCP | UDP |\n| order | yes | no |', 'compare');
+		expect(compare.name).toBeUndefined();
+		expect(compare.items).toEqual(['TCP', 'UDP']);
+	});
+
+	it('reads [ADDED] like [GENERATED] on @read, and at the end of a card line', () => {
+		expect(blockOf('@read\n[ADDED] Extra text.', 'read')).toMatchObject({
+			text: 'Extra text.',
+			isGenerated: true
+		});
+		expect(blockOf('@fact\nA :: b [ADDED]', 'fact').entries[0]).toMatchObject({
+			right: 'b',
+			isAdded: true
+		});
+	});
+
+	it('keeps [CHECK] as an alias of the old marker', () => {
+		expect(blockOf('@fact\nA :: b [CHECK]', 'fact').entries[0]?.isChecked).toBe(true);
+	});
+
+	it('reads mixed-case names the same as lowercase', () => {
+		const strip = (text: string) => parseImport(text).document.blocks.map(({ kind }) => kind);
+		expect(strip('@Topic a A\n@SECTION S\n@Fact\nx :: y')).toEqual(
+			strip('@topic a A\n@section S\n@fact\nx :: y')
+		);
+	});
+
+	it('ignores ``` lines and everything before the first @ line', () => {
+		const output = parseImport('Sure! Here you go:\n```\n@map M\n@end\n```');
+		expect(output.errors).toEqual([]);
+		expect(output.document.blocks.map(({ kind }) => kind)).toEqual(['map', 'end']);
+		// SPEC-GAP: PROMPTS §7 says to ignore a preamble; is it also a warning? (the golden file expects one)
+		expect(output.warnings.map(({ line }) => line)).toEqual([1]);
+	});
+
+	it('gives no warning for ``` lines alone', () => {
+		expect(parseImport('```\n@map M\n```').warnings).toEqual([]);
+	});
+
+	it('skips the lines under an unknown directive until the next known directive', () => {
+		const output = parseImport('@fact\na :: 1\n@bogus\nb :: 2\n@fact\nc :: 3');
+		const facts = output.document.blocks.flatMap((block) => (block.kind === 'fact' ? [block] : []));
+		expect(facts.map((fact) => fact.entries.map((entry) => entry.left))).toEqual([['a'], ['c']]);
+		expect(output.errors).toEqual([]);
+		expect(output.warnings).toHaveLength(1);
+	});
+});
+
+describe('Import v2 fixtures', () => {
+	const read = (name: string) => readFileSync(`tests/fixtures/import/${name}`, 'utf8');
+
+	it('parses the security reply with no errors and no warnings', () => {
+		const output = parseImport(read('security_reply.txt'));
+		expect(output.errors).toEqual([]);
+		expect(output.warnings).toEqual([]);
+	});
+
+	it('parses the datacomms reply with no errors; its @exam blocks are only warnings', () => {
+		const text = read('datacomms_reply.txt');
+		const output = parseImport(text);
+		expect(output.errors).toEqual([]);
+		const exams = text.split('\n').filter((line) => line.startsWith('@exam')).length;
+		expect(output.warnings).toHaveLength(exams);
+		for (const warning of output.warnings) expect(warning.message).toContain('@exam');
 	});
 });

@@ -25,6 +25,22 @@ describe('generateCards', () => {
 		]);
 	});
 
+	it('gives a starred-list fact a forward card only (no reverse)', () => {
+		const note = {
+			type: 'fact',
+			payload: { term: 'a', definition: 'x, y', keyWords: ['x', 'y'], list: true }
+		} satisfies NoteContent;
+		expect(variants(cardsFor(note))).toEqual(['fwd']);
+	});
+
+	it('still gives a fact with key words but no list a forward and a reverse card', () => {
+		const note = {
+			type: 'fact',
+			payload: { term: 'a', definition: 'x y', keyWords: ['x'] }
+		} satisfies NoteContent;
+		expect(variants(cardsFor(note))).toEqual(['fwd', 'rev']);
+	});
+
 	it('gives a cloze one card per answer, numbered from c1', () => {
 		expect(cardsFor({ type: 'cloze', payload: { text: '{{a}} x {{b}} y {{c}}' } })).toEqual([
 			{ variant: 'c1', path: ['cloze'] },
