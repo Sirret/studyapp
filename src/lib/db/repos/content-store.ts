@@ -1,6 +1,6 @@
 import type { Card } from '../schemas/card.ts';
 import type { CourseId, DeviceId } from '../schemas/common.ts';
-import type { Chunk, Media, Topic } from '../schemas/course.ts';
+import type { Chunk, Course, Media, Topic } from '../schemas/course.ts';
 import type { Note } from '../schemas/note.ts';
 import type { SnowpackDb } from '../schema.ts';
 import type { RepoContext } from './content-repo.ts';
@@ -15,6 +15,8 @@ import {
 
 /** Records to write together, built with each repository's `draft` and `draftChange`. */
 export interface ContentBatch {
+	/** Changed courses (an import's course map). */
+	courses?: Course[];
 	media: Media[];
 	/** New topics and changed existing ones. */
 	topics: Topic[];
@@ -60,8 +62,9 @@ export class ContentStore {
 	 * helper inside one can silently drop it, and later writes then can't roll back.
 	 */
 	writeBatch(batch: ContentBatch): Promise<void> {
-		const { media, topics, chunks, notes, cards } = this.db;
-		return this.db.transaction('rw', [media, topics, chunks, notes, cards], async () => {
+		const { courses, media, topics, chunks, notes, cards } = this.db;
+		return this.db.transaction('rw', [courses, media, topics, chunks, notes, cards], async () => {
+			if (batch.courses) await courses.bulkPut(batch.courses);
 			await media.bulkAdd(batch.media);
 			await topics.bulkPut(batch.topics);
 			await chunks.bulkAdd(batch.chunks);

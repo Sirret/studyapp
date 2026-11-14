@@ -1,15 +1,9 @@
 import type { ContentBatch, ContentStore } from '#lib/db/repos/content-store.ts';
-import type {
-	CourseId,
-	DeviceId,
-	MediaId,
-	Placement,
-	Priority,
-	TopicId
-} from '#lib/db/schemas/common.ts';
+import type { CourseId, DeviceId, MediaId, Placement, TopicId } from '#lib/db/schemas/common.ts';
 import type { Topic } from '#lib/db/schemas/course.ts';
 import type { PlannedTopic } from '#lib/import/build.ts';
 import { fileKey } from '#lib/import/zip.ts';
+import { matchTopic } from './import-map.ts';
 import { toNoteFields } from './import-notes.ts';
 import type { PreparedImage } from './import-service.ts';
 
@@ -25,16 +19,26 @@ function nextOrder(records: { order: number }[]): number {
 	return records.reduce((next, record) => Math.max(next, record.order + 1), 0);
 }
 
-/** A tapped placement applies, and priority can rise but never fall. Undefined if nothing changes. */
+/** A tapped placement applies, priority can rise but never fall, and the Import v2 fields update. */
 function topicChanges(
 	topic: Topic,
 	planned: PlannedTopic,
 	tapped: Placement | undefined
-): { priority: Priority; placement: Placement } | undefined {
+): Partial<Topic> {
 	const priority = planned.priority === 'high' ? 'high' : topic.priority;
 	const placement = tapped ?? topic.placement;
-	const isSame = priority === topic.priority && placement === topic.placement;
-	return isSame ? undefined : { priority, placement };
+	return { priority, placement, ...topicV2Fields(planned, topic) };
+}
+
+/** Import v2 topic fields: key, lectures (merged), summary, and partial (cleared once complete). */
+function topicV2Fields(planned: PlannedTopic, topic?: Topic): Partial<Topic> {
+	const from = [...new Set([...(topic?.from ?? []), ...planned.from])];
+	return {
+		...(planned.key ? { key: planned.key } : {}),
+		...(from.length > 0 ? { from } : {}),
+		...(planned.summary ? { summary: planned.summary } : {}),
+		partial: planned.partial
+	};
 }
 
 /**
@@ -64,7 +68,7 @@ export class ImportBatchDrafter {
 		const existing = await this.store.topics.listByCourse(input.courseId);
 		let order = nextOrder(existing);
 		for (const planned of input.topics) {
-			const match = existing.find((topic) => topic.name === planned.name);
+			const match = matchTopic(existing, planned);
 			const topicId = match
 				? this.draftTopicChange(match, planned, input.placements)
 				: this.draftNewTopic(input, planned, order++);
@@ -95,7 +99,8 @@ export class ImportBatchDrafter {
 				name: planned.name,
 				order,
 				placement: input.placements.get(planned.name) ?? 'unread',
-				priority: planned.priority
+				priority: planned.priority,
+				...topicV2Fields(planned)
 			},
 			this.deviceId
 		);
@@ -109,8 +114,7 @@ export class ImportBatchDrafter {
 		placements: ReadonlyMap<string, Placement>
 	): TopicId {
 		const changes = topicChanges(topic, planned, placements.get(planned.name));
-		if (changes)
-			this.batch.topics.push(this.store.topics.draftChange(topic, changes, this.deviceId));
+		this.batch.topics.push(this.store.topics.draftChange(topic, changes, this.deviceId));
 		return topic.id;
 	}
 
@@ -120,11 +124,8 @@ export class ImportBatchDrafter {
 		planned: PlannedTopic
 	): Promise<void> {
 		const firstChunk = nextOrder(await this.store.chunks.listByTopic(topicId));
-		const chunks = planned.chunks.map(({ text, words, source, check }, index) =>
-			this.store.chunks.draft(
-				{ topicId, order: firstChunk + index, text, words, source, ...(check ? { check } : {}) },
-				this.deviceId
-			)
+		const chunks = planned.chunks.map(({ line: _line, ...section }, index) =>
+			this.store.chunks.draft({ topicId, order: firstChunk + index, ...section }, this.deviceId)
 		);
 		this.batch.chunks.push(...chunks);
 		const firstNote = nextOrder(await this.store.notes.listByTopic(topicId));

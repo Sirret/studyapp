@@ -88,7 +88,15 @@ export const NoteSchema = z.discriminatedUnion('type', [
 	}),
 	NoteBaseSchema.extend({
 		type: z.literal('fact'),
-		payload: z.object({ term: z.string(), definition: z.string() })
+		payload: z.object({
+			term: z.string(),
+			/** Shown without the `*…*` markers. */
+			definition: z.string(),
+			/** Idea units: the `*starred*` key phrases a typed definition must contain. */
+			keyWords: z.array(z.string()).optional(),
+			/** The definition is only a list of starred items: no reverse card. */
+			list: z.literal(true).optional()
+		})
 	}),
 	NoteBaseSchema.extend({ type: z.literal('cloze'), payload: z.object({ text: z.string() }) }),
 	NoteBaseSchema.extend({

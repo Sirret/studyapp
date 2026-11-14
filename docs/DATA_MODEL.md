@@ -123,6 +123,7 @@ Not shown: singleton key-value records (`kv`, §5) and the app log (`logs`, §6)
 | `examFormat` | `'recall' \| 'recognition' \| 'mixed'` | ✓ | default `mixed` | Chooses cram α (§6.6 plan) |
 | `color` | `'lavender' \| 'peach' \| 'sage' \| 'sky' \| 'rose' \| 'butter'` | ✓ | assigned in order on creation; editable | Course colour (DESIGN §3.1) |
 | `settingsOverride` | `Partial<Settings>` | — | keys from `kv.settings` | Per-course setting overrides (exercise toggles, spelling mode…) |
+| `map` | `CourseMap` | — | §4.6; from an Import v2 reply | How the topics connect, exam habit questions, planned topics, links, cheat table, missing content, resume point |
 
 Indexes: `id, status, examDate, updatedAt`.
 
@@ -136,24 +137,36 @@ Indexes: `id, status, examDate, updatedAt`.
 | `order` | `number` | ✓ | integer ≥ 0 | Position within course (import order) |
 | `placement` | `'unread' \| 'read'` | ✓ | default `unread` | Routes cards to acquisition or review |
 | `priority` | `'high' \| 'normal'` | ✓ | default `normal` | Topic-level priority |
+| `key` | `string` | — | from `@topic <key>` | The topic's id in the course map; absent for `@deck` topics |
+| `from` | `string[]` | — | normalised `Lecture I`; absent = none | Lectures it came from (`from:`); re-imports match on these |
+| `summary` | `string` | — | from `@summary` | The topic's essence (first screen of Learn) |
+| `partial` | `true` | — | | Its reply was cut off inside it; more sections to come |
 
 Indexes: `id, courseId, [courseId+order], updatedAt`.
 
-### 3.3 `chunks` — content
+### 3.3 `chunks` — content (a topic's **sections**)
+
+A chunk is a section: `@section` (Import v2), or a legacy `@read` (titled by its `@tag`). The table keeps its name.
 
 | Field | Type | Req | Constraints | Meaning |
 |---|---|---|---|---|
 | *Meta* | | ✓ | | |
 | `topicId` | `ID` | ✓ | → `topics.id` | Owning topic |
 | `order` | `number` | ✓ | integer ≥ 0 | Reading order |
-| `text` | `string` | ✓ | from `@read` | What the student reads |
+| `text` | `string` | ✓ | from `@read`; `''` for a section with no `@read` | What the student reads |
+| `title` | `string` | — | from `@section` (legacy: first `@tag` of its notes) | Section name; the reader's heading |
+| `priority` | `'high' \| 'normal'` | — | from `@priority` under `@section` | Section priority |
+| `tip` | `string` | — | from `@tip` | Mnemonic shown under the reading; never a card |
+| `added` | `true` | — | section "Added by the chatbot (check these)" | Chatbot additions, reviewed apart |
 | `words` | `number` | ✓ | computed on write | For reading-time estimates |
-| `source` | `'notes' \| 'generated'` | ✓ | `generated` if `[GENERATED]` | Shows the AI-generated banner |
+| `source` | `'notes' \| 'generated'` | ✓ | `generated` if `[ADDED]` (or legacy `[GENERATED]`) | Shows the AI-generated banner |
 | `check` | `true` | — | from `[CHECK]` | Had a `[CHECK]` marker; shown flagged |
 | `splitFlag` | `true` | — | set by acquisition | Chunk quiz < 75%; re-check next day |
 | `reported` | `true` | — | set by "report wrong" | Hidden from study until edited |
 
 Indexes: `id, topicId, [topicId+order], updatedAt`.
+
+**Dexie version 2** (Import v2): no index changes; its upgrade gives each chunk without a `title` the first `@tag` of its notes (in note order), so a legacy `@deck`/`@tag` import reads as a topic with named sections. Every other new field is optional, so older records stay valid (`upgradeToV2` in `db/schema.ts`).
 
 ### 3.4 `notes` — content
 
@@ -168,7 +181,7 @@ Indexes: `id, topicId, [topicId+order], updatedAt`.
 | `payload` | `NotePayload` | ✓ | §4.2, must match `type` | The content |
 | `priority` | `'high' \| 'normal'` | ✓ | from `@priority` | Planner value weight |
 | `tags` | `string[]` | ✓ | may be empty | From `@tag` |
-| `generated` | `boolean` | ✓ | | Came from a `[GENERATED]` chunk |
+| `generated` | `boolean` | ✓ | | Came from an `[ADDED]`/`[GENERATED]` section, or its line ended with `[ADDED]` |
 | `check` | `boolean` | ✓ | | Had a `[CHECK]` marker; shown flagged |
 | `accept` | `Record<string, string[]>` | ✓ | key = card `variant`; may be empty | Grow-as-you-go accepted synonyms |
 
@@ -224,6 +237,8 @@ Common to all events:
 | `chosenFromCardId` | `ID` | — | If the wrong pick was another card's answer → confusion pair |
 | `credited` | `boolean` | ✓ | `false` for same-day acquisition chunk-quiz answers (no FSRS/criterion credit) |
 | `required` | `number` | — | ≥ 1. The card's criterion count in this session after this answer (plan §6.3); replay derives it when absent |
+| `hinted` | `boolean` | — | A hint was used. A hinted correct is rated Hard for FSRS and never counts toward the criterion (BUILD_PLAN §6.3). Absence = no hint |
+| `verdictKind` | `'exact' \| 'fuzzy' \| 'ideaUnit' \| 'listN'` | — | How a typed answer was graded (BUILD_PLAN §5.1). Absence = exact |
 
 `type: 'pretest'`:
 
@@ -331,7 +346,7 @@ Indexes: `id, hash`.
 | Type | Payload shape |
 |---|---|
 | `keyterm` | `{ term: string; meaning: string }` |
-| `fact` | `{ term: string; definition: string }` |
+| `fact` | `{ term: string; definition: string; keyWords?: string[]; list?: true }` — `definition` is stored without `*…*`; `keyWords` are the starred idea units; `list` when the definition is only starred items (no `rev` card) |
 | `cloze` | `{ text: string }` — answers are the `{{…}}` spans, numbered c1, c2… in order |
 | `sequence` | `{ name: string; steps: string[] }` (≥ 2) |
 | `example` | `{ name: string; steps: { subgoal: string; step: string }[] }` (≥ 2) |
@@ -374,6 +389,22 @@ Variant strings are stable: editing a note keeps existing variants (and their ca
 The ts-fsrs 6 `Card` object as stored by the library (due, stability, difficulty, scheduled days, learning steps, reps, lapses, state, last review; v6 removed elapsed days). Stored verbatim; dates as epoch ms. Never edited outside `replay()`.
 
 ---
+
+### 4.6 `CourseMap` (on `courses.map`)
+
+From an Import v2 reply (docs/PROMPTS.md §3 FORMAT, §6).
+
+| Field | Type | Meaning |
+|---|---|---|
+| `bigpicture` | `string[]` | `@bigpicture` lines: how the topics connect |
+| `habit` | `string[]` | `@habit` questions that solve most exam questions |
+| `topics` | `{ key; title; from: string[]; sections: string[] }[]` | The map's planned topics, for the "N of M imported" checklist and the resume prompt |
+| `links` | `{ from; to; how }[]` | `@links` (`a -> b : how`, split at the first " : ") |
+| `cheat` | `{ name; items; rows }` | `@cheat` table shown on the course page |
+| `missing` | `string[]` | `@missing` lines (legacy `@coverage`); "none" → `[]` |
+| `next` | `{ topicKey; section? }` | Where an unfinished import resumes |
+| `goal` | `'learn' \| 'study' \| 'cram'` | The intake goal, reused by the resume prompt |
+
 
 ## 5. `kv` — singletons (key → value)
 

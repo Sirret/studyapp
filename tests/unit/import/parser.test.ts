@@ -34,27 +34,41 @@ describe('parseImport', () => {
 			expect(blockOf('   @deck   Spaced name  ', 'deck').name).toBe('Spaced name');
 		});
 
+		// PROMPTS §7: an empty paste gives no errors and no warnings ("Nothing to import").
 		it('returns nothing for empty text', () => {
-			expect(parseImport('')).toEqual({ document: { blocks: [] }, errors: [] });
+			expect(parseImport('')).toEqual({ document: { blocks: [] }, errors: [], warnings: [] });
 		});
 	});
 
 	describe('directives', () => {
-		it('treats directive names as case-sensitive', () => {
-			expect(parseImport('@Fact').errors[0]?.line).toBe(1);
+		// PROMPTS §7: directive names are case-insensitive, and no warning is given.
+		it('treats directive names as case-insensitive', () => {
+			const output = parseImport('@DECK Lecture 1\n@FACT\nterm :: definition');
+			expect(output.errors).toEqual([]);
+			expect(output.warnings).toEqual([]);
 		});
 
+		// PROMPTS §7: unknown directives are skipped with a warning, never an error, with the lines under them.
 		it.each(['constructor', 'toString', '__proto__'])(
-			'reports @%s as unknown rather than finding it on an object',
+			'warns on @%s as unknown rather than finding it on an object',
 			(name) => {
-				expect(parseImport(`@${name}`).errors).toEqual([
-					{ line: 1, message: `Unknown directive @${name}; the lines under it were skipped.` }
+				const output = parseImport(`@${name}\nterm :: definition`);
+				expect(output.errors).toEqual([]);
+				expect(output.warnings).toEqual([
+					{
+						line: 1,
+						message: `Unknown directive @${name}; it and the lines under it were skipped.`
+					}
 				]);
+				expect(output.document.blocks).toEqual([]);
 			}
 		);
 
-		it('reports a lone @ as unknown', () => {
-			expect(parseImport('@').errors[0]?.line).toBe(1);
+		// PROMPTS §7: a lone "@" is an unknown directive.
+		it('warns on a lone @ as unknown', () => {
+			const output = parseImport('@');
+			expect(output.errors).toEqual([]);
+			expect(output.warnings[0]?.line).toBe(1);
 		});
 
 		it('reads @priority high and normal', () => {

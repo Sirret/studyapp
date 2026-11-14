@@ -1,6 +1,7 @@
 const BYTE_ORDER_MARK = '﻿';
 const LINE_BREAK = /\r\n|\r|\n/;
 const CHECK_MARKER = /\s*\[CHECK\]$/;
+const ADDED_MARKER = /\s*\[ADDED\]$/;
 
 /** A line of ordinary text. */
 export interface TextToken {
@@ -8,6 +9,8 @@ export interface TextToken {
 	line: number;
 	text: string;
 	isChecked: boolean;
+	/** Ended with `[ADDED]` (PROMPTS §3): the chatbot added this card. */
+	isAdded: boolean;
 }
 
 /** A line that opens a block: `@name argument`. */
@@ -21,11 +24,12 @@ export interface DirectiveToken {
 
 export type Token = TextToken | DirectiveToken;
 
-/** Trims a line and removes its `[CHECK]` marker. @see BUILD_PLAN §4.1 */
-export function readLine(raw: string): { text: string; isChecked: boolean } {
+/** Trims a line and removes its trailing `[CHECK]` and `[ADDED]` markers. @see BUILD_PLAN §4.1 */
+export function readLine(raw: string): { text: string; isChecked: boolean; isAdded: boolean } {
 	const trimmed = raw.trim();
-	const text = trimmed.replace(CHECK_MARKER, '');
-	return { text, isChecked: text !== trimmed };
+	const unadded = trimmed.replace(ADDED_MARKER, '');
+	const text = unadded.replace(CHECK_MARKER, '');
+	return { text, isChecked: text !== unadded, isAdded: unadded !== trimmed };
 }
 
 function directiveToken(line: number, text: string, isChecked: boolean): DirectiveToken {
@@ -55,13 +59,13 @@ export function splitLines(source: string): string[] {
 export function lex(source: string): Token[] {
 	const tokens: Token[] = [];
 	splitLines(source).forEach((raw, index) => {
-		const { text, isChecked } = readLine(raw);
+		const { text, isChecked, isAdded } = readLine(raw);
 		const line = index + 1;
 		if (text === '') return;
 		tokens.push(
 			text.startsWith('@')
 				? directiveToken(line, text, isChecked)
-				: { kind: 'text', line, text, isChecked }
+				: { kind: 'text', line, text, isChecked, isAdded }
 		);
 	});
 	return tokens;

@@ -1,0 +1,511 @@
+@map Network Security
+@bigpicture
+Every control in this course protects the CIA goals of assets that face threats and vulnerabilities, and controls work in four stages: prevent, detect, respond, recover.
+Secure design principles (least privilege, defense in depth) say how to build those controls in, while threats, malware and web attacks show what the controls must withstand.
+Scanning finds exposed hosts and ports, forensics investigates incidents with preserved evidence, and policy and governance give all of it direction, accountability and review.
+@habit
+CIA goal: which is protected or harmed?
+Control stage: prevent, detect, respond or recover?
+Asset, threat, vulnerability or risk: which is it?
+@topic found Network Security Foundations | from: I, V
+CIA and what network security is
+Assets, threats, vulnerabilities and risk
+Authentication, authorization and accounting
+Control stages and incident response
+Firewalls, IDS, IPS and SIEM
+Encryption and segmentation
+@topic design Secure Design Principles | from: II
+Security by design and least privilege
+Defense in depth and safe defaults
+Separation of duties, trust boundaries and simplicity
+@topic threats Threats and Attacks | from: III
+Threats, attacks and the attack lifecycle
+Phishing and credential attacks
+Network attacks, DoS and insiders
+@topic malware Malware Threats | from: X
+What malware is and its types
+Ransomware, entry routes and impact
+Preventing and responding to malware
+@topic web Web Security | from: VI
+Web threats and attacks
+HTTPS, cookies and secure coding
+WAF, architecture and testing
+@topic scan Scanning Networks | from: VII
+What scanning is and host discovery
+Ports and service detection
+Workflow, tools and safe use
+@topic forensics Digital Forensics | from: IV
+Evidence and the forensic process
+Preservation and chain of custody
+Analysis, reporting and best practices
+@topic policy Security Policy and Governance | from: VIII
+Policy, standards, procedures and guidelines
+Governance, roles and leadership
+Policy set, lifecycle and assurance
+@links
+design -> found : secure design builds the CIA goals and control stages into systems from the start
+threats -> found : attacks exploit vulnerabilities to harm CIA goals and controls reduce the risk
+threats -> design : defense in depth and least privilege limit how far an attack can go
+malware -> threats : malware is a major threat type and follows the attack stages
+web -> threats : web attacks are application attacks that exploit untrusted input
+web -> design : a WAF is one layer of defense in depth across the web stack
+scan -> threats : scanning is both an authorized assessment tool and a network-based attack technique
+scan -> design : scan results guide disabling unneeded ports to shrink the attack surface
+forensics -> found : forensic evidence is collected after detect and respond and relies on integrity
+forensics -> malware : investigation after malware detection preserves evidence
+policy -> found : governance sets the risk decisions and policies behind controls
+policy -> design : separation of duties appears in both design and governance practice
+@cheat Controls and what they do
+| | What it does | Stage or goal |
+| Firewall | Filters traffic by policy rules | Prevent |
+| IDS | Detects suspicious activity and alerts | Detect |
+| IPS | Can actively block or disrupt malicious traffic | Detect and block |
+| SIEM / SOC | Correlates events, gives central visibility | Detect |
+| MFA | Requires more than one proof of identity | Prevent |
+| Encryption | Protects data in transit and at rest | Confidentiality, integrity, authentication |
+| Segmentation | Separates trust zones, limits lateral movement | Prevent |
+| Least privilege | Gives only the access required | Prevent |
+| WAF | Filters HTTP/HTTPS requests to web apps | Prevent |
+| Hash | Verifies evidence is unchanged | Integrity |
+| Backups | Restore data after an incident | Recover |
+@missing
+Lecture X slide 3 (Major Types of Malware): adware appears only as a bare label and is never explained
+Lecture VII slide 3 (Types of Network Scanning): OS detection appears only as a bare label and is never explained
+
+@topic found Network Security Foundations | from: I, V
+@summary
+Network security protects networked resources with policies, technologies, controls and practices.
+Its goals are the CIA triad: confidentiality, integrity, availability.
+Risk exists when a threat exploits a vulnerability of an asset; AAA controls who is allowed to do what.
+Controls act in four stages (prevent, detect, respond, recover), supported by firewalls, IDS/IPS, SIEM, encryption and segmentation.
+@section CIA and what network security is
+@priority high
+@read
+Network security is the combination of policies, technologies, controls and practices that protect networked resources from unauthorized actions and disruptions. It covers every part of the network, from devices to data, and it is a continuous process rather than a product you install once. Its foundation is the CIA triad. Confidentiality means information is protected from unauthorized disclosure, so only authorized people or systems can access it. Integrity means information stays accurate and complete and is protected from unauthorized change or destruction. Availability means authorized users can reach systems and data when they need them. Whenever you analyse an incident, ask which of these three goals was harmed: a data leak harms confidentiality, tampering harms integrity, and an outage harms availability. Authorization, which controls who and what can use network resources, supports all three.
+@tip
+CIA = Confidential, Intact, Available.
+@fact
+Three CIA goals :: *confidentiality*, *integrity*, *availability*
+@cloze
+Network security is a {{continuous}} process, not a one-time product.
+@scenario
+CIA goal: an attacker changes invoice amounts in a database :: integrity
+CIA goal: a traffic flood makes a website unreachable :: availability
+@section Assets, threats, vulnerabilities and risk
+@priority high
+@read
+Four terms explain why security is needed. An asset is something valuable that should be protected, such as a server, data or a service. A threat is a potential cause of harm or unwanted impact, such as ransomware or a malicious insider. A vulnerability is a weakness that may be exploited, such as an unpatched system. Risk is the potential impact of a threat exploiting a vulnerability. Risk only appears when these meet: a threat with no weakness to exploit, or a weakness with nothing valuable behind it, creates little risk. The level of risk is relative and depends on how likely the event is and how large its impact would be. Once a risk is understood, the organization chooses a treatment: avoid the risk, reduce (mitigate) it, transfer or share it, for example through insurance, or accept it.
+@tip
+Asset + threat + vulnerability gives risk; risk level = likelihood x impact.
+@cloze
+In security, {{risk}} is the potential impact of a threat exploiting a vulnerability.
+@fact
+Four risk treatment options :: *avoid*, *reduce*, *transfer*, *accept*
+@scenario
+Asset, threat, vulnerability or risk: an unpatched server with a known flaw :: vulnerability
+Asset, threat, vulnerability or risk: a ransomware gang targeting a company :: threat
+@section Authentication, authorization and accounting
+@priority high
+@read
+AAA describes how a network controls identity in three steps. Authentication verifies who a user, device or service claims to be, using proofs such as a password, a certificate or key, or biometrics. Multi-factor authentication (MFA) combines more than one proof, so a stolen password alone is not enough. Authorization then decides what the authenticated identity is allowed to do, using roles, permissions, policies and access control lists. Accounting, also called auditing, records activity in logs, audit trails and alerts for monitoring, investigation and compliance. For example, a student logs in, is allowed only into permitted systems, and the activity is logged. Lecture V names the same flow as identify, authenticate, authorize, audit. Account security also depends on a strong password policy, account lockout controls and regular access reviews with logging.
+@tip
+Who are you? What may you do? What did you do?
+@sequence AAA order
+Authentication
+Authorization
+Accounting
+@cloze
+In AAA, {{authorization}} decides what an authenticated identity is allowed to do.
+@section Control stages and incident response
+@priority high
+@read
+Controls reduce the likelihood or impact of security incidents, and they work in four stages. Prevent controls stop incidents from happening: firewalls, access control, patching and secure configuration. Detect controls notice that something is wrong: IDS/IPS, logging, monitoring and alerts. Respond controls limit the damage: containment, isolation and incident response. Recover controls restore normal service: backups, restoration, continuity and lessons learned. Prevention alone is never enough, so it must be supported by visibility, response and recovery. Incident response then follows a flow. You monitor logs, network flows, IDS/IPS alerts and authentication events; detect by validating an alert; analyze by correlating events and identifying affected assets; contain by isolating systems and blocking malicious traffic; and recover by restoring systems, resetting credentials and learning from the event. A good program feeds those lessons back into its controls.
+@tip
+PDRR: Prevent, Detect, Respond, Recover.
+@sequence Four control stages
+Prevent
+Detect
+Respond
+Recover
+@sequence Incident response flow
+Monitor
+Detect
+Analyze
+Contain
+Recover
+@scenario
+Control stage: an IDS raises an alert on a suspicious pattern :: detect
+@section Firewalls, IDS, IPS and SIEM
+@priority normal
+@read
+A firewall controls network traffic according to a security policy. It filters traffic using rules such as source, destination, port, protocol or application, separates trust zones and logs relevant events, and it can sit at the perimeter, in a data center or on a host. Good practice is default-deny, meaning only what is needed is allowed, together with limiting unnecessary ports and services, reviewing rules and testing changes. An IDS (intrusion detection system) mainly detects: it watches activity and raises alerts on suspicious patterns, using signatures, rules or behavioral techniques, and people must investigate those alerts. An IPS (intrusion prevention system) goes further and can actively block or disrupt malicious traffic. It is often placed inline with traffic, so it needs careful tuning to avoid disrupting legitimate traffic. A SIEM correlates security events from many sources to give centralized visibility, and a SOC uses it to investigate alerts and support response.
+@tip
+IDS = alarm, IPS = alarm plus guard.
+@compare IDS vs IPS
+| | IDS | IPS |
+| Main action | detects and alerts | can block or disrupt malicious traffic |
+| Caution | alerts need investigation | needs tuning to avoid disrupting legitimate traffic |
+@scenario
+A tool that correlates security events to give centralized visibility :: SIEM
+@section Encryption and segmentation
+@priority normal
+@read
+Encryption protects information in transit and, where appropriate, at rest. Plaintext is the original readable information. An algorithm and a key transform it into ciphertext, which is difficult to understand without the required key. Symmetric encryption uses the same secret key to encrypt and decrypt. Asymmetric encryption uses a public/private key pair, which supports secure key exchange and digital signatures. Keys and certificates must be protected, current protocols should be used and obsolete ones disabled. Segmentation is a separate protection: it splits the network into separate trust zones, using VLANs, ACLs and firewalls, so that a compromise in one area is less likely to spread. This reduces the attack surface and limits lateral movement, which is an attacker moving from one system to the next inside a network.
+@tip
+Symmetric = one key; asymmetric = a pair.
+@compare Symmetric vs asymmetric encryption
+| | Symmetric | Asymmetric |
+| Keys | same secret key | public/private key pair |
+| Supports | encrypting and decrypting | secure key exchange and digital signatures |
+@end
+
+@topic design Secure Design Principles | from: II
+@summary
+Security should be built in from the start, because early design decisions prevent vulnerabilities that are costly to fix later.
+Least privilege and defense in depth limit what a failure or compromise can reach.
+Secure by default and fail-safe defaults set safe starting and failing behavior.
+Separation of duties, trust boundaries and simplicity keep designs controllable.
+@section Security by design and least privilege
+@priority high
+@read
+Security by design means thinking about threats, trust boundaries, data protection and recovery before implementation, instead of bolting security on afterwards. Security requirements are written alongside functional and performance requirements, controls are tested while the system is built, and they are reviewed continuously after deployment. The reason is cost: a weak early design decision creates vulnerabilities that are expensive to fix later. The principle of least privilege gives each user, process and device only the access required for its role. If an account with too much access is compromised, the attacker can reach many systems and sensitive resources. With least privilege, a compromised account has fewer paths to valuable assets, so mistakes and stolen identities do less damage. It is applied through access controls and periodic access reviews, for example admin rights only when needed.
+@tip
+Least privilege: just enough access, just when needed.
+@fact
+Least privilege :: giving each user, process and device only the *access required* for its role
+@cloze
+Security by design builds security in from the {{beginning}}, not as an afterthought.
+@scenario
+An application service account receives only the permissions its job needs :: least privilege
+@section Defense in depth and safe defaults
+@priority high
+@read
+Defense in depth uses multiple independent layers so that the failure of one control does not expose everything; no single control should be the only line of defense. The layers run from the outside in: the perimeter or edge, network segmentation, the host or endpoint, the application, and finally data and identity. Each layer adds another barrier. Two principles are easily confused. Secure by default is about the starting configuration: the safest practical settings come first, with minimal services, limited permissions and secure protocols, unused services and accounts disabled, and risky features needing explicit opt-in with an audit trail of changes. Fail-safe defaults are about what happens when something goes wrong: the system should deny or restrict access until the condition is resolved, never grant access or bypass protection. For example, if authentication is unavailable, sensitive resources must not become public. Failure paths must therefore be tested, not only normal operation. Minimizing the attack surface follows the same spirit: fewer exposed services, interfaces and dependencies mean fewer opportunities for exploitation.
+@tip
+Secure by default = safe start. Fail-safe = safe failure.
+@sequence Defense in depth layers, outside to inside
+Perimeter / edge
+Network segmentation
+Host / endpoint
+Application
+Data / identity
+@compare Secure by default vs fail-safe defaults
+| | Secure by default | Fail-safe defaults |
+| Concerns | the starting configuration | behavior when something fails |
+| Typical rule | minimal services and limited permissions | deny or restrict access on error |
+@section Separation of duties, trust boundaries and simplicity
+@priority normal
+@read
+Separation of duties means no single person or process controls all critical steps, which reduces fraud and misuse. For example, a requester, an approver and an administrator hold separate roles, so one person cannot request, approve and carry out a sensitive action alone. A trust boundary is the point where trust changes, such as where untrusted data enters, where privileges change or where sensitive resources begin. Access across a boundary should be explicit and checked by policy, which is why designers identify boundaries early. Secure data handling means protecting data through its whole lifecycle, from collection to disposal, and collecting only what is needed. Finally, designs should stay simple, usable and maintainable: prefer clear security boundaries over needless complexity, make the safe action the easy one, avoid hard-coded credentials, validate input and document security assumptions for future administrators.
+@fact
+Separation of duties :: *no single person or process* controls *all critical steps*
+@cloze
+A trust boundary is the point where {{trust}} changes, such as where untrusted data enters.
+@link found
+Which AAA step does the principle of least privilege mainly support? :: authorization
+@link found
+Fail-safe defaults deny access on error to avoid exposing sensitive data: which CIA goal is protected? :: confidentiality
+@end
+
+@topic threats Threats and Attacks | from: III
+@summary
+A threat is a potential source of harm; an attack is an action that exploits a vulnerability to reach an objective.
+Attackers manipulate people through phishing and attack credentials through guessing, reuse and theft.
+Network attacks include DoS/DDoS, man-in-the-middle, spoofing, scanning and session attacks; insiders are a separate source.
+Attacks unfold in stages, so controls can be placed at several stages.
+@section Threats, attacks and the attack lifecycle
+@priority normal
+@read
+A threat is a potential source of harm, such as malware, an insider or a natural event. An attack is an attempt to exploit a vulnerability to achieve an objective, so a threat becomes real when an attacker uses a weakness in software, configuration, process or human behavior. The impact is the loss that results, including harm to the CIA goals, money or trust. Many attacks can be understood as a sequence of stages. Reconnaissance gathers information about the target. Initial access gains an entry point. Execution runs malicious activity. Persistence maintains access. Impact steals, alters, disrupts or destroys. Seeing attacks as stages helps defenders, because they can place preventive, detective and response controls at several stages instead of relying on one control. An attack that gets past one stage can still be stopped at a later one.
+@tip
+Recon, Initial, Execute, Persist, Impact.
+@sequence Attack lifecycle
+Reconnaissance
+Initial access
+Execution
+Persistence
+Impact
+@cloze
+In security, an {{attack}} is an attempt to exploit a vulnerability to achieve an objective.
+@section Phishing and credential attacks
+@priority high
+@read
+Attackers often manipulate people instead of attacking technology. Phishing uses deceptive messages, websites or requests to trick people into revealing information or taking an unsafe action, such as clicking a message that says "Urgent: verify your account now". Spear phishing targets a particular person or organization with tailored content. Pretexting uses a fabricated scenario or identity to obtain information or access. Weak or stolen credentials give attackers a direct path into systems. Brute force repeatedly tries many possible passwords. Credential stuffing uses username and password pairs stolen in other breaches. Password spraying tries a small set of common passwords across many accounts. Credential theft obtains passwords through phishing, malware or exposed secrets. Defenses include awareness, verifying unusual requests, MFA, email filtering, strong unique passwords, rate limiting, account lockout policies and monitoring.
+@tip
+Stuffing = stolen pairs; spraying = few passwords, many accounts.
+@fact
+Phishing :: *deceptive messages* that trick people into revealing information or taking an *unsafe action*
+@scenario
+An email with tailored content aimed at one named finance officer :: spear phishing
+A caller invents a fake IT identity to obtain access :: pretexting
+An attacker tries a few common passwords across many accounts :: password spraying
+An attacker replays username and password pairs stolen in another breach :: credential stuffing
+An attacker repeatedly tries many possible passwords :: brute force
+@section Network attacks, DoS and insiders
+@priority normal
+@read
+A denial-of-service (DoS) attack aims to reduce or prevent the availability of a service by sending large volumes of traffic or resource-intensive requests until capacity is consumed. When the traffic comes from one source it is DoS; when it comes from many distributed sources it is DDoS. Defenses include rate limiting and filtering, supported by monitoring for anomalies. Network-based attacks target communication, routing and protocols. In a man-in-the-middle attack the attacker sits between communicating parties to observe or alter traffic. Spoofing pretends to be another device, user, address or service. Scanning probes systems for hosts, ports, services or weaknesses. Session attacks try to steal, predict or abuse authenticated sessions. Insider threats come from authorized people or accounts. A malicious insider intentionally misuses legitimate access, a negligent insider accidentally exposes data or weakens security, and a compromised account lets an attacker operate through a legitimate identity.
+@tip
+DDoS = Distributed: many sources.
+@cloze
+A {{DDoS}} attack uses many distributed sources, while a DoS attack uses one.
+@fact
+Four network-based attacks :: *man-in-the-middle*, *spoofing*, *scanning*, *session attacks*
+Three insider threat types :: *malicious insider*, *negligent insider*, *compromised account*
+@link found
+A DDoS flood harms which CIA goal? :: availability
+@link found
+In risk terms, which word describes the weakness an attack tries to exploit? :: vulnerability
+@end
+
+@topic malware Malware Threats | from: X
+@summary
+Malware is software or firmware intentionally designed or inserted to perform unauthorized actions that can harm confidentiality, integrity or availability.
+Its types overlap: virus, worm, Trojan, ransomware, spyware, rootkit, botnet and adware.
+Defense layers are patch, MFA, protect, train and backup; response follows detect, contain, investigate, eradicate, recover.
+@section What malware is and its types
+@priority high
+@read
+Malware is software or firmware intentionally designed or inserted to perform unauthorized actions that can harm confidentiality, integrity or availability. It can steal information, disrupt operations, provide unauthorized access or enable extortion, and modern malware often combines several capabilities rather than fitting one category. A virus is malicious code that attaches to or modifies legitimate files and replicates when the host is executed. A worm self-propagates across systems or networks without needing that file-hosting behavior. A Trojan is disguised as, or embedded in, something that appears legitimate. Ransomware denies access to data or systems, commonly by encryption, and demands payment. Spyware monitors activity and collects sensitive information such as credentials. A rootkit maintains privileged access and conceals malicious activity from normal security controls. A botnet is a collection of compromised devices controlled for coordinated malicious activity. Adware is listed as a type but not explained in the lecture.
+@tip
+Virus needs a host, worm walks alone, Trojan tricks you.
+@fact
+Eight malware types :: *virus*, *worm*, *Trojan*, *ransomware*, *spyware*, *rootkit*, *botnet*, *adware*
+@scenario
+Malicious code attaches to legitimate files and replicates when the host runs :: virus
+Malware spreads by itself across a network without hosting in a file :: worm
+Malicious software disguised as a legitimate-looking program :: Trojan
+Malware conceals its activity and maintains privileged access :: rootkit
+@section Ransomware, entry routes and impact
+@priority normal
+@read
+Ransomware is malware that can deny access to data or systems, commonly through encryption, and then demands payment. An attack usually ends in encryption and extortion. Some operations also steal data first and threaten to release it publicly; this is called double extortion. Business disruption can continue after the encryption event, during investigation and recovery. Malware can get in through phishing or social engineering, malicious attachments, compromised websites, unpatched software, stolen credentials and removable media. Typical signs of infection include unexpected slowdowns, crashes or pop-ups, unknown applications or accounts, unusual network connections or data transfers, security tools being disabled, and encrypted files or ransom notes. The impact is both operational and security-related, ranging from data loss and service disruption to financial loss and reputational damage.
+@tip
+Double extortion = encrypt plus threaten to leak.
+@cloze
+Ransomware that also steals data and threatens public release is called {{double extortion}}.
+@fact
+Six ways malware gets in :: *phishing*, *malicious attachments*, *compromised websites*, *unpatched software*, *stolen credentials*, *removable media*
+@scenario
+Files on a server are encrypted and a ransom note appears :: ransomware
+@section Preventing and responding to malware
+@priority normal
+@read
+Prevention uses five layers of habit. Patch operating systems, applications and security tools. Use MFA and strong identity controls, especially for email, remote access and privileged accounts. Protect systems with endpoint protection or EDR, application controls and network security monitoring. Train users to recognize phishing and suspicious files or links. Keep tested, offline or otherwise resilient backups for critical data. When malware is found, response has five steps. Detect by monitoring endpoint, identity and network indicators for suspicious behavior. Contain by isolating affected systems when appropriate to stop spread. Investigate by preserving evidence and determining affected accounts, systems and data. Eradicate by removing malicious components, closing the initial access path and remediating vulnerabilities. Recover by restoring trusted systems and data, then monitoring for recurrence. Detection should be early, because a practiced response reduces the impact.
+@tip
+Prevent: Patch, MFA, Protect, Train, Backup.
+@fact
+Five malware prevention measures :: *patch*, *MFA*, *protect*, *train*, *backup*
+@sequence Malware response steps
+Detect
+Contain
+Investigate
+Eradicate
+Recover
+@link threats
+Which attack lifecycle stage does a rootkit's hidden, privileged access support? :: persistence
+@link found
+Ransomware that encrypts data and denies access harms which CIA goal? :: availability
+@end
+
+@topic web Web Security | from: VI
+@summary
+Web security protects browsers, web or API servers, databases and the data they handle, and must address both technical weaknesses and human behavior.
+Key attacks are SQL injection, XSS, CSRF, broken access control and insecure file upload.
+Defenses include HTTPS/TLS, safe coding, secure cookies, a WAF and repeated testing.
+@section Web threats and attacks
+@priority high
+@read
+Web applications are frequent targets because they process untrusted input and valuable data. SQL injection happens when malicious input changes the meaning of a database query. Cross-site scripting (XSS) happens when untrusted script content executes in another user's browser. Cross-site request forgery (CSRF) tricks a user's browser into sending an unwanted request. Broken access control lets a user reach data or functions beyond their authorization. Insecure file upload means the application accepts dangerous or unexpected files. Phishing, malware and denial-of-service also threaten web systems. Each attack has a matching defense: input validation and parameterized queries for injection, output encoding for XSS, authorization checks for broken access control, and secure file handling for uploads. Because the web stack spans client, server and database, these defenses must be applied in the application itself, not only around it.
+@tip
+Injection changes a query; XSS runs a script; CSRF forges a request.
+@scenario
+Malicious input changes the meaning of a database query :: SQL injection
+Untrusted script content executes in another user's browser :: XSS
+A user's browser is tricked into sending an unwanted request :: CSRF
+A user reaches data or functions beyond their authorization :: broken access control
+@cloze
+Parameterized queries reduce {{SQL injection}} risk, and output encoding reduces {{XSS}}.
+@section HTTPS, cookies and secure coding
+@priority normal
+@read
+HTTPS uses TLS to provide encryption and server authentication between browser and server. A certificate binds a website identity to a public key. Modern deployments should use current TLS versions and avoid obsolete protocols and ciphers. TLS protects data in transit, but it does not automatically secure the application itself. On the application side, validate input on the server, preferably with allowlists, use parameterized queries and encode output. Store passwords with modern password-hashing algorithms, not reversible encryption, and keep frameworks and libraries patched. State between requests is protected through cookies and sessions. Cookies should use the Secure and HttpOnly attributes and an appropriate SameSite policy. Session identifiers should be unpredictable and expire, anti-CSRF mechanisms are used where cookies carry authentication, and security headers such as Content Security Policy restrict where scripts and other content may load from.
+@tip
+Cookie trio: Secure, HttpOnly, SameSite.
+@fact
+TLS certificate :: binds a *website identity* to a *public key*
+Three cookie protections :: *Secure*, *HttpOnly*, *SameSite*
+@cloze
+TLS protects data in {{transit}} but does not automatically secure the application.
+Web passwords should be stored with a modern password-{{hashing}} algorithm, not reversible encryption.
+@section WAF, architecture and testing
+@priority normal
+@read
+A web application firewall (WAF) is an extra filtering layer in front of a web application. It inspects HTTP/HTTPS requests and responses against security rules, blocks suspicious patterns such as known injection or exploit attempts, and produces logs and security signals for monitoring and response. It is one layer of defense in depth across the web stack, with CDN/DDoS protection in front and logging and monitoring behind. Weaknesses should be found before attackers find them, through four activities in order: code review, vulnerability scanning, penetration testing, and monitoring and response. Static analysis can identify insecure coding patterns before deployment, while dynamic testing examines the running application. A penetration test simulates authorized attacks to find exploitable weaknesses. Testing should be repeated as applications, dependencies and threats change.
+@tip
+Review the code, scan, pen-test, then keep watching.
+@fact
+Web application firewall :: a *filtering layer* in front of web apps inspecting *HTTP/HTTPS requests*
+@sequence Web security testing flow
+Code review
+Vulnerability scan
+Penetration test
+Monitor and respond
+@link design
+Is a WAF an example of defense in depth or of secure by default? :: defense in depth
+@link threats
+Which web attack from the threats topic involves untrusted input changing a database query? :: SQL injection
+@end
+
+@topic scan Scanning Networks | from: VII
+@summary
+Network scanning examines a network or host range to find reachable systems and exposed services.
+Host discovery, port scanning and service detection answer different questions.
+Scans follow a six-step workflow, must stay within authorized scope, and results must be validated because scans can be wrong or disruptive.
+@section What scanning is and host discovery
+@priority normal
+@read
+Network scanning examines a network or host range to identify reachable systems and exposed services. It supports asset discovery, vulnerability assessment, troubleshooting and defensive monitoring, and it must always stay within an authorized scope. Scanning has several types, each answering a different question. Host discovery asks which addresses appear reachable. Port scanning asks which ports are open. Service detection asks what runs behind an open port. OS detection examines operating-system characteristics. Vulnerability scanning checks for known weaknesses. Host discovery can use ICMP-based checks, ARP discovery on local networks, or carefully scoped TCP/UDP probes, and its results become the active asset list for later assessment. Firewalls, filtering and powered-off systems can cause false negatives, meaning a host looks absent although it exists.
+@tip
+Discover hosts, then ports, then services.
+@fact
+Five types of network scanning :: *host discovery*, *port scanning*, *service detection*, *OS detection*, *vulnerability scanning*
+@scenario
+A scan finds which IP addresses in a range appear reachable :: host discovery
+@section Ports and service detection
+@priority normal
+@read
+Ports identify logical endpoints used by network applications. When scanned, a port can be observed as open, closed or filtered, depending on the response and on filtering behavior. Common examples are TCP 22 for SSH, 25 for SMTP, 53 for DNS, 80 for HTTP and 443 for HTTPS. A port number alone does not prove which application or version is really running. After an open port is found, authorized scanners may attempt service and version detection to identify what is behind it, for example a web server, mail service, database or remote-access service. This information supports vulnerability management and asset inventory. Be careful, however: banner information can be incomplete, misleading or intentionally hidden, so it should be verified rather than trusted.
+@tip
+22 SSH, 25 SMTP, 53 DNS, 80 HTTP, 443 HTTPS.
+@fact
+Three port states observed in scanning :: *open*, *closed*, *filtered*
+Five common ports :: *22 SSH*, *25 SMTP*, *53 DNS*, *80 HTTP*, *443 HTTPS*
+@section Workflow, tools and safe use
+@priority normal
+@read
+Scanning follows a six-step workflow inside an authorized testing boundary. First define scope, then discover hosts, scan ports, identify services, validate findings and finally report. Common tools include Nmap, widely used for host discovery, port scanning and service detection. Masscan is designed for very high-speed port scanning and needs careful scope and rate control. Netcat is useful for basic TCP/UDP connectivity testing. Vulnerability scanners combine discovery with checks for known weaknesses. Choose the tool to match the goal and avoid unnecessary network load. When interpreting results, separate confirmed observations from assumptions, verify unexpected open ports with authorized follow-up checks, correlate with the asset inventory and prioritize by exposure, business importance and validated risk. Scanning has limits: it can add network load or disrupt services, and it can give false positives and negatives. Use safe rates, maintenance windows and explicit authorization.
+@tip
+Scope, Discover, Ports, Services, Validate, Report.
+@sequence Scanning workflow
+Define scope
+Discover hosts
+Scan ports
+Identify services
+Validate findings
+Report
+@scenario
+Widely used tool for host discovery, port scanning and service detection :: Nmap
+Tool designed for very high-speed port scanning :: Masscan
+Tool useful for basic TCP/UDP connectivity testing :: Netcat
+@link threats
+Which network-based attack from the threats topic probes systems for hosts and ports? :: scanning
+@link design
+Disabling unneeded ports found by a scan applies which secure design principle? :: minimize attack surface
+@end
+
+@topic forensics Digital Forensics | from: IV
+@summary
+Digital forensics is a disciplined, repeatable, documented process for handling digital evidence.
+The process is identify, acquire, preserve, examine, analyze, report.
+Integrity is protected by forensic images, write protection, hashes, documentation, secure storage and chain of custody.
+Analysis separates observed findings from inference and records limitations.
+@section Evidence and the forensic process
+@priority normal
+@read
+Digital forensics examines data from computers, mobile devices, networks, cloud services and other digital systems to determine what happened, when, how, and what evidence supports the findings. The work should be repeatable, documented and appropriate to the legal or organizational context. Evidence comes from six kinds of source. Computer evidence is files, operating-system artifacts, logs and user activity. Mobile evidence is calls, messages, apps, photos and location data. Network evidence is packets, flow records, and firewall and authentication logs. Cloud evidence is service logs, account activity and audit records. Memory evidence is running processes, network connections and volatile information. Removable media means USB drives, external disks and memory cards. The forensic process has six steps: identify relevant devices, accounts and data; acquire data while minimizing changes to the source; preserve integrity and document actions; examine; analyze by correlating events and interpreting findings; and report methods, limitations and conclusions.
+@tip
+IAPEAR: Identify, Acquire, Preserve, Examine, Analyze, Report.
+@fact
+Six types of digital evidence :: *computer*, *mobile*, *network*, *cloud*, *memory*, *removable media*
+@sequence Digital forensic process
+Identify
+Acquire
+Preserve
+Examine
+Analyze
+Report
+@section Preservation and chain of custody
+@priority high
+@read
+The original evidence must be protected from unnecessary alteration. A forensic image is a bit-for-bit or otherwise appropriate copy, so that analysis can be done on the copy rather than the source. Write protection reduces the chance of changing the source media. Hash verification uses cryptographic hashes to show that collected data remains unchanged. Documentation records who collected the evidence, when, where and how. Secure storage restricts access and protects evidence from loss or tampering. Chain of custody is the documented handling of evidence, which supports integrity and accountability. Evidence is collected, sealed and stored, transferred, examined and reported. Record the identity of the evidence, the collector, the date and time, the location and the acquisition method, and document every transfer or access. Notes must be detailed enough for another qualified person to understand and reproduce the process.
+@tip
+Image, write-block, hash, document, store.
+@fact
+Five evidence preservation measures :: *forensic image*, *write protection*, *hash verification*, *documentation*, *secure storage*
+@sequence Chain of custody
+Collect
+Seal / store
+Transfer
+Examine
+Report
+@section Analysis, reporting and best practices
+@priority normal
+@read
+Small traces help reconstruct activity. File metadata can show timestamps and ownership, deleted files may leave recoverable remnants, operating systems keep event logs and recent-file records, and browsers keep history, downloads, cookies and cache. Timestamps must be interpreted carefully because time zones, clock settings and application behavior can affect them. In network forensics, investigators correlate packet captures, flow records, firewall, DNS and authentication logs rather than relying on one log entry. Encryption can limit content visibility, so metadata and endpoint evidence become more important. Mobile and cloud investigations deal with copies of data across devices and services and may need provider-held records, so collection must follow the law, policy and authorization. In analysis, arrange events in a timeline, correlate artifacts, separate findings from inference, document limitations, and report objectively. Strong work follows six best practices.
+@tip
+Observed is a finding; interpreted is an inference.
+@fact
+Six digital forensics best practices :: *preserve originals*, *document everything*, *verify integrity*, *minimize alteration*, *corroborate findings*, *respect authorization*
+@cloze
+In forensic analysis, a {{finding}} is directly observed evidence, while an {{inference}} is interpretation.
+@link found
+Hash verification of evidence protects which CIA goal? :: integrity
+@link malware
+Which malware response step preserves evidence and finds affected accounts? :: investigate
+@end
+
+@topic policy Security Policy and Governance | from: VIII
+@summary
+A security policy is a formal statement of security requirements and expected behavior.
+Governance sets direction, oversight and accountability, and aligns security with organizational priorities through risk.
+Policy, standards, procedures and guidelines answer different questions.
+Policies are living documents with a lifecycle and are checked through compliance, audit and assurance.
+@section Policy, standards, procedures and guidelines
+@priority high
+@read
+A security policy is a formal statement of security requirements and expected behavior. It establishes rules for protecting information, systems, users and technology, and defines responsibilities, acceptable behavior and consequences for violations. A good policy states its purpose (what must be protected and how), its scope (the systems, users, locations and information covered) and its responsibility (the owners and accountable roles). Policies should be clear, practical, approved by appropriate authority and communicated to users. A policy then sits above a family of documents, each answering a different question. A policy is high-level mandatory direction and answers what is required. A standard sets a specific mandatory minimum level. A procedure gives step-by-step instructions and answers how it is done. A guideline is recommended practice and answers what is advisable. Policies are the foundation for standards, procedures, technical controls and security awareness.
+@tip
+Policy = what, Standard = how much, Procedure = how, Guideline = advisable.
+@fact
+Three parts of a security policy :: *purpose*, *scope*, *responsibility*
+@scenario
+A document giving step-by-step instructions for how a task is done :: procedure
+A document setting a specific mandatory minimum level :: standard
+High-level mandatory direction on what is required :: policy
+Recommended practice that is advisable but not mandatory :: guideline
+@section Governance, roles and leadership
+@priority normal
+@read
+Security governance turns security objectives into accountable action. It connects leadership, risk management, security policy, controls and assurance in that order. Leadership sets priorities, accountability and resources. Risk management identifies threats, vulnerabilities and impacts and chooses how to treat them, according to organizational authority, with significant decisions documented and given accountable owners. Policy turns organizational expectations into security requirements. Controls implement those requirements through people, processes and technology. Assurance checks whether the measures are working as intended. Governance needs clear ownership. The board or leadership sets direction, approves risk appetite and provides oversight. Security leadership coordinates strategy, policy and risk activities, and IT and network teams operate technical controls. Users follow policies and report concerns, risk and compliance functions monitor requirements, and internal audit provides independent assurance.
+@tip
+Lead, Risk, Policy, Controls, Assure.
+@sequence Security governance chain
+Leadership
+Risk management
+Security policy
+Controls
+Assurance
+@scenario
+Governance role: who sets direction and approves risk appetite :: board
+@section Policy set, lifecycle and assurance
+@priority normal
+@read
+Organizations usually maintain a set of policies rather than one document. Typical examples are acceptable use, access control, data protection, incident response, business continuity and third-party security. Each covers one area, for example incident response sets reporting, escalation, containment and recovery responsibilities. Policies are living documents that follow a lifecycle. Develop by identifying the business need, risks, scope and requirements. Approve by obtaining authorization from the governance authority. Communicate by making the policy accessible and explaining responsibilities. Implement by supporting it with standards, procedures and technical controls. Review by updating it when risks, technology, laws or needs change. Governance also needs evidence that requirements are followed. Compliance checks whether policies, laws, regulations or contractual obligations are being met. Audit independently examines controls, evidence and processes. Assurance gives confidence that controls operate effectively. A policy is effective only when people understand and follow it.
+@tip
+Develop, Approve, Communicate, Implement, Review.
+@sequence Policy lifecycle
+Develop
+Approve
+Communicate
+Implement
+Review
+@fact
+Six key security policies :: *acceptable use*, *access control*, *data protection*, *incident response*, *business continuity*, *third-party security*
+@cloze
+In governance, {{audit}} independently examines controls, evidence and processes.
+@link found
+Which control stage does an incident response policy mainly govern? :: respond
+@link design
+Which design principle says no single person controls all critical steps? :: separation of duties
+@end

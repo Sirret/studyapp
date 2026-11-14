@@ -68,15 +68,18 @@ function diagramCards({ payload }: ContentOf<'diagram'>): CardSpec[] {
 	];
 }
 
+/** A fact gets a reverse card, except a starred list: "malware, phishing, … → ?" has no meaning, so fwd only. @see SESSION_NOTES D4 */
+function factCards(payload: { list?: boolean }): CardSpec[] {
+	const fwd: CardSpec = { variant: 'fwd', path: MC_THEN_CLOZE };
+	return payload.list ? [fwd] : [fwd, { variant: 'rev', path: MC_THEN_CLOZE }];
+}
+
 function cardsForNote(note: NoteContent): CardSpec[] {
 	switch (note.type) {
 		case 'keyterm':
 			return [{ variant: 'fwd', path: MC_THEN_CLOZE }];
 		case 'fact':
-			return [
-				{ variant: 'fwd', path: MC_THEN_CLOZE },
-				{ variant: 'rev', path: MC_THEN_CLOZE }
-			];
+			return factCards(note.payload);
 		case 'cloze':
 			return clozeAnswers(note.payload.text).map((_answer, index) => ({
 				variant: `c${index + 1}`,

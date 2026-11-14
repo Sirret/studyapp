@@ -39,7 +39,11 @@ export const StudyEventSchema = z.discriminatedUnion('type', [
 		chosenFromCardId: CardIdSchema.optional(),
 		credited: z.boolean(),
 		/** The card's criterion count in this session after this answer (BUILD_PLAN §6.3). */
-		required: z.number().int().min(1).optional()
+		required: z.number().int().min(1).optional(),
+		/** A hint was used. A hinted correct is rated Hard for FSRS and never counts toward the criterion. @see BUILD_PLAN §6.3 */
+		hinted: z.boolean().optional(),
+		/** How the answer was graded (typed only). Absence = exact. @see BUILD_PLAN §5.1 */
+		verdictKind: z.enum(['exact', 'fuzzy', 'ideaUnit', 'listN']).optional()
 	}),
 	EventBaseSchema.extend({
 		type: z.literal('pretest'),

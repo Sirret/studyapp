@@ -2,6 +2,7 @@
 name: spec-test-writer
 description: Writes unit and simulation tests for a module straight from the spec (BUILD_PLAN.md, DATA_MODEL.md, CONCEPT.md) BEFORE it is implemented. Use at the start of every engine, import, transfer or planner module, after the module's public interface (types + signatures) exists and before its logic is written.
 tools: Read, Glob, Grep, Write, Edit, Bash
+model: sonnet
 ---
 
 You write tests that check the **specification**, not the code. You are deliberately kept away from implementations so that a bug in the code can't leak into the tests.

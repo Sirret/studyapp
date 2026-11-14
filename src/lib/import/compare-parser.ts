@@ -1,7 +1,6 @@
 import type { ImportError } from './ast.ts';
 import { finishBlock, isBlockChecked, type BlockOutput, type RawBlock } from './block-parsers.ts';
 
-const SKIPPED = ' The @compare block was skipped.';
 /** A Markdown header separator, such as `|---|:--:|`. */
 const SEPARATOR_ROW = /^\|[\s:|-]*-[\s:|-]*$/;
 
@@ -24,28 +23,41 @@ function rowProblem(text: string, expectedCells: number | undefined): string | u
 	return cells.includes('') ? 'A table cell is empty.' : undefined;
 }
 
-/**
- * Parses `@compare`: the first row names the items, and a bad row skips the whole table, since a
- * table missing a row would teach the wrong comparison.
- *
- * @see BUILD_PLAN §4.1
- */
-export function parseCompare(raw: RawBlock): BlockOutput {
+/** The table rows of a `@compare` or `@cheat` block, or the errors that skip it. */
+export function readTable(
+	raw: RawBlock
+):
+	{ items: string[]; rows: { attribute: string; values: string[] }[] } | { errors: ImportError[] } {
 	const rows = raw.lines.filter((line) => !SEPARATOR_ROW.test(line.text));
 	const errors: ImportError[] = [];
 	let expectedCells: number | undefined;
 	for (const { line, text } of rows) {
 		const problem = rowProblem(text, expectedCells);
-		if (problem) errors.push({ line, message: problem + SKIPPED });
+		if (problem) errors.push({ line, message: `${problem} The @${raw.name} block was skipped.` });
 		else expectedCells ??= readCells(text).length;
 	}
 	if (errors.length > 0) return { errors };
 	const [header, ...body] = rows.map((row) => readCells(row.text));
+	return {
+		items: header?.slice(1) ?? [],
+		rows: body.map(([attribute = '', ...values]) => ({ attribute, values }))
+	};
+}
+
+/**
+ * Parses `@compare [name]`: the first row names the items, and a bad row skips the whole table, since a
+ * table missing a row would teach the wrong comparison.
+ *
+ * @see BUILD_PLAN §4.1
+ */
+export function parseCompare(raw: RawBlock): BlockOutput {
+	const table = readTable(raw);
+	if ('errors' in table) return table;
 	return finishBlock(raw, {
 		kind: 'compare',
 		line: raw.line,
 		isChecked: isBlockChecked(raw),
-		items: header?.slice(1) ?? [],
-		rows: body.map(([attribute, ...values]) => ({ attribute, values }))
+		...(raw.argument ? { name: raw.argument } : {}),
+		...table
 	});
 }

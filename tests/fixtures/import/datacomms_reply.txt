@@ -1,0 +1,392 @@
+@topic signals Data, Signals and Single-Hop Links | from: Lecture I
+@summary
+Data communication is the exchange of data between devices over a medium.
+Information is meaning, data is its representation, and signals carry data.
+Signals have measurable properties and suffer attenuation, distortion and noise.
+Data travels in six steps, and the simplest link is a single hop.
+@section Data, information and signals
+@priority normal
+@read
+Data communication is the exchange of data between two or more devices through a communication medium. It needs five parts: a sender, a receiver, a message, a transmission medium and rules called protocols. The goal is to deliver information accurately and efficiently from one point to another.
+Information is the meaning or knowledge that is useful to a recipient. Data is a representation of information that can be stored, processed or transmitted. The message is the actual content chosen to be sent.
+Data takes five forms: text, numbers, images (pixels), audio (samples) and video (a sequence of images, often with audio). To travel, data is carried by a signal, a physical or electromagnetic representation that varies over time. A signal can be analog (a continuous waveform) or digital (discrete levels representing bits). Modern computer networks overwhelmingly use digital transmission.
+@tip
+Data is the container; information is what it means to the receiver.
+@fact
+Data communication :: the exchange of *data* between two or more devices through a *communication medium*
+@cloze
+In data communication, information is the {{meaning}} useful to a recipient, while data is its transmissible representation
+@section Signal properties and impairments
+@priority normal
+@read
+A signal has measurable properties. Amplitude is its strength. Frequency is the number of cycles per second, measured in hertz (Hz). Period is the time for one complete cycle, T = 1/f. Phase is the relative position of the waveform within its cycle. Wavelength is the physical distance one cycle occupies. Bandwidth is the range of frequencies a channel can effectively carry.
+On the way, the signal can be damaged. Attenuation is the loss of signal strength as it travels through a medium. Distortion is a change of signal shape, because different components propagate differently. Noise is unwanted energy or interference added to the signal. All three increase errors and reduce communication quality, so the received signal may differ from the one sent.
+@tip
+A-D-N: Attenuation = weaker, Distortion = deformed, Noise = added junk.
+@scenario
+In data communication, a signal grows weaker as it travels through a medium :: attenuation
+In data communication, a signal's shape changes because its components propagate differently :: distortion
+In data communication, unwanted energy or interference is added to a signal :: noise
+@section The communication process and single hops
+@priority high
+@read
+Every data communication follows six steps. The source creates or selects the data. Encoding converts the data into a suitable signal. Transmission sends the signal through the medium. Reception means the destination receives and detects the signal. Decoding converts the signal back into usable data. Delivery passes the information to the intended application or user.
+The simplest case is single-hop communication, where source and destination are connected through one direct communication hop. A hop is one traversal from one device or link endpoint to the next. In a single hop there is no intermediate forwarding router. The medium may be copper, fiber, radio or another channel.
+Examples: a laptop sending a frame straight to a Wi-Fi access point, a PC linked to a directly attached switch port, or a point-to-point microwave link between two sites. Single hops are the building blocks of larger multi-hop networks, and a real end-to-end path may contain many hops.
+@tip
+Send, Encode, Transmit, Receive, Decode, Deliver: the signal goes out and comes back as data.
+@sequence Data communication process
+Source creates or selects the data
+Encoding converts data into a signal
+Transmission sends the signal through the medium
+Reception detects the signal at the destination
+Decoding converts the signal back into usable data
+Delivery passes information to the application or user
+@cloze
+In data communication, single-hop communication connects source and destination through {{one}} direct hop, with no intermediate {{router}}
+@exam
+Explain the process of data communication. :: source creates data; encoding into a signal; transmission over the medium; reception; decoding and delivery to the user
+Describe the three signal impairments. :: attenuation weakens the signal with distance; distortion changes its shape; noise adds unwanted energy; all increase errors
+Explain single-hop communication with an example. :: one direct hop between endpoints; no intermediate router; laptop to Wi-Fi access point; building block of multi-hop networks
+Distinguish between information, data and message. :: information is meaning useful to a recipient; data represents it for storage or transmission; message is the content chosen to send
+@next layering
+
+@topic layering Protocols, Layers and Encapsulation | from: Lecture II
+@summary
+A protocol is a set of rules that lets devices communicate.
+Networks split the job into layers; each layer serves the one above and uses the one below.
+Standards bodies make protocols interoperable.
+Encapsulation adds headers going down the stack, and decapsulation removes them going up.
+@section What a protocol is, and standards
+@priority normal
+@read
+A protocol is a set of rules that governs communication between networked devices. It defines message formats and meanings, and how devices establish, maintain and end communication. Where applicable it also covers addressing, error handling, sequencing and flow control. Because the rules are shared, devices from different vendors can interoperate if they implement the same standards.
+Typical protocols are HTTP/HTTPS (web), DNS (names to IP addresses), DHCP (automatic network configuration), TCP/UDP (transport services), IP (logical addressing and routing), Ethernet/Wi-Fi (local networks), ARP/ND (local address resolution) and BGP/OSPF (routing).
+Protocols are standardized by organizations: the IETF for Internet protocols, the IEEE for LAN and WLAN standards, and ISO for reference models. A protocol suite is a collection of protocols designed to work together. Interoperability means equipment and software can communicate because they follow compatible standards.
+@fact
+Network protocol :: a set of *rules* governing *communication* between networked devices
+@scenario
+Standards for LANs and WLANs, such as Ethernet and Wi-Fi, come from this organization :: IEEE
+@section Why networks use layers
+@priority normal
+@read
+Layering divides a complex communication problem into manageable functions. Each layer provides services to the layer above it and uses services from the layer below it. Because the layers are separate, a change inside one layer can often be made without redesigning every other layer. Standardized interfaces between layers improve interoperability and make troubleshooting simpler.
+A single web request shows layers cooperating. DNS resolves the name, TCP provides a transport connection, IP routes the packets, and Ethernet or Wi-Fi carries the frames over each local link. HTTPS adds security at the application layer.
+@tip
+Think of a postal chain: each stage does one job and trusts the stage below it.
+@fact
+Layered network architecture :: each layer gives *services* to the layer *above* and uses services from the layer *below*
+@cloze
+In layered network architectures, a change in one layer can often be made {{without redesigning}} the other layers
+@section Encapsulation and peer communication
+@priority high
+@read
+When data is sent, it moves down the protocol stack and each layer adds the control information its peer layer at the destination will need. This is encapsulation. Application data is wrapped in a TCP segment, which is wrapped in an IP packet, which is wrapped in an Ethernet frame.
+At the receiver the process reverses. Headers and trailers are processed and removed as the data moves up the stack. This is decapsulation. It lets each protocol do its defined job.
+Each layer on one host logically talks to the same layer on the other host, for example Transport with Transport. These are peer protocols. The real transmission, however, only passes between adjacent devices and through the layers below.
+@tip
+Down = wrap (add headers); up = unwrap (remove headers).
+@sequence Encapsulation of data units
+Application data
+TCP segment
+IP packet
+Ethernet frame
+@cloze
+In layered networking, {{decapsulation}} removes headers as data moves up the stack at the receiver
+@link signals
+Why do two devices joined by one single hop still need protocols? :: to agree on message formats and rules
+@exam
+Explain why network architectures use layers. :: divides a complex problem into manageable functions; each layer serves the layer above and uses the one below; changes in one layer need not redesign others; standard interfaces aid interoperability and troubleshooting
+Describe encapsulation and decapsulation. :: each layer adds headers moving down; application data to TCP segment to IP packet to Ethernet frame; receiver removes headers moving up
+What is a network protocol? Name standards bodies. :: rules for communication; message formats, setup, addressing, error handling; IETF, IEEE, ISO
+@next osi
+
+@topic osi The OSI Reference Model | from: Lecture VI
+@summary
+OSI (Open Systems Interconnection, from ISO) is a seven-layer reference model.
+Each layer has a job, typical protocols, a data unit and an address.
+Devices work at specific layers: hub at 1, switch at 2, router at 3.
+It is a teaching framework, not a protocol suite.
+@section The seven OSI layers
+@priority high
+@read
+OSI is a seven-layer reference and teaching model, not a single protocol suite. Each layer serves the layer above and uses the layer below.
+Layer 7, Application: network services used by applications (HTTP, DNS, SMTP, FTP). Layer 6, Presentation: data format, translation, encryption and compression. Layer 5, Session: establishes, manages and ends sessions. Layer 4, Transport: end-to-end delivery, segmentation, reliability and flow control (TCP, UDP). Layer 3, Network: logical addressing and routing (IP, routers). Layer 2, Data Link: frames, MAC addresses and local delivery (Ethernet, switches). Layer 1, Physical: bits and signals over copper, fiber or radio.
+Data units: Transport uses a segment, Network a packet, Data Link a frame, Physical bits. Addresses: Data Link uses MAC addresses, Network uses IP addresses.
+@tip
+Bottom to top: Please Do Not Throw Sausage Pizza Away (Physical, Data link, Network, Transport, Session, Presentation, Application).
+@fact
+Seven OSI layers, 7 to 1 :: *Application*, *Presentation*, *Session*, *Transport*, *Network*, *Data Link*, *Physical*
+@cloze
+In OSI, TCP and UDP work at the {{Transport}} layer, while IP works at the {{Network}} layer
+In OSI, the Transport layer data unit is a {{segment}}, the Network layer's is a {{packet}} and the Data Link layer's is a {{frame}}
+In OSI, the Data Link layer uses {{MAC}} addresses and the Network layer uses {{IP}} addresses
+@section Network devices by layer
+@priority high
+@read
+Different devices work mainly at different OSI layers, which is why the layers help in design and troubleshooting.
+A hub or repeater works mainly at Layer 1, the Physical layer, handling signals. A switch or bridge works mainly at Layer 2, the Data Link layer, forwarding frames by MAC address. A router works mainly at Layer 3, the Network layer, forwarding packets by IP address between networks. A gateway or host spans Layers 4 to 7, and hosts implement functions across multiple layers.
+Rule of thumb: the higher the layer, the more of the data a device understands.
+@tip
+1-2-3: Hub, Switch, Router.
+@cloze
+In OSI, a hub or repeater works at the {{Physical}} layer, a switch or bridge at the {{Data Link}} layer and a router at the {{Network}} layer
+@scenario
+In OSI, a device that forwards frames using MAC addresses works at this layer :: Data Link layer
+@section Benefits and limits of OSI
+@priority normal
+@read
+OSI is a reference framework, not an implementation blueprint. Its benefits: it gives engineers a common vocabulary, helps isolate faults by layer, supports modular protocol design, is useful for education and documentation, and makes technologies easier to compare.
+Its limits: real protocols do not always fit exactly one layer, modern implementations may combine functions, some concepts are simplified for teaching, and the model is conceptual rather than a complete design for building networks.
+@cloze
+A benefit of the OSI model is that it helps isolate {{faults}} by layer
+A limitation of the OSI model is that real protocols do not always fit {{one layer}} exactly
+@link layering
+In encapsulation, the Ethernet frame is the data unit of which OSI layer? :: Data Link
+@exam
+List and describe the seven layers of the OSI model. :: Application gives network services; Presentation handles format, encryption, compression; Session manages sessions; Transport gives end-to-end delivery and flow control; Network does logical addressing and routing; Data Link uses frames and MAC; Physical sends bits
+Explain which OSI layer hubs, switches and routers work at. :: hub or repeater at Physical; switch or bridge at Data Link; router at Network; hosts span many layers
+Discuss the benefits and limitations of the OSI model. :: common vocabulary; isolates faults by layer; modular design; real protocols do not fit one layer; conceptual not a blueprint
+@next tcpip
+
+@topic tcpip The TCP/IP Model | from: Lecture V
+@summary
+TCP/IP is a protocol suite and the practical architecture of the Internet.
+Four layers: Application, Transport, Internet, Network Access.
+TCP gives reliable delivery and UDP gives low-overhead delivery; ports identify processes.
+IP provides logical addressing, in IPv4 (32-bit) and IPv6 (128-bit).
+@section TCP/IP layers and mapping to OSI
+@priority normal
+@read
+TCP/IP stands for Transmission Control Protocol / Internet Protocol. It is a suite of protocols, not one protocol, and defines how data is addressed, transported, routed and delivered across interconnected networks. It supports the Internet, enterprise networks and cloud services.
+The four-layer model: Application provides network services to software (HTTP, DNS, SMTP, SSH). Transport provides process-to-process delivery (TCP, UDP). Internet handles logical addressing and routing (IP, ICMP, the latter for network control and diagnostics). Network Access handles local delivery over the link (Ethernet, Wi-Fi).
+Compared with OSI, the TCP/IP Application layer covers OSI Application, Presentation and Session. Transport maps to Transport, Internet maps to Network, and Network Access covers Data Link and Physical. OSI is mainly a reference model, while TCP/IP is the practical architecture of the Internet. Real protocols never map perfectly to one layer.
+@tip
+ATIN: Application, Transport, Internet, Network access.
+@fact
+TCP/IP four layers, top to bottom :: *Application*, *Transport*, *Internet*, *Network Access*
+@cloze
+In TCP/IP, the {{Internet}} layer corresponds to the OSI Network layer
+In TCP/IP, OSI's Data Link and Physical layers together form the {{Network Access}} layer
+@section TCP versus UDP
+@priority high
+@read
+The Transport layer provides communication between application processes. Port numbers identify which application process on a host the data belongs to.
+TCP is connection-oriented. It gives reliable delivery through acknowledgments, sequencing, and flow and congestion control. It is used for web, email, file transfer and other applications that need reliability.
+UDP is connectionless. It has low overhead and no built-in reliability or ordering. It suits cases where low overhead or application-managed timing matters, such as many real-time and query/response applications.
+Exam trap: both TCP and UDP use ports. The difference is reliability and connection setup, not whether ports exist.
+@tip
+TCP = Takes Care (reliable); UDP = U Don't Promise.
+@compare TCP vs UDP
+| | TCP | UDP |
+| Connection | connection-oriented | connectionless |
+| Reliability | acknowledgments and sequencing | none built in |
+@cloze
+In TCP/IP, {{port numbers}} identify application processes at the {{Transport}} layer
+@scenario
+In TCP/IP, a real-time application needs low overhead and manages its own timing :: UDP
+@section IPv4 and IPv6 addressing
+@priority normal
+@read
+The Internet layer uses IP for logical addressing, and routers examine destination IP addresses to forward packets.
+IPv4 uses 32-bit addresses written as four decimal octets, such as 192.168.1.10. An address identifies a network interface. A subnet mask or prefix length splits it into network and host parts, for example CIDR notation 192.168.1.0/24. Private IPv4 ranges are common inside homes and organizations, and NAT translates private addresses for Internet connectivity.
+IPv6 uses 128-bit addresses, giving a vastly larger address space. They are written as hexadecimal groups separated by colons, for example 2001:db8::1. IPv6 supports hierarchical addressing and efficient routing, and Neighbor Discovery replaces several IPv4 mechanisms for local discovery. Networks may run IPv4, IPv6 or both (dual-stack).
+@cloze
+IPv4 uses {{32}}-bit addresses and IPv6 uses {{128}}-bit addresses
+@scenario
+In IPv4, a mechanism translates private addresses so hosts can reach the Internet :: NAT
+@link osi
+Which TCP/IP layer covers OSI Application, Presentation and Session together? :: Application
+@exam
+Describe the TCP/IP four-layer model with protocol examples. :: Application: HTTP, DNS, SMTP, SSH; Transport: TCP, UDP; Internet: IP, ICMP; Network Access: Ethernet, Wi-Fi
+Compare TCP and UDP. :: TCP connection-oriented, reliable, sequencing, acknowledgments, flow and congestion control; UDP connectionless, low overhead, no built-in reliability or ordering; both use ports; TCP for web and email, UDP for real-time and queries
+Compare OSI and TCP/IP. :: OSI seven layers, reference model; TCP/IP four layers, practical Internet architecture; TCP/IP Application covers OSI 5 to 7; Network Access covers Data Link and Physical; real protocols do not map perfectly
+@next lan
+
+@topic lan Local Area Networks, Ethernet and Wi-Fi | from: Lecture III, Lecture X
+@summary
+A LAN connects devices in a small area with high speed and low latency.
+Switches forward frames by MAC address; VLANs split a LAN into broadcast domains.
+Ethernet (IEEE 802.3) is wired; Wi-Fi (IEEE 802.11) is wireless.
+Most real LANs combine both.
+@section LAN basics and topologies
+@priority normal
+@read
+A LAN connects computers, printers, servers, phones and other devices in a small, controlled geographic area such as a room, office, building or campus. It usually gives high data rates with low delay, and is often managed by one organization. Users share resources such as files, printers and Internet access. Ethernet and Wi-Fi are the common technologies.
+A LAN is built from a few device types. A NIC is the network interface of a device. A switch connects LAN devices and forwards frames. An access point provides Wi-Fi. A server provides shared services. A router connects different networks and leads to the Internet.
+Topology is how devices are connected. Bus: devices share a common backbone. Ring: each device connects to two neighbors. Mesh: multiple redundant paths between nodes. Star: devices connect to a central switch, which is common in Ethernet LANs. Wireless LANs use an access point as the central point.
+@tip
+LAN = devices + connectivity + services.
+@fact
+Local area network (LAN) :: a network joining devices across a *small controlled geographic area* with *high speed*
+Four LAN topologies :: *bus*, *ring*, *mesh*, *star*
+@section Switches and VLANs
+@priority high
+@read
+A switch makes forwarding decisions from MAC addresses. When a frame arrives, the switch learns the source MAC address and the port where it was seen. It then looks up the destination MAC in its forwarding table. If the destination is known, the frame goes out through the matching port. If it is unknown, the frame is flooded within the VLAN.
+A VLAN logically divides one physical LAN into separate broadcast domains, for example staff, students, guests and servers. VLANs improve organization, can reduce broadcast traffic and support security policies between user groups. 802.1Q tagging is commonly used on trunk links. Because VLANs are separate domains, communication between two VLANs requires Layer 3 routing.
+@tip
+Learn the source, look up the destination, forward or flood.
+@sequence LAN switch forwarding
+Frame arrives at the switch
+Switch learns the source MAC address
+Switch checks the destination MAC in its table
+Known destination: frame goes out the matching port
+Unknown destination: frame is flooded within the VLAN
+@fact
+VLAN :: a logical division of one physical LAN into separate *broadcast domains*
+@cloze
+Communication between different VLANs requires {{Layer 3}} routing
+@section Ethernet
+@priority normal
+@read
+Ethernet is the dominant wired LAN technology, standardized mainly by IEEE 802.3. It uses frames and MAC addresses for local delivery, and MAC addresses identify interfaces at the data-link layer. In modern Ethernet LANs, switches provide dedicated links between devices.
+Speeds run from Fast Ethernet (100 Mbps) to 1 Gbps, 10 Gbps and beyond. Cabling is either twisted-pair copper (Cat5e, Cat6, Cat6A with RJ-45-style connectors) or fiber, which sends light and supports long distances and high bandwidth. Cable choice depends on speed, distance, environment and cost. Structured cabling uses patch panels, outlets and cable runs to organize a building.
+An Ethernet frame holds destination MAC, source MAC, type/length, payload and FCS. Modern switched Ethernet uses full-duplex links, so collisions are not a normal feature.
+@fact
+Ethernet :: the dominant wired LAN technology, standardized mainly by *IEEE 802.3*
+@cloze
+Modern switched Ethernet uses {{full-duplex}} links, so collisions are not a normal feature
+@section Wireless LANs (Wi-Fi)
+@priority normal
+@read
+A WLAN gives LAN connectivity using radio instead of cables. Wi-Fi is based on IEEE 802.11. Access points connect wireless clients to the wired or wireless LAN, and the technology supports mobility for laptops, phones, tablets and IoT devices. Generations include Wi-Fi 5, Wi-Fi 6/6E and Wi-Fi 7.
+Performance depends on signal strength, interference, channel use, distance and obstacles. Better signal quality generally improves reliability and data rates. Channel planning and careful access-point placement reduce interference and coverage gaps.
+Wi-Fi uses a shared radio medium, so it employs CSMA/CA to reduce the chance of simultaneous transmissions. 802.11 frames carry extra control and address information for wireless operation, and both Wi-Fi and Ethernet use MAC addresses for local delivery.
+@fact
+Wi-Fi :: a wireless LAN technology based on *IEEE 802.11* that uses *radio*
+@cloze
+Wi-Fi uses {{CSMA/CA}} to reduce simultaneous transmissions on a shared radio medium
+@section Ethernet versus Wi-Fi
+@priority high
+@read
+Both give LAN connectivity but trade off differently. Ethernet uses copper or fiber, so mobility is limited by the cable, wired links usually see less interference, and cabling is required. Wi-Fi uses radio, so mobility is high, it is more sensitive to radio interference, and clients need less cabling. Wireless also needs strong authentication and encryption.
+Choose Ethernet when stable, predictable connectivity, high sustained throughput or low interference matters. Choose wireless when mobility, flexible placement or fewer client cables matters. Use both when a building needs wired infrastructure plus mobile and guest access.
+In many networks an Ethernet switch connects wired PCs and servers and also the Wi-Fi access point, while a router/firewall controls traffic between the LAN and other networks. VLANs can separate staff, guest, voice and IoT traffic.
+@compare Ethernet vs Wi-Fi
+| | Ethernet | Wi-Fi |
+| Mobility | limited by the cable | high mobility |
+| Interference | generally lower | more sensitive to radio interference |
+@scenario
+In a LAN, a building needs stable, high sustained throughput with low interference for its servers :: Ethernet
+@link osi
+At which OSI layer does an Ethernet switch work, and what address does it use? :: Data Link layer, MAC address
+@link tcpip
+Which TCP/IP layer includes Ethernet and Wi-Fi? :: Network Access
+@exam
+Describe the characteristics of a LAN. :: limited area such as room, building or campus; high speed and low latency; private control by one organization; resource sharing; Ethernet and Wi-Fi
+Explain how a LAN switch forwards frames. :: frame arrives; learns source MAC and port; checks destination MAC in its table; forwards to the port if known; floods within the VLAN if unknown
+Compare Ethernet and wireless LANs. :: copper or fiber versus radio; limited versus high mobility; wired has less interference; wireless needs strong authentication and encryption; wired needs cabling
+Explain VLANs and why they are used. :: divide one physical LAN into broadcast domains; reduce broadcast traffic; support security policy; 802.1Q tagging on trunks; inter-VLAN needs Layer 3 routing
+@next wan
+
+@topic wan Wide Area Networks | from: Lecture IV
+@summary
+A WAN links geographically separated LANs across cities, countries and continents.
+It usually rides on carrier infrastructure and has higher, variable latency than a LAN.
+Technologies include leased lines, MPLS, SD-WAN, VPN, cellular and satellite.
+Performance is judged by bandwidth, latency, jitter, packet loss and availability.
+@section WAN basics and LAN versus WAN
+@priority high
+@read
+A WAN is a network spanning large distances that links geographically separated LANs and networks. It can connect offices in different cities, regions or countries, and often uses carrier or telecom infrastructure. Examples include enterprise WANs, carrier networks and the Internet.
+A typical enterprise WAN runs from a branch LAN through an edge router (customer premises equipment) to a provider edge router and across the provider's network to the HQ LAN. The provider carries traffic across the distance, and security devices can sit at site boundaries.
+LAN versus WAN: a LAN covers a room, building or campus and is often owned by one organization, with usually lower latency, on Ethernet or Wi-Fi, for local resource sharing. A WAN covers a city, country or the globe, often uses multiple carriers or providers, has usually higher and variable latency, uses leased links, carrier networks, the Internet or wireless, and interconnects distant sites.
+@tip
+LAN = local and owned; WAN = wide and rented.
+@cloze
+A WAN links geographically separated {{LANs}} across large distances
+@compare LAN vs WAN
+| | LAN | WAN |
+| Geographic scope | room, building or campus | city, country or global |
+| Ownership | often one organization | often multiple carriers or providers |
+| Latency | usually lower | usually higher and variable |
+@section WAN technologies, devices and routing
+@priority normal
+@read
+WAN technology is chosen by distance, availability, cost and performance. A leased line is dedicated point-to-point connectivity. MPLS is a provider-managed private WAN service. SD-WAN is software-controlled routing over multiple links. An Internet VPN uses encrypted tunnels across the public Internet. Cellular (4G/5G) serves fixed or mobile sites. Satellite serves remote or difficult locations.
+Devices: a router routes packets between networks; a firewall controls and filters traffic; a modem or ONT terminates the access technology; a WAN edge router connects a site to provider services; a core router carries traffic through large networks.
+Routers use routing tables to pick paths. Static routes are configured manually, while dynamic routing protocols exchange reachability information. Common protocols are OSPF, IS-IS, BGP and RIP.
+@scenario
+In a WAN, a dedicated point-to-point connection is rented between two sites :: leased line
+In a WAN, routing is controlled by software over multiple links :: SD-WAN
+In a WAN, encrypted tunnels carry traffic across the public Internet :: Internet VPN
+@section WAN performance, security and trade-offs
+@priority normal
+@read
+Five factors describe WAN performance. Bandwidth is the amount of data carried per second. Latency is the time for data to cross the network. Jitter is variation in packet delay, which matters for voice and video. Packet loss means packets are dropped through congestion or link problems. Availability is how consistently the service stays usable.
+Because WAN traffic crosses provider or public infrastructure, it needs firewalls at boundaries, encryption over untrusted networks, access control, monitoring, and backups or alternative links for critical sites.
+Advantages: connects separated sites, supports centralized applications and remote work, and offers resilient paths. Challenges: higher cost than a small LAN, greater latency over long distances, dependence on providers, and the need for careful security and monitoring. In a multi-branch WAN each branch has its own LAN and redundant links improve resilience.
+@fact
+Five WAN performance factors :: *bandwidth*, *latency*, *jitter*, *packet loss*, *availability*
+@scenario
+In a WAN, voice and video quality suffers because packet delay varies :: jitter
+@link lan
+What device connects a branch LAN to the WAN provider network? :: edge router
+@link osi
+At which OSI layer do WAN routers work? :: Network layer
+@exam
+Compare LAN and WAN. :: scope room or campus versus city or country; one owner versus multiple providers; lower versus higher variable latency; Ethernet and Wi-Fi versus leased and carrier links; local sharing versus connecting distant sites
+Describe WAN connection technologies. :: leased line dedicated; MPLS provider-managed; SD-WAN software-controlled over multiple links; Internet VPN; cellular and satellite
+Explain the performance factors of a WAN. :: bandwidth; latency; jitter; packet loss; availability
+Discuss the advantages and challenges of WANs. :: connects distant sites and supports remote work; resilient paths; higher cost; higher latency; provider dependence; needs security and monitoring
+@next security
+
+@topic security Network Security | from: Lecture VIII
+@summary
+Network security protects the confidentiality, integrity and availability of networks and data.
+Threats include malware, phishing, DoS, eavesdropping, spoofing and unauthorized access.
+Controls are firewalls, encryption, authentication, segmentation and monitoring.
+Defense in depth layers these controls across every layer.
+@section Security goals and threats
+@priority high
+@read
+Network security uses policies, technologies and practices to protect networked systems from network-based threats. It applies to wired, wireless, Internet, cloud and enterprise networks. Effective security uses multiple layers rather than one mechanism, called defense in depth.
+The CIA triad gives three goals. Confidentiality: only authorized people or systems can access information, preventing unauthorized disclosure. Integrity: information stays accurate and is changed only by authorized parties. Availability: authorized users can reach systems and data when needed. One control often supports more than one goal.
+Common threats: malware (ransomware, worms, trojans), phishing (fraudulent messages that steal credentials), DoS/DDoS (attempts to make services unavailable), eavesdropping (unauthorized interception), spoofing (pretending to be another device, user or service) and unauthorized access (gaining access without permission).
+@tip
+CIA: Confidential, Intact, Available.
+@fact
+Three security goals in the CIA triad :: *confidentiality*, *integrity*, *availability*
+Six network threats :: *malware*, *phishing*, *DoS*, *unauthorized access*, *eavesdropping*, *spoofing*
+@scenario
+In network security, a fraudulent message tries to steal a user's credentials :: phishing
+In network security, an attacker pretends to be another device, user or service :: spoofing
+@section Core security controls
+@priority high
+@read
+A firewall controls traffic according to defined rules. It can filter by addresses, ports, protocols and applications. Host-based firewalls protect single endpoints; network firewalls enforce boundaries between zones.
+Encryption turns plaintext into ciphertext, and decryption reverses it. TLS protects many application connections, including HTTPS, and VPNs can encrypt traffic across untrusted networks. Encryption protects confidentiality, while authentication and integrity mechanisms are also needed.
+Authentication verifies identity using passwords, certificates, tokens or biometrics. Authorization decides which resources and actions are permitted. MFA uses more than one factor. Least privilege grants only the access a task requires, which limits the damage from a compromised account.
+Segmentation limits the spread of attacks: sensitive systems are isolated from less-trusted ones, and firewalls or Layer 3 policies control traffic between segments (VLANs create the segments).
+@tip
+Authentication = who are you; authorization = what may you do.
+@cloze
+In network security, a {{firewall}} controls network traffic according to defined security rules
+@scenario
+In network security, a user proves identity with a password or token :: authentication
+In network security, the system decides which resources a user may use :: authorization
+@section Monitoring, wireless security and best practices
+@priority normal
+@read
+IDS systems detect suspicious activity and generate alerts. IPS systems can also block or disrupt selected malicious traffic. SIEM platforms aggregate logs and security events for analysis, and human review and incident response remain important.
+For wireless networks use WPA2 or WPA3, preferring WPA3 for new deployments when practical. Use strong authentication, avoid shared default credentials, and separate guest devices from sensitive internal resources. Keep access points and controllers updated and watch for unauthorized access points.
+Best practices: patch systems, use strong passwords with MFA, back up data and test recovery, use firewalls and endpoint protection, train users to spot phishing, and keep an incident-response plan. Remove unnecessary accounts and services.
+Controls are layered across the TCP/IP stack: Application (authentication, secure protocols, input validation), Transport (port controls, TLS above TCP), Internet (IP filtering, routing security, segmentation) and Network Access (802.1X, Wi-Fi security, switch controls).
+@tip
+Patch, MFA, Backup, Monitor: the four habits on the best-practices slide.
+@scenario
+In network security, a system detects suspicious activity and raises alerts :: IDS
+In network security, a system detects malicious traffic and can also block it :: IPS
+@cloze
+For Wi-Fi security, {{WPA3}} is preferred for new deployments where practical
+@link tcpip
+Which TCP/IP layer uses port controls and TLS for security? :: Transport
+@link lan
+What LAN feature creates separate segments to isolate users from servers? :: VLANs
+@exam
+Explain the CIA triad. :: confidentiality prevents unauthorized disclosure; integrity keeps information accurate and changed only by authorized parties; availability gives authorized users access when needed
+List and describe common network threats. :: malware such as ransomware, worms, trojans; phishing steals credentials; DoS/DDoS makes services unavailable; eavesdropping, spoofing and unauthorized access
+Describe the key network security controls. :: firewalls filter by rules; encryption with TLS and VPN; authentication, authorization, MFA, least privilege; IDS/IPS/SIEM monitoring; segmentation
+Explain good wireless security practice. :: WPA2 or WPA3, prefer WPA3; strong authentication, no shared default credentials; separate guest devices; update access points; monitor for unauthorized access points
+@end

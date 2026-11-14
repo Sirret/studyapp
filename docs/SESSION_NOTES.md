@@ -1,22 +1,22 @@
 # Snowpack: running notes (everything decided since the tech check)
 
 Single place to collect decisions, fixes and open questions. This becomes the Phase 8.6 spec for Claude Code.
-Status key: **DECIDED** · **FIX** (prompt or app change to make) · **OPEN** (needs thought or a stress test) · **NOT APPLIED** (agreed but not yet in code)
+Status key: **DECIDED** · **FIX** (prompt or app change to make) · **OPEN** (needs thought or a stress test) · **NOT APPLIED** (agreed but not yet in code; now only A11)
 
 ---
 
-## A. Tech-check fixes: NOT APPLIED (still pending in code)
-1. planOneNight returns an empty plan after sleep start → give one minimum block plus the sleep reminder.
-2. SAFETY_MARGIN is applied twice → apply it once. Estimator: first attempt at p0, later attempts at about 0.8, relearning at R(t).
-3. "Minutes used today" counts only responseMs → use session wall time with idle gaps capped.
-4. A course with an exam more than 7 days away gets long-term new/day that ignores the planner → let the planner share set new/day.
-5. D=1: check that read-but-unseen cards get into the final pass (sim test).
-6. One shared valueOf() for cram degrade and planner cuts.
-7. Collision guard: reject a fuzzy match that is as close or closer to another card's answer.
-8. Multiple choice with fewer than 3 options → skip to the next path step.
-9. Same card twice in a row when fewer than 3 remain → test.
-10. Replay: order events from the same device by seq; store tzOffsetMin per event.
-11. Add Settings and Courses screens; add "installed on Android and used offline" to Phase 10's done-when.
+## A. Tech-check fixes: 10 of 11 applied (Fix pass, 2026-11-13); A11 open
+1. planOneNight returns an empty plan after sleep start → give one minimum block plus the sleep reminder. ✅
+2. SAFETY_MARGIN is applied twice → apply it once. Estimator: first attempt at p0, later attempts at about 0.8, relearning at R(t). ✅
+3. "Minutes used today" counts only responseMs → use session wall time with idle gaps capped. ✅
+4. A course with an exam more than 7 days away gets long-term new/day that ignores the planner → let the planner share set new/day. ✅
+5. D=1: check that read-but-unseen cards get into the final pass (sim test). ✅
+6. One shared valueOf() for cram degrade and planner cuts. ✅
+7. Collision guard: reject a fuzzy match that is as close or closer to another card's answer. ✅
+8. Multiple choice with fewer than 3 options → skip to the next path step. ✅
+9. Same card twice in a row when fewer than 3 remain → test. ✅
+10. Replay: order events from the same device by seq; store tzOffsetMin per event. ✅
+11. ⏳ Add Settings and Courses screens; add "installed on Android and used offline" to Phase 10's done-when. Still pending; see 8.6.
 
 ## B. Bugs found by using the live app (Nov 13)
 - **FIX:** typed term→definition answers need a word-for-word match, so correct paraphrases are marked wrong (see D3).
@@ -50,10 +50,12 @@ Status key: **DECIDED** · **FIX** (prompt or app change to make) · **OPEN** (n
    - Typed answers are for definition → term only.
    - Term → definition is multiple choice or an idea-unit check: the student types, then ticks the *key words* (from the prompt's `*asterisks*`), and the app pre-ticks keyword matches.
    - Research: typing beats thinking (d = 0.43); idea-unit standards cut overconfident self-scoring from about 55% to 15-28%.
+   - Spec: see BUILD_PLAN §5.1 and §6.3; event fields added in this commit (`verdictKind: 'ideaUnit'`, `hinted`).
 4. **List cards** (an answer that is a set: "Name the six network threats"):
    - Graded as a checklist of starred items (typed or tap-pick). Ordered lists are sequences instead.
    - **DECIDED (user):** keep long lists (e.g. 8 malware types) and add a **"name N of M"** variant ("name any 4 of the 8"): correct if at least N valid items. It's gradable, so it counts like any card. Students focus on different items, so full lists stay available.
    - **FIX:** never generate a reverse card from a list fact.
+   - Spec: see BUILD_PLAN §5.1 and §6.3; event fields added in this commit (`verdictKind: 'listN'`).
 5. **Reverse cards:** a @fact makes two cards, term → definition and definition → term. For lists the reverse ("malware, phishing, … → ?") is meaningless, so skip it.
 6. **Sequences:** use the arrange exercise; the diagram/stack version comes in Phase 6.
 7. **Sounds (DECIDED):** soft paw tap, snow crunch on correct, a low soft note on wrong, a stamp when a card becomes exam-ready. Own toggle; never during reading. Music: instrumental only, off by default, low volume (research: about zero effect; lyrics hurt).
@@ -146,7 +148,8 @@ Status key: **DECIDED** · **FIX** (prompt or app change to make) · **OPEN** (n
   3. Choose a mode: Learn, Practice, Play or Exam prep.
 
   Every mode respects that selection. Exam prep can also be narrowed, e.g. "only Lectures III-V".
-- **Micro hint** (Quizlet-style): reveal the first few words or letters of the answer. A hinted answer never counts as a first-attempt correct; at most it's a recognition-level success, and it doesn't count toward the criterion.
+- **Micro hint** (Quizlet-style): reveal the first few words or letters of the answer. A hinted correct is rated Hard for FSRS and never counts toward the criterion (not even as recognition).
+  - Spec: see BUILD_PLAN §5.1 and §6.3; event fields added in this commit (`hinted`, `verdictKind`).
 - **Any card type can show in several formats:**
 
   | Card | Formats |

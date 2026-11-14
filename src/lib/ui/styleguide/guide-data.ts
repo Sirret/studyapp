@@ -14,7 +14,7 @@ export const CARD_STATUSES: readonly CardStatus[] = [
 
 /** A sample import preview for the style guide: one problem, one unsure card, two topics. */
 export const SAMPLE_IMPORT_PREVIEW = {
-	plan: { topics: [], coverage: ['Transport', 'Indexing'] },
+	plan: { topics: [], coverage: ['Transport', 'Indexing'], map: null, status: 'complete' as const },
 	images: [],
 	errors: [{ line: 12, message: 'Expected "A -> B" or "A -> B : label". This line is skipped.' }],
 	topics: [
@@ -27,7 +27,13 @@ export const SAMPLE_IMPORT_PREVIEW = {
 	generatedChunkCount: 0,
 	checked: [{ line: 30, text: 'Basic operations :: select, project, union' }],
 	unusedImages: [],
-	ended: false
+	ended: false,
+	status: 'cut',
+	warnings: [],
+	checklist: [],
+	missing: [],
+	resumePrompt: null,
+	starredGaps: []
 } satisfies ImportPreview;
 
 /** A few lines of import text, for the paste-area sample. */

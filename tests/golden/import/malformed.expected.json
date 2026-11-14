@@ -1,9 +1,11 @@
 {
+	"warnings": [
+		{ "line": 1, "message": "Text before the first @ line was ignored." },
+		{ "line": 6, "message": "Unknown directive @unknown; it and the lines under it were skipped." }
+	],
 	"errors": [
-		{ "line": 1, "message": "This line is not under any @ directive." },
-		{ "line": 2, "message": "@fact comes before any @deck, so it was skipped." },
+		{ "line": 2, "message": "@fact comes before any @topic or @deck, so it was skipped." },
 		{ "line": 4, "message": "@deck needs a name." },
-		{ "line": 6, "message": "Unknown directive @unknown; the lines under it were skipped." },
 		{ "line": 8, "message": "@priority must be high or normal." },
 		{ "line": 9, "message": "@fact takes nothing on its own line, so this block was skipped." },
 		{ "line": 13, "message": "Expected \"term :: definition\"." },

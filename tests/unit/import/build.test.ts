@@ -47,14 +47,16 @@ describe('buildPlan', () => {
 			['@diagram stack', '@diagram stack S\na\nb\n@deck A'],
 			['@diagram flow', '@diagram flow F\na -> b\n@deck A']
 		])('reports %s before any @deck', (directive, text) => {
+			// PROMPTS §7: @deck maps to @topic, so the message names both (wording only; still skipped with an error).
 			expect(build(text).errors).toEqual([
-				{ line: 1, message: `${directive} comes before any @deck, so it was skipped.` }
+				{ line: 1, message: `${directive} comes before any @topic or @deck, so it was skipped.` }
 			]);
 		});
 
 		it('reports @occlusion before any @deck', () => {
+			// PROMPTS §7: @deck maps to @topic, so the message names both (wording only).
 			expect(build('@occlusion a.png\n@deck A', ['a.png']).errors).toEqual([
-				{ line: 1, message: '@occlusion comes before any @deck, so it was skipped.' }
+				{ line: 1, message: '@occlusion comes before any @topic or @deck, so it was skipped.' }
 			]);
 		});
 

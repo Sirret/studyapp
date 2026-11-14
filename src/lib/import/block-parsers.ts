@@ -18,7 +18,8 @@ export interface BlockOutput {
 export type BlockParser = (raw: RawBlock) => BlockOutput;
 
 const PAIR = /^(.+?)\s+::\s+(.+)$/;
-const GENERATED_PREFIX = /^\[GENERATED\]\s*/;
+/** `[ADDED]` (Import v2) or legacy `[GENERATED]` at the start of a reading. */
+const GENERATED_PREFIX = /^\[(?:GENERATED|ADDED)\]\s*/;
 
 /** Validates what a block parser built against the AST schema. */
 export function finishBlock(
@@ -48,7 +49,7 @@ export function splitPair(text: string): { left: string; right: string } | undef
 }
 
 /** Reports text under a directive that takes none. */
-function strayLineErrors(raw: RawBlock): ImportError[] {
+export function strayLineErrors(raw: RawBlock): ImportError[] {
 	return raw.lines.map(({ line }) => ({ line, message: `@${raw.name} takes no lines under it.` }));
 }
 
@@ -87,9 +88,9 @@ function parsePairs(kind: 'keyterms' | 'fact' | 'scenario', expected: string): B
 		if (raw.lines.length === 0) return failBlock(raw, `@${kind} has no lines.`);
 		const entries: PairEntry[] = [];
 		const errors: ImportError[] = [];
-		for (const { line, text, isChecked } of raw.lines) {
+		for (const { line, text, isChecked, isAdded } of raw.lines) {
 			const pair = splitPair(text);
-			if (pair) entries.push({ line, ...pair, isChecked });
+			if (pair) entries.push({ line, ...pair, isChecked, isAdded });
 			else errors.push({ line, message: `Expected "${expected}".` });
 		}
 		if (entries.length === 0) return { errors };
@@ -138,7 +139,12 @@ const parseCloze: BlockParser = (raw) => {
 		{
 			kind: 'cloze',
 			line: raw.line,
-			entries: entries.map(({ line, text, isChecked }) => ({ line, text, isChecked }))
+			entries: entries.map(({ line, text, isChecked, isAdded }) => ({
+				line,
+				text,
+				isChecked,
+				isAdded
+			}))
 		},
 		errors
 	);
@@ -223,7 +229,7 @@ export const BLOCK_PARSERS: ReadonlyMap<string, BlockParser> = new Map<string, B
 	['fact', parsePairs('fact', 'term :: definition')],
 	['cloze', parseCloze],
 	['sequence', parseSequence],
-	['compare', (raw) => refuseArgument(raw) ?? parseCompare(raw)],
+	['compare', parseCompare],
 	['scenario', parsePairs('scenario', 'situation :: answer')],
 	['example', parseExample],
 	['diagram', parseDiagram],

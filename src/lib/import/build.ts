@@ -2,14 +2,32 @@ import type { Chunk } from '#lib/db/schemas/course.ts';
 import type { Priority } from '#lib/db/schemas/common.ts';
 import { generateCards, type CardSpec, type NoteContent } from '#lib/engine/cardgen.ts';
 import type { Block, ImportDocument, ImportError, PairEntry } from './ast.ts';
+import { collectMap, type PlannedMap } from './build-map.ts';
+import {
+	applyStructure,
+	requireTopic,
+	type BuildState,
+	type StructureBlock,
+	type StructureKind
+} from './build-structure.ts';
+import {
+	checkCompleteness,
+	type Completeness,
+	type ReplyStatus,
+	type ResumePoint
+} from './completeness.ts';
+import { readKeyWords } from './key-words.ts';
 import { fileKey } from './zip.ts';
 
 /** A note's content before its image exists in `media`: occlusion names the file instead. */
 export type PlannedContent =
 	Exclude<NoteContent, { type: 'occlusion' }> | { type: 'occlusion'; file: string };
 
-/** A chunk about to be written. @see DATA_MODEL §3.3 */
-export interface PlannedChunk extends Pick<Chunk, 'text' | 'words' | 'source' | 'check'> {
+/** A section (chunk) about to be written. @see DATA_MODEL §3.3 */
+export interface PlannedChunk extends Pick<
+	Chunk,
+	'text' | 'words' | 'source' | 'check' | 'title' | 'priority' | 'tip' | 'added'
+> {
 	line: number;
 }
 
@@ -32,6 +50,13 @@ export interface PlannedNote {
 export interface PlannedTopic {
 	name: string;
 	priority: Priority;
+	/** The map id (`@topic <key>`); absent for `@deck` topics. */
+	key?: string;
+	/** Normalised lecture names (`from:`). */
+	from: string[];
+	summary?: string;
+	/** Its reply was cut off inside it. */
+	partial?: true;
 	chunks: PlannedChunk[];
 	notes: PlannedNote[];
 }
@@ -41,6 +66,11 @@ export interface ImportPlan {
 	topics: PlannedTopic[];
 	/** Sections listed by `@coverage`; shown in the preview, never stored. */
 	coverage: string[];
+	/** The course map, when the paste has `@map`. */
+	map: PlannedMap | null;
+	status: ReplyStatus;
+	/** Where to resume, unless complete. */
+	resume?: ResumePoint;
 }
 
 /** What the builder needs from outside. */
@@ -50,86 +80,27 @@ export interface BuildContext {
 	newId: () => string;
 }
 
-type NoteBlock = Exclude<
-	Block,
-	{ kind: 'deck' | 'tag' | 'priority' | 'read' | 'coverage' | 'end' }
->;
+type NoteBlock = Exclude<Block, { kind: StructureKind }>;
 
 /** A note's content before the sticky state is applied. */
 interface Draft {
 	line: number;
 	content: PlannedContent;
 	isChecked: boolean;
+	isAdded?: boolean;
 	sourceFile?: string;
 }
 
-/** Where the builder is in the file. `@deck` resets all of it but the topic. */
-interface BuildState {
-	context: BuildContext;
-	topics: Map<string, PlannedTopic>;
-	coverage: string[];
-	errors: ImportError[];
-	topic?: PlannedTopic;
-	chunkIndex?: number;
-	tag?: string;
-	priority: Priority;
-}
-
 const NOT_A_NOTE_BLOCK = new Set<Block['kind']>(['tag', 'priority', 'keyterms']);
-
-function directiveLabel(block: Block): string {
-	if (block.kind === 'diagramStack') return '@diagram stack';
-	if (block.kind === 'diagramFlow') return '@diagram flow';
-	return `@${block.kind}`;
-}
-
-/** The current topic; without one the block is reported and skipped. */
-function requireTopic(state: BuildState, block: Block): PlannedTopic | undefined {
-	if (!state.topic) {
-		state.errors.push({
-			line: block.line,
-			message: `${directiveLabel(block)} comes before any @deck, so it was skipped.`
-		});
-	}
-	return state.topic;
-}
-
-function openDeck(state: BuildState, name: string): void {
-	const topic = state.topics.get(name) ?? { name, priority: 'normal', chunks: [], notes: [] };
-	state.topics.set(name, topic);
-	state.topic = topic;
-	state.chunkIndex = undefined;
-	state.tag = undefined;
-	state.priority = 'normal';
-}
-
-function applyPriority(state: BuildState, block: Extract<Block, { kind: 'priority' }>): void {
-	const topic = requireTopic(state, block);
-	if (!topic) return;
-	state.priority = block.value;
-	if (block.value === 'high') topic.priority = 'high';
-}
-
-function addChunk(state: BuildState, block: Extract<Block, { kind: 'read' }>): void {
-	const topic = requireTopic(state, block);
-	if (!topic) return;
-	topic.chunks.push({
-		line: block.line,
-		text: block.text,
-		words: block.text.split(/\s+/).filter(Boolean).length,
-		source: block.isGenerated ? 'generated' : 'notes',
-		...(block.isChecked ? { check: true as const } : {})
-	});
-	state.chunkIndex = topic.chunks.length - 1;
-}
 
 function pairDrafts(
 	block: { entries: PairEntry[] },
 	toContent: (left: string, right: string) => PlannedContent
 ): Draft[] {
-	return block.entries.map(({ line, left, right, isChecked }) => ({
+	return block.entries.map(({ line, left, right, isChecked, isAdded }) => ({
 		line,
 		isChecked,
+		isAdded,
 		content: toContent(left, right)
 	}));
 }
@@ -167,17 +138,19 @@ function draftsPerLine(block: Extract<NoteBlock, { entries: unknown }>): Draft[]
 		case 'fact':
 			return pairDrafts(block, (term, definition) => ({
 				type: 'fact',
-				payload: { term, definition }
+				payload: factPayload(term, definition)
 			}));
+		case 'link':
 		case 'scenario':
 			return pairDrafts(block, (situation, answer) => ({
 				type: 'scenario',
 				payload: { situation, answer }
 			}));
 		case 'cloze':
-			return block.entries.map(({ line, text, isChecked }) => ({
+			return block.entries.map(({ line, text, isChecked, isAdded }) => ({
 				line,
 				isChecked,
+				isAdded,
 				content: { type: 'cloze', payload: { text } }
 			}));
 	}
@@ -255,36 +228,69 @@ function addNotes(state: BuildState, block: NoteBlock, blocks: Block[], index: n
 	const topic = requireTopic(state, block);
 	if (!topic || !hasRequiredImage(state, block)) return;
 	const chunk = chunkFor(state, topic, block, upcomingRead(blocks, index));
-	for (const draft of toDrafts(block, state.context.newId)) {
+	const tags = block.kind === 'link' ? [`link:${block.topicKey}`] : state.tag ? [state.tag] : [];
+	for (const { isAdded, ...draft } of toDrafts(block, state.context.newId)) {
 		topic.notes.push({
 			...draft,
 			...chunk,
+			...(isAdded ? { isGenerated: true } : {}),
 			priority: state.priority,
-			tags: state.tag ? [state.tag] : [],
+			tags,
 			cards: draft.content.type === 'occlusion' ? [] : generateCards(draft.content).result
 		});
 	}
 }
 
+const STRUCTURE_KINDS = new Set<Block['kind']>([
+	'deck',
+	'tag',
+	'priority',
+	'read',
+	'coverage',
+	'end',
+	'map',
+	'bigpicture',
+	'habit',
+	'topic',
+	'links',
+	'cheat',
+	'missing',
+	'summary',
+	'section',
+	'tip',
+	'next'
+] satisfies StructureKind[]);
+
+function isStructure(block: Block): block is StructureBlock {
+	return STRUCTURE_KINDS.has(block.kind);
+}
+
+/** A `@fact` with its `*key words*` read: shown without markers, a starred list makes one card. */
+function factPayload(
+	term: string,
+	definition: string
+): Extract<PlannedContent, { type: 'fact' }>['payload'] {
+	const { text, keyWords, list } = readKeyWords(definition);
+	return {
+		term,
+		definition: text,
+		...(keyWords.length > 0 ? { keyWords } : {}),
+		...(list ? { list: true as const } : {})
+	};
+}
+
+/** Marks the topic the reply stopped or was cut in as partial. */
+function markPartial(state: BuildState, done: Completeness, map: PlannedMap | null): void {
+	const topic = done.resume ? state.topics.get(done.resume.topicKey) : undefined;
+	if (!topic || done.status === 'complete') return;
+	const planned = map?.topics.find((entry) => entry.key === done.resume?.topicKey);
+	const fewer = planned !== undefined && topic.chunks.length < planned.sections.length;
+	if (done.status === 'cut' || done.resume?.section !== undefined || fewer) topic.partial = true;
+}
+
 function applyBlock(state: BuildState, block: Block, blocks: Block[], index: number): void {
-	switch (block.kind) {
-		case 'deck':
-			return openDeck(state, block.name);
-		case 'tag':
-			if (requireTopic(state, block)) state.tag = block.name;
-			return;
-		case 'priority':
-			return applyPriority(state, block);
-		case 'read':
-			return addChunk(state, block);
-		case 'coverage':
-			state.coverage.push(...block.sections);
-			return;
-		case 'end':
-			return;
-		default:
-			return addNotes(state, block, blocks, index);
-	}
+	if (isStructure(block)) applyStructure(state, block);
+	else addNotes(state, block, blocks, index);
 }
 
 /**
@@ -301,11 +307,22 @@ export function buildPlan(
 		topics: new Map(),
 		coverage: [],
 		errors: [],
+		sectionOpen: false,
 		priority: 'normal'
 	};
-	document.blocks.forEach((block, index) => applyBlock(state, block, document.blocks, index));
+	const done = checkCompleteness(document);
+	const { map, errors: mapErrors } = collectMap(document);
+	const { blocks } = done.document;
+	blocks.forEach((block, index) => applyBlock(state, block, blocks, index));
+	markPartial(state, done, map);
 	return {
-		plan: { topics: [...state.topics.values()], coverage: state.coverage },
-		errors: state.errors
+		plan: {
+			topics: [...state.topics.values()],
+			coverage: state.coverage,
+			map,
+			status: done.status,
+			...(done.resume ? { resume: done.resume } : {})
+		},
+		errors: [...state.errors, ...mapErrors].sort((a, b) => a.line - b.line)
 	};
 }

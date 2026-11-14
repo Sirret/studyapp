@@ -150,6 +150,8 @@ describe('ImportService', () => {
 			const expected = JSON.parse(readFileSync(`${GOLDEN}/${name}.expected.json`, 'utf8'));
 			const preview = await commit(text, await prepare('slide12.png'));
 			expect(preview.errors).toEqual(expected.errors);
+			// Golden files without a "warnings" list expect none (PROMPTS §7: unknown directives and text outside the import are warnings).
+			expect(preview.warnings).toEqual(expected.warnings ?? []);
 			expect(preview.plan.coverage).toEqual(expected.coverage);
 			expect(sortCards(await storedTree())).toEqual(sortCards(expected.topics));
 		});

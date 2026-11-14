@@ -6,16 +6,25 @@ import {
 	type CourseId,
 	type Placement
 } from '#lib/db/schemas/common.ts';
-import type { Course, Topic } from '#lib/db/schemas/course.ts';
+import type { Course, ImportGoal, Topic } from '#lib/db/schemas/course.ts';
 import type { NoteType } from '#lib/db/schemas/note.ts';
 import type { ImportError } from '#lib/import/ast.ts';
 import { buildPlan, type ImportPlan } from '#lib/import/build.ts';
+import type { ReplyStatus } from '#lib/import/completeness.ts';
+import { starredGaps, type StarredGap } from '#lib/import/validate.ts';
 import { readLine, splitLines } from '#lib/import/lexer.ts';
 import { parseImport } from '#lib/import/parser.ts';
 import { fileKey, readImportZip } from '#lib/import/zip.ts';
 import type { Logger } from '#lib/log/logger.ts';
 import type { Result } from '#lib/util/result.ts';
 import { ImportBatchDrafter } from './import-batch.ts';
+import {
+	mapChecklist,
+	matchTopic,
+	nextCourseMap,
+	resumeFor,
+	type ChecklistItem
+} from './import-map.ts';
 
 /** An attached image before processing. */
 export interface ImageSource {
@@ -75,6 +84,18 @@ export interface ImportPreview {
 	unusedImages: string[];
 	/** The reply was finished (`@end`, or `@coverage` from older prompts); false: it may be cut off. */
 	ended: boolean;
+	/** Import v2: complete, stopped at `@next`, or cut off (its half-written last section dropped). */
+	status: ReplyStatus;
+	/** Skipped but harmless (unknown directives, text outside the code block). */
+	warnings: ImportError[];
+	/** The course map's topics, ticked when imported ("5 of 8 topics imported"). */
+	checklist: ChecklistItem[];
+	/** What the chatbot couldn't read (`@missing`). */
+	missing: string[];
+	/** A prompt to finish the course in a new chat, when topics are missing or the reply stopped. */
+	resumePrompt: string | null;
+	/** Cards whose starred words their reading doesn't say; their notes are flagged. */
+	starredGaps: StarredGap[];
 }
 
 /** What a commit wrote. */
@@ -121,6 +142,14 @@ function checkedItems(plan: ImportPlan, text: string): CheckedItem[] {
 		.filter((chunk) => chunk.check)
 		.map(({ line, text: chunkText }) => ({ line, text: chunkText.split('\n')[0] ?? '' }));
 	return [...fromNotes, ...fromChunks].sort((a, b) => a.line - b.line);
+}
+
+/** Flags the notes of cards whose starred words their reading doesn't say (preview shows them). */
+function flagGaps(plan: ImportPlan, gaps: readonly StarredGap[]): void {
+	const lines = new Set(gaps.map((gap) => gap.line));
+	for (const note of plan.topics.flatMap((topic) => topic.notes)) {
+		if (lines.has(note.line)) note.isChecked = true;
+	}
 }
 
 /**
@@ -193,7 +222,12 @@ export class ImportService {
 			newId: this.newId
 		});
 		const { plan } = built;
+		const gaps = starredGaps(plan);
+		flagGaps(plan, gaps);
 		const existing = await this.store.topics.listByCourse(courseId);
+		const course = await this.store.courses.get(courseId);
+		const map = course ? nextCourseMap(course, plan) : undefined;
+		const checklist = mapChecklist(map, plan, existing);
 		const referenced = referencedFiles(plan);
 		const isUsed = (image: PreparedImage) => referenced.has(fileKey(image.fileName));
 		return {
@@ -202,7 +236,7 @@ export class ImportService {
 			errors: [...parsed.errors, ...built.errors].sort((a, b) => a.line - b.line),
 			topics: plan.topics.map((topic) => ({
 				name: topic.name,
-				existing: existing.find((candidate) => candidate.name === topic.name),
+				existing: matchTopic(existing, topic),
 				chunks: topic.chunks.length,
 				notes: topic.notes.length,
 				cards: topic.notes.reduce((sum, note) => sum + note.cards.length, 0)
@@ -215,9 +249,15 @@ export class ImportService {
 				.filter((chunk) => chunk.source === 'generated').length,
 			checked: checkedItems(plan, text),
 			unusedImages: images.filter((image) => !isUsed(image)).map((image) => image.fileName),
-			ended: parsed.document.blocks.some(
-				(block) => block.kind === 'end' || block.kind === 'coverage'
-			)
+			ended:
+				plan.status === 'complete' ||
+				parsed.document.blocks.some((block) => block.kind === 'coverage'),
+			status: plan.status,
+			warnings: parsed.warnings,
+			checklist,
+			missing: map?.missing ?? [],
+			resumePrompt: resumeFor(map, checklist, plan),
+			starredGaps: gaps
 		};
 	}
 
@@ -230,11 +270,11 @@ export class ImportService {
 	async commit(
 		courseId: CourseId,
 		preview: ImportPreview,
-		placements: ReadonlyMap<string, Placement>
+		placements: ReadonlyMap<string, Placement>,
+		goal?: ImportGoal
 	): Promise<Result<ImportSummary, string>> {
-		if (!(await this.store.courses.get(courseId))) {
-			return { ok: false, error: 'That course no longer exists.' };
-		}
+		const course = await this.store.courses.get(courseId);
+		if (!course) return { ok: false, error: 'That course no longer exists.' };
 		try {
 			const drafter = new ImportBatchDrafter(this.store, await this.store.getDeviceId());
 			const batch = await drafter.draft({
@@ -243,6 +283,9 @@ export class ImportService {
 				images: preview.images,
 				placements
 			});
+			const map = nextCourseMap(course, preview.plan, goal);
+			const deviceId = await this.store.getDeviceId();
+			if (map) batch.courses = [this.store.courses.draftChange(course, { map }, deviceId)];
 			await this.store.writeBatch(batch);
 			const summary = {
 				topics: preview.topics.length,

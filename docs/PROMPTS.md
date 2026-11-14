@@ -238,6 +238,9 @@ Then: `Here is my material:` followed by the paste or attachments.
   - Read `*…*` as key words only inside @fact answers.
   - Normalise a trailing "layer"/"protocol" when comparing answers across cards.
   - @cheat is a @compare shown on the course page.
+  - Unknown directives (any `@word` not in the directive list, including `@constructor`, `@toString`, `@__proto__`, and a lone `@`) are skipped with a warning, never an error. The lines under them are skipped until the next known directive. Lookup uses own keys only, so prototype names never match.
+  - Directive names are case-insensitive: `@Fact`, `@SECTION` and `@section` are `@fact` and `@section`. No warning.
+  - Parse output has `warnings` next to `errors`. An empty paste gives no errors and no warnings; the app says "Nothing to import".
 - **Partial replies:** import every complete section; drop a half-written last line or section and mark that topic "partial"; @next <id> <section> tells the app where to resume.
 - **Manual mode:** every directive has an in-app form, so students can build courses, topics, sections and every card type without any chatbot.
 - **Topic merging on re-import:** a topic whose `from:` overlaps an existing topic offers "update this topic" instead of creating a duplicate.
