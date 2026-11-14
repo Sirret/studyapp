@@ -1,6 +1,6 @@
 ---
 name: spec-test-writer
-description: Writes unit and simulation tests for a module straight from the spec (BUILD_PLAN.md, DATA_MODEL.md, CONCEPT.md) BEFORE it is implemented. Use at the start of every engine, import, transfer or planner module, after the module's public interface (types + signatures) exists and before its logic is written.
+description: Writes unit and simulation tests for risky modules straight from the spec (BUILD_PLAN.md, DATA_MODEL.md, CONCEPT.md, PROMPTS.md) BEFORE they are implemented, on Sonnet. Use for engine replay, merge, criterion, queue, session, status, cram, planner, grading, estimate and value; and for the import parser, lexer, completeness and validate. For transfer, db repos, migrations and import data-mapping helpers (build-map, lectures, key-words), use spec-test-writer-haiku.
 tools: Read, Glob, Grep, Write, Edit, Bash
 model: sonnet
 ---

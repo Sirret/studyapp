@@ -16,6 +16,7 @@ The working notes passed from one phase to the next. Unlike `PROGRESS.md` (a his
 
 | To do this | Use | Never |
 | --- | --- | --- |
+| Write spec tests for a new module | `spec-test-writer` (Sonnet) for risky modules; `spec-test-writer-haiku` for transfer, repos, migrations and import data-mapping helpers (CLAUDE.md step 2) | One agent for every module, or an unnamed model |
 | Create or change content | `CourseRepo`, `TopicRepo`, `ChunkRepo`, `NoteRepo`, `CardRepo`, `MediaRepo` in `db/repos/content-repos.ts`, built on `ContentRepo` | Touch a Dexie table directly |
 | Delete content | `repo.softDelete(id)`; reads already hide tombstones | Hard delete, except archive or replace import |
 | Record study history | `EventRepo.append(fields)`; it adds `id`, `ts`, `deviceId`, `seq` and `tzOffsetMin`. An answer plus its session snapshot: `appendWithSession` (one transaction) | Update or delete an event |

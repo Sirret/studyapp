@@ -166,10 +166,10 @@ verdictKind: z.enum(['exact', 'fuzzy', 'ideaUnit', 'listN']).optional(),
 
     Effort: S.
 
-    Status: [x] — commit: (this commit). Evidence anchors found. Checkpoint rule added to CLAUDE.md; checkpoint log started in WIP.md with the four commits from this session.
+    Status: [x] — commit: cf56b14. Evidence anchors found. Checkpoint rule added to CLAUDE.md; checkpoint log started in WIP.md with the four commits from this session.
 
 Tier 2 — High (do before 8.5)
-[ ] 2.1 — Spec-test-writer: scope the brief, not the test execution
+[x] 2.1 — Spec-test-writer: scope the brief, not the test execution
 
     Where: docs/WIP.md "spec-test-writer brief (Import v2 parser)" and .claude/agents/spec-test-writer.md.
 
@@ -189,7 +189,7 @@ Tier 2 — High (do before 8.5)
 
     Effort: S.
 
-    Status: [ ] — commit: _
+    Status: [x] — commit: (this commit). Evidence matched. Brief cut to the parser's spec sections; Haiku agent added for plumbing; module rule in CLAUDE.md step 2 and HANDOFF.
 
 [ ] 2.2 — Enforce tokens-only for every new screen until DESIGN.md is rewritten
 
