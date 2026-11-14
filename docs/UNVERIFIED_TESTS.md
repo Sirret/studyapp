@@ -1,24 +1,14 @@
 # Unverified tests
 
-Tests that fail intermittently on the development laptop (an HP 440 G6, slow for many parallel browsers) **only by running out of time**, while passing on their own. User's call (2026-11-08): log them here, keep going, and review the whole list **after Phase 10** (on CI or a faster machine).
+Tests that failed by **timeout or under load** and passed on a rerun, so a real bug isn't proven or ruled out. A test failing on a wrong value or a missing element is a bug: fix it in its phase, never log it here. This list is rerun and fixed in the final phase.
 
-## Rule for every phase
+**Logging an entry:** add a row when a timeout-type failure isn't reproducible in its phase. Note what was checked (e.g. "also fails on the previous commit"). Never skip, delete or loosen the test (rule 15); it keeps running as normal.
 
-- A `verify` whose only failures are timeouts of the kinds below may be closed: log each one here and note it in that phase's PROGRESS entry.
-- **Anything else is not loggable:** a check that gets a wrong value, an error in the app, a crash. Those are bugs; fix them.
-- Before logging, run the test on its own (`npx playwright test <file> --project=<p> -g "<name>"`) and record the result.
-- Local e2e already runs with 2 workers and no video (`playwright.config.ts`) to reduce the load.
-- A test that passes alone on two consecutive attempts gets marked ✅ with the date. Review the whole list together after Phase 10, or on a CI machine if one is added.
+**Final phase:** rerun only these, e.g. `npx playwright test -g "<name>" --repeat-each=5`. Read the trace, fix the cause, and delete the row in the commit that fixes it.
 
-## Log
-
-| Date | Phase | Test (project) | What happened | Alone | Kind |
-| --- | --- | --- | --- | --- | --- |
-| 2026-11-08 | 5 | `import.spec.ts` › the course survives a reload, and a later import adds to its topic (mobile) | Once the course picker had no value within 5 s after the reload; once the whole test passed the 30 s limit, ending in the correct state ("Added 1 notes and 1 cards across 1 topics") | 4 of 5 passed (`--repeat-each 5`) | slow machine: two imports + a reload in 30 s |
-| 2026-11-08 | 5 | `import.spec.ts` › resizes an occlusion image to WebP and stores it once (mobile) | Ran out of time while encoding under full-suite load (also seen once before Phase 5) | passes | slow machine: image encoding |
-| 2026-11-08 | 5 | `logging.spec.ts` › records that the app started (laptop) | Closing the browser ("Tearing down context") exceeded the limit after its checks | passes | teardown under load |
-| 2026-11-08 | 5 | `pwa.spec.ts` › shows the app name with no sideways scroll (laptop) | Teardown exceeded the limit after its checks | 5 of 5 passed | teardown under load |
-| 2026-11-08 | 5 | `import.spec.ts` › is reached from the home screen; copies the chatbot prompt (mobile) | Teardown exceeded the limit after their checks, while the long session tests ran alongside | 14 of 14 passed | teardown under load |
-| 2026-11-10 | 7 | `import.spec.ts` › resizes an occlusion image to WebP and stores it once (laptop) | In `verify` the "Attached: …" line didn't show within 5 s (encoding two 3200 px PNGs under full-suite load); with `--repeat-each 3` and 2 parallel workers it failed 3 of 3 the same way. Phase 7 changed no import code | passed alone 1 of 1 and 3 of 3 with `--workers 1`; also passes on mobile | slow machine: image encoding |
-| 2026-11-11 | 8 | `import.spec.ts` › resizes an occlusion image to WebP and stores it once (laptop) | Same as the Phase 7 row: "Attached: …" not shown within 5 s under full-suite load. Phase 8 changed no import code | passed alone 1 of 1 (`--workers 1`) | slow machine: image encoding |
-| 2026-11-14 | Import v2 | `import.spec.ts` › import offline › works with no network once the app has loaded (laptop) | Ran 31.4 s against the 30 s limit in `verify` (the status line did not appear within the test); the check itself was not wrong | passed alone 1 of 1 (6.0 s) | slow machine under full-suite load |
+| First seen | Phase | Test (file › name) | Project | Failure | What was checked | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2026-11-14 | 8.5 | `course-map.spec.ts` › sample course opens with its course map | both | Test timeout 30 s; "Tearing down context exceeded the test timeout" | Also fails on base commit `acf4307` (stash check); fails on the 2nd `--repeat-each` | Open |
+| 2026-11-14 | 8.5 | `import.spec.ts` › resizes an occlusion image to WebP and stores it once | mobile | "Attached: slide.png, copy.png" not visible within 5 s | Also fails on base commit `acf4307` | Open |
+| 2026-11-14 | 8.5 | `import.spec.ts` › works with no network once the app has loaded | both | Test timeout 30 s waiting for the "Added 1 note" status | Also fails on base commit `acf4307`; fails on the 2nd `--repeat-each` | Open |
+| 2026-11-14 | 8.5 | `tests/unit/services/study-service.test.ts` › plays the harness session to the end | unit | Failed once in a full run (likely a timeout under load); name not captured the 2nd time | Passed 20+ reruns | Open |

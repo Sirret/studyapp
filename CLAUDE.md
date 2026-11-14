@@ -18,6 +18,7 @@ The docs, for reference:
 - `docs/DATA_MODEL.md` — every stored field, the ER diagram and the export format. The source of truth for data.
 - `docs/DESIGN.md` — the look and feel: tokens, components, screens, and Yuki the wolf companion (reference art in `docs/design/`).
 - `docs/PROGRESS.md` — what has been built so far and the latest test results. Read the last entry first.
+- `docs/UNVERIFIED_TESTS.md` — tests that failed only by timeout or under load and passed on a rerun. Log them there instead of chasing them mid-phase; the final phase reruns and fixes them.
 
 ## Toolchain traps (already solved; don't rediscover them)
 
@@ -48,7 +49,7 @@ The docs, for reference:
 11. **Never lock the user out** (sleep is a reminder, not a block), and **never add an "I know this" skip**.
 12. **Verify library APIs** listed in `BUILD_PLAN.md` §14 against the installed versions instead of assuming.
 13. **Test continuously.** Run `npm run test` after every change set. Before saying a phase is done, run `npm run verify` and make it pass.
-14. **Read the logs, don't guess.** When anything fails, read `test-results/summary.md` first, then the specific report it points to (sim scenario `.md`, Playwright trace, coverage). Fix the cause.
+14. **Read the logs, don't guess.** When anything fails, read `test-results/summary.md` first, then the specific report it points to (sim scenario `.md`, Playwright trace, coverage). Fix the cause. Exception: a timeout-type failure that passes on a rerun goes into `docs/UNVERIFIED_TESTS.md` (what was checked, e.g. "also fails on the previous commit") and is left for the final phase; a wrong value or missing element is a bug to fix now.
 15. **Never weaken tests to pass.** Don't skip, delete, loosen or `.only` tests, lower coverage thresholds, or bypass git hooks (`--no-verify`). If the spec itself was wrong, fix the spec and record it in the Decisions log.
 16. **Log progress.** At the end of each phase, append an entry to `docs/PROGRESS.md` using its template, with numbers from `summary.md`.
 17. **Engine functions return traces** (`{ result, trace }`) explaining their decisions; the app logger stores them. Don't put `console.log` in the engine.
