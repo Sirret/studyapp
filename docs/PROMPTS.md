@@ -221,7 +221,7 @@ Then: `Here is my material:` followed by the paste or attachments.
 | *key words* in @fact | Idea-unit checklist for typed definition answers (student ticks; app pre-ticks matches) |
 | [ADDED] / "Added by the chatbot" section | Shown as its own review section at the end of each topic; the student keeps or deletes each item; never mixed into normal sections |
 | @link | A card tagged with both topics; used in mixed review |
-| @next / @end | The "next" button in the import screen, and import completeness |
+| @next / @end | The "Resume" button, shown when the map reports missing topics, and import completeness |
 
 ## 7. Parser changes (Phase 8.6)
 

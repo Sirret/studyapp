@@ -559,6 +559,8 @@ Each subsection is one pure module with unit tests. "Done when" lines are the ac
 
 `secure` overrides `exam-ready` when its rule holds.
 
+`weak` is never set by games (GAMES.md); only the card's own credited sessions set it (Decisions log, Fix pass A6).
+
 ### 6.6 Cram (`cram.ts`) — concept §7
 
 - **Triage:** `R_exam` = retrievability at exam time with no further review. `R_exam ≥ SECURE_AT_EXAM` (0.95) → secure (final pass only); otherwise at-risk; never reviewed → new.

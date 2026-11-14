@@ -98,7 +98,8 @@ Status key: **DECIDED** · **FIX** (prompt or app change to make) · **OPEN** (n
 - **Partial reply:** import complete sections, drop a half-written last line or section, mark the topic "partial", resume from @next.
 - **Resume prompt:** built from the stored @map ("Topics done: …; start at topic X, section Y") for a new chat, another account or after credits reset.
 
-## F. Getting slides to the chatbot: OPEN, needs a stress test
+## F. Getting slides to the chatbot: provisional — PDFs recommended, stress test outstanding
+Provisional decision (2026-11-13): Import v2 recommends PDF upload on the intake screen; revisit after the section F stress test.
 - **Problem:** PowerPoint SmartArt holds 40-75% of the words in these decks, and chatbots reading .pptx miss it. In the first real test, free Claude reported about 20 slides "empty".
 - **PDF export works** (the second test reported only 1 truly unreadable slide), but it uses a lot of free-tier usage.
 - **Idea:** a "Prepare my slides" tool in the app: pptx → text in the browser (slide text + SmartArt + notes; done with a script here).
@@ -168,6 +169,8 @@ Status key: **DECIDED** · **FIX** (prompt or app change to make) · **OPEN** (n
   - **Try a sample course** (a built-in demo deck) is the primary action, then "Bring my lectures", then "Make cards by hand".
 - **Returning home:** continue where you left off, your courses, a gentle suggestion for today, entry to Play. No streak guilt.
 - **Design canvas:** Welcome and Home screens for the vintage and cozy styles, plus a third direction (row "Direction 3": Welcome, Home, Course + pick what to study, swipe flashcards (interactive), Play hub, Match game, Reader, Motion sheet).
+
+- **Import screen:** a "Resume" prompt button, shown when the map reports missing topics (PROMPTS §6; for the DESIGN.md rewrite).
 
 ## L. Play section: moved to GAMES.md (Phase 11). Bad ideas removed.
 

@@ -8,6 +8,7 @@ Tests that fail intermittently on the development laptop (an HP 440 G6, slow for
 - **Anything else is not loggable:** a check that gets a wrong value, an error in the app, a crash. Those are bugs; fix them.
 - Before logging, run the test on its own (`npx playwright test <file> --project=<p> -g "<name>"`) and record the result.
 - Local e2e already runs with 2 workers and no video (`playwright.config.ts`) to reduce the load.
+- A test that passes alone on two consecutive attempts gets marked ✅ with the date. Review the whole list together after Phase 10, or on a CI machine if one is added.
 
 ## Log
 

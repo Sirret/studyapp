@@ -4,7 +4,7 @@ Not part of Phases 6-10. Build after the core app works. Ideas that were judged 
 
 ## Rules for every game
 - **Games are practice. They never move FSRS** (speed pressure and guessing would distort it).
-- **Misses are logged:** a missed card is flagged weak and reappears more often in later rounds.
+- **Misses are logged for the games only:** a missed card is remembered for the next round (a separate `gameMiss` flag in the games' own state; it never sets `weak` and never affects FSRS, cram, or the planner).
 - **Games use the same scope selection as every mode:** a course, or the chosen topics and sections.
 - **Controls:** one tap, one swipe or one drag. Nothing needs a keyboard.
 - **Visual timers** (a shrinking bar or ring), not numbers.
