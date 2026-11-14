@@ -6,6 +6,7 @@
 	import type { Course, ImportGoal } from '#lib/db/schemas/course.ts';
 	import type { ImageSource, ImportPreview, PreparedImage } from '#lib/services/import-service.ts';
 	import { importService } from '#lib/services/import-wiring.ts';
+	import { DEFAULT_IMPORT_GOAL } from '#lib/config/defaults.ts';
 	import { countOf } from '#lib/util/plural.ts';
 	import { ArrowLeft } from '@lucide/svelte';
 	import Banner from '#lib/ui/components/Banner.svelte';
@@ -32,7 +33,7 @@
 	let imageErrors = $state.raw<string[]>([]);
 	let preview = $state.raw<ImportPreview | undefined>();
 	/** The intake's goal (PROMPTS §2); the commit saves it on the course map. */
-	let goal = $state<ImportGoal | undefined>('learn');
+	let goal = $state<ImportGoal | undefined>(DEFAULT_IMPORT_GOAL);
 	const placements = new SvelteMap<string, Placement>();
 	let notice = $state('');
 	/** The course the last import went into, for "Start studying"; cleared by any new work. */
@@ -129,7 +130,12 @@
 	async function commitImport(): Promise<void> {
 		if (!courseId || !preview) return;
 		isBusy = true;
-		const result = await importService.commit(courseId, preview, placements, goal ?? 'learn');
+		const result = await importService.commit(
+			courseId,
+			preview,
+			placements,
+			goal ?? DEFAULT_IMPORT_GOAL
+		);
 		isBusy = false;
 		if (!result.ok) {
 			notice = result.error;

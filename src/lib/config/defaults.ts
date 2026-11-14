@@ -189,3 +189,5 @@ export const COVERAGE_ENGINE_MIN = 90;
 export const COVERAGE_DATA_MIN = 80;
 /** App log entries kept on the device. */
 export const LOG_RING_SIZE = 2000;
+/** The goal the import screen starts with, until the student picks another (PROMPTS.md intake). */
+export const DEFAULT_IMPORT_GOAL = 'learn';

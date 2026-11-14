@@ -8,6 +8,8 @@
 		type Giving,
 		type Intake
 	} from '#lib/services/import-wiring.ts';
+	import { DEFAULT_IMPORT_GOAL } from '#lib/config/defaults.ts';
+	import { copyText } from '#lib/util/clipboard.ts';
 	import type { ImportGoal } from '#lib/db/schemas/course.ts';
 	import Disclosure from '#lib/ui/components/Disclosure.svelte';
 	import Stack from '#lib/ui/layout/Stack.svelte';
@@ -17,7 +19,7 @@
 
 	let {
 		onCopied,
-		goal = $bindable<ImportGoal | undefined>('learn')
+		goal = $bindable<ImportGoal | undefined>(DEFAULT_IMPORT_GOAL)
 	}: {
 		/** Called after the copy attempt: true when the clipboard took the prompt. */
 		onCopied: (copied: boolean) => void;
@@ -38,18 +40,13 @@
 	const prompt = $derived(
 		buildPrompt({
 			giving: giving ?? 'lecture',
-			goal: goal ?? 'learn',
+			goal: goal ?? DEFAULT_IMPORT_GOAL,
 			syllabus
 		} satisfies Intake)
 	);
 
 	async function copy(): Promise<void> {
-		try {
-			await navigator.clipboard.writeText(prompt);
-			onCopied(true);
-		} catch {
-			onCopied(false);
-		}
+		onCopied(await copyText(prompt));
 	}
 </script>
 

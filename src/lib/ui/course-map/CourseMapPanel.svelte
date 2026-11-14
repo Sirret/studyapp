@@ -43,7 +43,7 @@
 				<table>
 					<thead>
 						<tr>
-							<th scope="col"><span class="visually-hidden">Attribute</span></th>
+							<th scope="col"><span class="sr-only">Attribute</span></th>
 							{#each map.cheat.items as item (item)}
 								<th scope="col">{item}</th>
 							{/each}
@@ -94,14 +94,5 @@
 		border: var(--hairline) solid var(--border);
 		text-align: start;
 		vertical-align: top;
-	}
-
-	.visually-hidden {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip: rect(0 0 0 0);
-		white-space: nowrap;
 	}
 </style>

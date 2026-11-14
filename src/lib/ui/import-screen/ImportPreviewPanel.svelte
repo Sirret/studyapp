@@ -8,6 +8,7 @@
 	import type { Placement } from '#lib/db/schemas/common.ts';
 	import type { NoteType } from '#lib/db/schemas/note.ts';
 	import type { ImportPreview, TopicPreview } from '#lib/services/import-service.ts';
+	import { copyText } from '#lib/util/clipboard.ts';
 	import { countOf } from '#lib/util/plural.ts';
 	import Disclosure from '../components/Disclosure.svelte';
 	import StickyNote from '../components/StickyNote.svelte';
@@ -68,12 +69,9 @@
 	/** Copies the resume prompt; the text is also shown below, so it can be copied by hand. */
 	async function copyResume(): Promise<void> {
 		if (!preview.resumePrompt) return;
-		try {
-			await navigator.clipboard.writeText(preview.resumePrompt);
-			resumeNote = 'Copied. Paste it into a new chat with your chatbot.';
-		} catch {
-			resumeNote = 'Copying was blocked. Open "Show the resume prompt" below and copy it by hand.';
-		}
+		resumeNote = (await copyText(preview.resumePrompt))
+			? 'Copied. Paste it into a new chat with your chatbot.'
+			: 'Copying was blocked. Open "Show the resume prompt" below and copy it by hand.';
 	}
 
 	let resumeNote = $state('');
