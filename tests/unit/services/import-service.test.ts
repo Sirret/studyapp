@@ -16,7 +16,6 @@ import { ContentStore } from '#lib/db/repos/content-store.ts';
 import { DeviceRepo } from '#lib/db/repos/device-repo.ts';
 import { createDb, type SnowpackDb } from '#lib/db/schema.ts';
 import { DEFAULT_EXAM_FORMAT } from '#lib/config/defaults.ts';
-import { CHATBOT_PROMPT } from '#lib/import/prompt.ts';
 import { Logger } from '#lib/log/logger.ts';
 import {
 	ImportService,
@@ -493,15 +492,6 @@ describe('ImportService', () => {
 				zipSync({ 'a.txt': strToU8('@deck A'), 'b.png': new Uint8Array([1]) })
 			);
 			expect(result.ok && result.value.text).toBe('@deck A');
-		});
-	});
-
-	describe('the chatbot prompt', () => {
-		it('matches the spec word for word', () => {
-			const plan = readFileSync('docs/BUILD_PLAN.md', 'utf8').replaceAll('\r\n', '\n');
-			const start = plan.indexOf('You convert my lecture notes');
-			const end = plan.indexOf('[paste]', start) + '[paste]'.length;
-			expect(CHATBOT_PROMPT).toBe(plan.slice(start, end));
 		});
 	});
 });

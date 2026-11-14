@@ -1,7 +1,7 @@
 import { strToU8, zipSync } from 'fflate';
 import { expect, test, type Page } from '@playwright/test';
 import { IMAGE_MAX_PX } from '../../src/lib/config/defaults.ts';
-import { CHATBOT_PROMPT } from '../../src/lib/import/prompt.ts';
+import { buildPrompt } from '../../src/lib/import/prompt-v2.ts';
 
 const SAMPLE = `@deck Networking
 @keyterms
@@ -194,7 +194,7 @@ test.describe('import screen', () => {
 		await expect(page.getByRole('status')).toContainText('Prompt copied');
 		const copied = await page.evaluate(() => navigator.clipboard.readText());
 		// The Windows clipboard stores line breaks as CRLF, which is not a change of wording.
-		expect(copied.replace(/\r\n/g, '\n')).toBe(CHATBOT_PROMPT);
+		expect(copied.replace(/\r\n/g, '\n')).toBe(buildPrompt({ giving: 'lecture', goal: 'learn' }));
 	});
 });
 

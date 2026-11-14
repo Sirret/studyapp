@@ -2,6 +2,7 @@
 <script lang="ts">
 	import { CARD_STATUSES, SAMPLE_IMPORT_PREVIEW } from './guide-data.ts';
 	import ImportPreviewPanel from '../import-screen/ImportPreviewPanel.svelte';
+	import PromptIntake from '../import-screen/PromptIntake.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import Banner from '../components/Banner.svelte';
 	import ConfirmDialog from '../components/ConfirmDialog.svelte';
@@ -133,6 +134,11 @@
 				onPlacement={(name, placement) => placements.set(name, placement)}
 				onJumpToLine={noop}
 			/>
+		</div>
+	</GuideRow>
+	<GuideRow label="Prompt intake (four questions, copy the prompt)">
+		<div class="wide">
+			<PromptIntake onCopied={noop} />
 		</div>
 	</GuideRow>
 	<GuideRow label="Confirm dialog (popup)">

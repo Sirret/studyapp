@@ -5,12 +5,12 @@
 	import type { CourseId, Placement } from '#lib/db/schemas/common.ts';
 	import type { Course } from '#lib/db/schemas/course.ts';
 	import type { ImageSource, ImportPreview, PreparedImage } from '#lib/services/import-service.ts';
-	import { CHATBOT_PROMPT, importService } from '#lib/services/import-wiring.ts';
+	import { importService } from '#lib/services/import-wiring.ts';
 	import { countOf } from '#lib/util/plural.ts';
 	import { ArrowLeft } from '@lucide/svelte';
 	import Banner from '#lib/ui/components/Banner.svelte';
-	import Disclosure from '#lib/ui/components/Disclosure.svelte';
 	import ImportPreviewPanel from '#lib/ui/import-screen/ImportPreviewPanel.svelte';
+	import PromptIntake from '#lib/ui/import-screen/PromptIntake.svelte';
 	import Row from '#lib/ui/layout/Row.svelte';
 	import Screen from '#lib/ui/layout/Screen.svelte';
 	import Stack from '#lib/ui/layout/Stack.svelte';
@@ -54,13 +54,10 @@
 		newCourseName = '';
 	}
 
-	async function copyPrompt(): Promise<void> {
-		try {
-			await navigator.clipboard.writeText(CHATBOT_PROMPT);
-			notice = 'Prompt copied. Paste it into your own chatbot with your notes.';
-		} catch {
-			notice = 'Copying was blocked. Open "Show the prompt" below and copy it by hand.';
-		}
+	function promptCopied(copied: boolean): void {
+		notice = copied
+			? 'Prompt copied. Paste it into your own chatbot with your notes.'
+			: 'Copying was blocked. Open "Show the prompt" below and copy it by hand.';
 	}
 
 	function textChanged(): void {
@@ -201,10 +198,7 @@
 	</Card>
 
 	<Card tag="section" label="Chatbot prompt">
-		<Stack gap="sm">
-			<Button variant="secondary" full onclick={copyPrompt}>Copy the chatbot prompt</Button>
-			<Disclosure summary="Show the prompt" preformatted>{CHATBOT_PROMPT}</Disclosure>
-		</Stack>
+		<PromptIntake onCopied={promptCopied} />
 	</Card>
 
 	<Card tag="section" label="Text and images">
