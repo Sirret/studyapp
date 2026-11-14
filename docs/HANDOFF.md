@@ -64,6 +64,8 @@ The working notes passed from one phase to the next. Unlike `PROGRESS.md` (a his
 
 **Slow-machine e2e timeouts:** if `verify` fails only because a test ran out of time (and it passes alone), log it in `docs/UNVERIFIED_TESTS.md` per its rule and carry on; wrong values or app errors are bugs to fix. Local e2e runs with 2 workers and no video.
 
+**E2E viewports:** functional e2e tests run on `mobile` only; the `laptop` project runs only tests tagged `@both` (layout checks in `tests/e2e/layout.spec.ts`). A new screen gets a `@both` layout test there; don't tag functional tests `@both`. While iterating, run only the spec you're changing, after `npm run build:test` (Playwright serves `build/`).
+
 **Test pattern:** `import 'fake-indexeddb/auto'` plus a unique database name per test (create it in each test's setup; `afterEach` deletes it). Sim scenarios live in `tests/sim/` and report through `writeSimReport` in `tests/sim/harness.ts`. Session fixtures are in `tests/unit/engine/session-fixtures.ts`. Property tests use `fast-check`; shared generators are in `tests/unit/engine/fixtures.ts`. Golden files are in `tests/golden/import/` (hand-written, never generated from output) and run from `tests/unit/services/import-service.test.ts`.
 
 ## What each phase reads

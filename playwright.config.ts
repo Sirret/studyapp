@@ -33,7 +33,9 @@ export default defineConfig({
 				viewport: { width: 360, height: 740 }
 			}
 		},
-		{ name: 'laptop', use: { ...devices['Desktop Chrome'] } }
+		// Logic is the same at every width, so functional tests run on mobile (the priority, rule 10)
+		// and the laptop runs only the `@both` layout checks (Decisions log: e2e viewport split).
+		{ name: 'laptop', use: { ...devices['Desktop Chrome'] }, grep: /@both/ }
 	],
 	webServer: {
 		command: `npm run preview -- --port ${PORT} --strictPort`,

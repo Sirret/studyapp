@@ -8,7 +8,7 @@ async function waitForServiceWorker(page: Page): Promise<void> {
 }
 
 test.describe('app shell', () => {
-	test('shows the app name with no sideways scroll', async ({ page }) => {
+	test('shows the app name with no sideways scroll', { tag: '@both' }, async ({ page }) => {
 		await page.goto('/');
 		await expect(page.getByRole('heading', { name: APP_NAME })).toBeVisible();
 		await expect(page).toHaveTitle(APP_NAME);

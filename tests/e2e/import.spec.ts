@@ -83,20 +83,24 @@ const pasteArea = (page: Page) => page.getByLabel("Paste the chatbot's text");
 const attach = (page: Page) => page.getByLabel('Attach images or a .zip');
 
 test.describe('import screen', () => {
-	test('is reached from the home screen, with no sideways scroll', async ({ page }) => {
-		await page.goto('/');
-		await page.getByRole('link', { name: /import/i }).click();
-		await expect(page.getByRole('heading', { name: 'Import', exact: true })).toBeVisible();
-		await page.getByLabel('New course').fill('Networks');
-		await page.getByRole('button', { name: 'Create course' }).click();
-		await pasteArea(page).fill(SAMPLE);
-		await page.getByRole('button', { name: 'Check' }).click();
-		await expect(page.getByRole('region', { name: 'Preview' })).toBeVisible();
-		const overflow = await page.evaluate(
-			() => document.documentElement.scrollWidth - document.documentElement.clientWidth
-		);
-		expect(overflow).toBeLessThanOrEqual(0);
-	});
+	test(
+		'is reached from the home screen, with no sideways scroll',
+		{ tag: '@both' },
+		async ({ page }) => {
+			await page.goto('/');
+			await page.getByRole('link', { name: /import/i }).click();
+			await expect(page.getByRole('heading', { name: 'Import', exact: true })).toBeVisible();
+			await page.getByLabel('New course').fill('Networks');
+			await page.getByRole('button', { name: 'Create course' }).click();
+			await pasteArea(page).fill(SAMPLE);
+			await page.getByRole('button', { name: 'Check' }).click();
+			await expect(page.getByRole('region', { name: 'Preview' })).toBeVisible();
+			const overflow = await page.evaluate(
+				() => document.documentElement.scrollWidth - document.documentElement.clientWidth
+			);
+			expect(overflow).toBeLessThanOrEqual(0);
+		}
+	);
 
 	test('previews counts, errors, [CHECK] items and coverage', async ({ page }) => {
 		await openWithCourse(page);

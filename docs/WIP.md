@@ -10,6 +10,7 @@
 | 2026-11-14 | 8.5 | 2 tests | Opus 5.5 | Spec tests (agent: card-regen, duplicates) + direct tests (card list, service, undo, re-import wiring, fix prompt); SPEC-GAPs logged | 9 | Step 3: implement card-regen, duplicates, fix-prompt, card-list, services, import-service split + wiring; commit tests with it | uncommitted (hook blocks red tests) |
 | 2026-11-14 | 8.5 | 3a modules | Opus 5.5 | All step-3 modules + services + import wiring green, committed with the step-2 tests; card rows sort cards by createdAt then variant (IDs are random) | 22 | Step 3b: screens ("See all cards", undo button, fix-it prompt, preview duplicates) | 1c2bea0 |
 | 2026-11-14 | 8.5 | 3b screens | Opus 5.5 | See all cards (edit/flag/delete), undo import on course page, fix-it prompt + duplicates in preview, numbered import steps, preview on paste, Button link attrs fix | 21 | Step 4: one-night minimum block | 22dc9b2 |
+| 2026-11-14 | 8.5 | e2e viewport split | Opus 5.5 | Laptop project runs only `@both` layout tests (new `tests/e2e/layout.spec.ts`); functional e2e on mobile only; full e2e 54 passed in 5.3 min; restored UNVERIFIED_TESTS.md | 9 | Step 4: one-night minimum block | (this commit) |
 
 ## Task and spec
 
