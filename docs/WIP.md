@@ -13,7 +13,8 @@
 | 2026-11-14 | 8.5 | e2e viewport split | Opus 5.5 | Laptop project runs only `@both` layout tests (new `tests/e2e/layout.spec.ts`); functional e2e on mobile only; full e2e 54 passed in 5.3 min; restored UNVERIFIED_TESTS.md | 9 | Step 4: one-night minimum block | 880ca22 |
 | 2026-11-14 | 8.5 | 4 minimum block | Opus 5.5 | `OneNightView.minimumBlock` (course-learn → PlanCards info banner with sleep reminder, `[data-minimum-block]`); unit test (shares [0]) + e2e (zero availability); 1853 unit green | 6 | Step 5: prompt rule (3+ items → separate cards or @sequence) | 508f76f |
 | 2026-11-14 | 8.5 | 5 prompt rule | Opus 5.5 | PROMPTS §3 + `BASE_PROMPT`: 3+ item answers → starred list @fact / @sequence / one card per item (starred lists kept per D4); test in `lectures.test.ts`; Decisions row; import tests 200 green | 4 | Step 6: `npm run build`, then `npm run verify` (checkpoint d) | cb74b0d |
-| 2026-11-14 | 8.5 | 6 verify | Opus 5.5 | `npm run verify` green: 1854 unit+sim, 95.66% lines, shell 89.4 KB, e2e 55 passed | 1 | Step 7: reviewer agent in a fresh session (base `7e09c48`, plus parser/lexer/build* in full) | (this commit) |
+| 2026-11-14 | 8.5 | 6 verify | Opus 5.5 | `npm run verify` green: 1854 unit+sim, 95.66% lines, shell 89.4 KB, e2e 55 passed | 1 | Step 7: reviewer agent in a fresh session (base `7e09c48`, plus parser/lexer/build* in full) | 4c11a0e |
+| 2026-11-14 | 8.5 | 7 review | Opus 5.5 | Reviewer: no blockers; fixed 3 should-fix + 2 nits (with tests), 2 nits left for PROGRESS; 1857 unit green | 12 | Step 8: HANDOFF + PROGRESS (with the 2 nits), delete WIP.md (checkpoint f) | 1c3150e |
 
 ## Task and spec
 
