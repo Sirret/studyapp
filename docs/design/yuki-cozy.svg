@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Yuki, a white wolf pup">
+  <!-- Yuki (cozy). Ink #1D2230, snow #FBF8F0, shade #E4E8F0/#DCE3EE, paws #E8E3D8, blush/inner ear #E7B3A6, bandana #7A2621.
+       Animate ONLY these groups, ONLY with transform/opacity: #tail (wag: rotate around its base), #body (breathe: scaleY 1→1.018),
+       #ear-l / #ear-r (tilt for "thinking"), #eyes (blink: scaleY), #zz (sleepy). Keep group ids stable. -->
+  <g id="body">
+    <g id="tail" style="transform-box: fill-box; transform-origin: 4% 85%;">
+      <path d="M124,176 C162,186 192,158 184,120 C180,100 162,92 152,104 C149,110 152,116 158,118 C166,132 162,154 128,158 Z" fill="#FBF8F0" stroke="#1D2230" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M182,112 C176,98 162,94 154,104 C153,110 155,114 160,116 C168,116 176,120 183,127 Z" fill="#DCE3EE"/>
+    </g>
+    <g stroke="#1D2230" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+      <path id="torso" d="M72,122 C64,140 62,168 70,183 L130,183 C138,168 136,140 128,122 Z" fill="#FBF8F0"/>
+      <ellipse id="paw-l" cx="86" cy="183" rx="13" ry="8" fill="#E8E3D8"/>
+      <ellipse id="paw-r" cx="114" cy="183" rx="13" ry="8" fill="#E8E3D8"/>
+    </g>
+    <g id="head" stroke="#1D2230" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+      <g id="ear-l" style="transform-box: fill-box; transform-origin: 70% 90%;">
+        <path d="M64,66 L55,20 Q57,13 64,17 L96,46 Z" fill="#FBF8F0"/>
+        <path d="M67,58 L61,28 L87,48 Z" fill="#E7B3A6" stroke="none"/>
+      </g>
+      <g id="ear-r" style="transform-box: fill-box; transform-origin: 30% 90%;">
+        <path d="M136,66 L145,20 Q143,13 136,17 L104,46 Z" fill="#FBF8F0"/>
+        <path d="M133,58 L139,28 L113,48 Z" fill="#E7B3A6" stroke="none"/>
+      </g>
+      <path id="face" d="M60,70 C60,48 80,40 100,40 C120,40 140,48 140,70 C146,78 152,86 150,94 L162,100 L148,104 L158,114 L140,116 C132,128 116,131 100,131 C84,131 68,128 60,116 L42,114 L52,104 L38,100 L50,94 C48,86 54,78 60,70 Z" fill="#FBF8F0"/>
+      <path id="mask" d="M63,70 C63,52 81,43 100,43 C119,43 137,52 137,70 C131,64 121,66 113,74 L100,86 L87,74 C79,66 69,64 63,70 Z" fill="#E4E8F0" stroke="none"/>
+      <g id="eyes" style="transform-box: fill-box; transform-origin: 50% 50%;">
+        <ellipse cx="80" cy="91" rx="9" ry="11" fill="#1D2230" stroke="none"/>
+        <ellipse cx="120" cy="91" rx="9" ry="11" fill="#1D2230" stroke="none"/>
+        <circle cx="77" cy="87" r="3.2" fill="#FBF8F0" stroke="none"/>
+        <circle cx="117" cy="87" r="3.2" fill="#FBF8F0" stroke="none"/>
+      </g>
+      <ellipse cx="68" cy="106" rx="7" ry="4" fill="#E7B3A6" stroke="none"/>
+      <ellipse cx="132" cy="106" rx="7" ry="4" fill="#E7B3A6" stroke="none"/>
+      <path id="nose" d="M94.5,104 Q100,100.5 105.5,104 Q103.5,109.5 100,110.5 Q96.5,109.5 94.5,104 Z" fill="#1D2230"/>
+      <path id="mouth" d="M90,113 Q95,123 100,114 Q105,123 110,113" fill="none" stroke-width="3"/>
+    </g>
+    <g id="bandana" stroke="#1D2230" stroke-width="4" stroke-linejoin="round">
+      <path d="M68,122 C84,133 116,133 132,122 L134,134 C116,145 84,145 66,134 Z" fill="#7A2621"/>
+      <path d="M108,138 L118,168 L104,170 L100,140 Z" fill="#7A2621"/>
+      <path d="M76,128 l3,6 M88,131 l3,6 M100,132 l3,6 M112,131 l3,6 M124,128 l3,6" fill="none" stroke="#EFE3CC" stroke-width="2"/>
+    </g>
+  </g>
+  <g id="zz" opacity="0" fill="#4A4238" font-family="Georgia, serif" font-style="italic" font-size="18"><text x="150" y="40">z</text><text x="162" y="26" font-size="13">z</text></g>
+</svg>
