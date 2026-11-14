@@ -8,6 +8,7 @@
 | 2026-11-13 | audit | 1.3 | claude-haiku-5-5 | BUILD_PLAN §10 Phase status table; HANDOFF pointer | 3 | audit 1.4 | c00ccbb |
 | 2026-11-13 | audit | 1.4 | claude-haiku-5-5 | Reviewer runs once per phase (CLAUDE.md step 5, reviewer.md, HANDOFF) | 4 | audit 1.7 | 9b8bc6c |
 | 2026-11-13 | audit | 1.7 | claude-haiku-5-5 | Checkpoint rule in CLAUDE.md; checkpoint log started | 6 | audit 2.1 | cf56b14 |
+| 2026-11-13 | audit | 3.3 | claude-haiku-5-5 | Cozy decision at the top of SESSION_NOTES §G (mockups only); HANDOFF design line | 3 | audit 2.2 | fdcfef0 |
 
 ## Committed 2026-11-13 with audit 1.1, 1.5, 1.6 (one commit; hash in AUDIT.md)
 
@@ -56,6 +57,8 @@
 6. e2e for intake/prompt, multi-reply paste + checklist, course page map. Then the default course (above), verify, reviewer (Sonnet), PROGRESS, HANDOFF, delete WIP, commit in groups of ≤ ~40 files, push.
 
 ## Checklist
+
+**UI rule (temporary until DESIGN.md is rewritten):** every new screen (routes/import/*, routes/course/[courseId]/*) uses tokens only (src/lib/design/tokens/*, themes/*). No raw hex, no off-scale px, no invented layout. If a component is missing, add it to src/lib/ui/ and to /dev/ui before using it on a screen. Re-theming later must be a token swap only; a screen edit means this rule was broken.
 
 - [x] 1 Interface: schemas, AST types, module signatures (stubs) — commit: 771609b. event.ts fields for 8.6 included (ReviewEvent `hinted`, `verdictKind`).
 - [ ] 2 spec-test-writer on the import modules (brief below once written)

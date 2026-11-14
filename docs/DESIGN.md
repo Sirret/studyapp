@@ -19,6 +19,8 @@ A **cozy study desk by day, a lofi desk by night.** Warm cream paper, lavender a
 
 ---
 
+**Current status (Nov 13):** the previous design direction is superseded by the decision recorded in SESSION_NOTES section G (cozy, "Cozy — The Den"). This file describes the previous direction and is being rewritten. Until the rewrite lands, nothing in this file's prose is authoritative; screens must use tokens only. See BUILD_PLAN §10 "Phase status" and CLAUDE.md rule 20.
+
 ## 3. Design tokens
 
 All colours, sizes and timings are CSS custom properties in the token layer under `src/lib/design/` — base tokens, semantic tokens and one file per theme (§13.2), imported together by `src/lib/design/tokens.css` and mirrored in `tokens.ts` for tests. **Components never use raw hex values or pixel numbers outside the scales below.** The values are starting points: the automated contrast test (§9) may darken or lighten a shade to pass AA — keep the hue. Phase 5 darkened the light `--text-muted`, `--primary`/`--focus`, `--success` and `--error` slightly; the table shows the values in use.
