@@ -2,7 +2,8 @@ import { z } from 'zod';
 import { PrioritySchema } from '#lib/db/schemas/common.ts';
 import { MIN_STEPS } from '#lib/db/schemas/note.ts';
 
-const MIN_COMPARE_ITEMS = 2;
+/** Fewest things a comparison table compares. */
+export const MIN_COMPARE_ITEMS = 2;
 const MIN_STACK_LAYERS = 2;
 
 const LineSchema = z.number().int().positive();

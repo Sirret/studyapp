@@ -9,6 +9,8 @@ import { ContentStore } from '#lib/db/repos/content-store.ts';
 import { CoursePlanService } from './course-plan-service.ts';
 import { PlannerService } from './planner-service.ts';
 import { CourseService } from './course-service.ts';
+import { CardListService } from './card-list-service.ts';
+import { ImportUndoService } from './import-undo.ts';
 import { DeviceRepo } from '#lib/db/repos/device-repo.ts';
 import { EventRepo } from '#lib/db/repos/event-repo.ts';
 import { KvRepo } from '#lib/db/repos/kv-repo.ts';
@@ -64,8 +66,16 @@ export const studyService = new StudyService({
 	logger
 });
 
+const content = new ContentStore(db, context);
+
 /** Trashing courses from Today. */
-export const courseService = new CourseService(new ContentStore(db, context), logger);
+export const courseService = new CourseService(content, logger);
+
+/** The "See all cards" screen: list, edit, delete and flag a course's notes (BUILD_PLAN §10 row 8.5). */
+export const cardListService = new CardListService(content, replay, logger);
+
+/** The course page's "Undo import" (DATA_MODEL §3.1 `lastImport`). */
+export const importUndoService = new ImportUndoService(content, logger);
 
 const planRepos = { ...repos, chunks: new ChunkRepo(db, context) };
 

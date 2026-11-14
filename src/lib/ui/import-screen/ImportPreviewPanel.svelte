@@ -24,9 +24,11 @@
 		placements: ReadonlyMap<string, Placement>;
 		onPlacement: (topicName: string, placement: Placement) => void;
 		onJumpToLine: (line: number) => void;
+		/** A prompt asking the chatbot to rewrite the skipped parts; `null` when nothing was skipped. */
+		fixPrompt?: string | null;
 	}
 
-	let { preview, placements, onPlacement, onJumpToLine }: Props = $props();
+	let { preview, placements, onPlacement, onJumpToLine, fixPrompt = null }: Props = $props();
 
 	/** The singular of each note type; `countOf` adds the plural. */
 	const NOTE_LABELS: Record<NoteType, string> = {
@@ -75,6 +77,15 @@
 	}
 
 	let resumeNote = $state('');
+	let fixNote = $state('');
+
+	/** Copies the fix-it prompt for the skipped parts (BUILD_PLAN §10 row 8.5). */
+	async function copyFix(): Promise<void> {
+		if (!fixPrompt) return;
+		fixNote = (await copyText(fixPrompt))
+			? 'Copied. Paste it into the same chat, then paste the reply at the end of your text here.'
+			: 'Copying was blocked. Open "Show the fix-it prompt" below and copy it by hand.';
+	}
 </script>
 
 <section aria-label="Preview">
@@ -142,6 +153,31 @@
 				{#each preview.errors as error (`${error.line}:${error.message}`)}
 					<Button variant="ghost" onclick={() => onJumpToLine(error.line)}>
 						Line {error.line}: {error.message}
+					</Button>
+				{/each}
+			</Disclosure>
+			{#if fixPrompt}
+				<Stack gap="sm">
+					<Button variant="secondary" full onclick={copyFix} data-copy-fix>
+						Copy a fix-it prompt for these parts
+					</Button>
+					{#if fixNote}<p class="muted" role="status">{fixNote}</p>{/if}
+					<Disclosure summary="Show the fix-it prompt" preformatted>{fixPrompt}</Disclosure>
+				</Stack>
+			{/if}
+		{/if}
+
+		{#if preview.duplicates.length > 0}
+			<Disclosure
+				summary="{plural(
+					preview.duplicates.length,
+					'line is',
+					'lines are'
+				)} already in this course, so they're left out."
+			>
+				{#each preview.duplicates as duplicate (duplicate.line)}
+					<Button variant="ghost" onclick={() => onJumpToLine(duplicate.line)}>
+						Line {duplicate.line} ({duplicate.topic})
 					</Button>
 				{/each}
 			</Disclosure>

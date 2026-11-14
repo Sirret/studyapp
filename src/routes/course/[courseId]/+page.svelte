@@ -4,7 +4,11 @@
 	import type { CardStatus, CourseId, ExamFormat } from '#lib/db/schemas/common.ts';
 	import { logger } from '#lib/services/app.ts';
 	import type { CourseToday } from '#lib/services/course-types.ts';
+	import type { LastImportView } from '#lib/services/import-undo.ts';
+	import { countOf } from '#lib/util/plural.ts';
 	import { prefs } from '#lib/services/preferences.svelte.ts';
+	import UndoImport from '#lib/ui/card-list/UndoImport.svelte';
+	import Banner from '#lib/ui/components/Banner.svelte';
 	import EmptyState from '#lib/ui/components/EmptyState.svelte';
 	import CourseMapPanel from '#lib/ui/course-map/CourseMapPanel.svelte';
 	import SpeechBubble from '#lib/ui/components/SpeechBubble.svelte';
@@ -27,6 +31,9 @@
 	let today = $state<CourseToday | null>(null);
 	let failed = $state(false);
 	let starting = $state<string | null>(null);
+	let lastImport = $state<LastImportView | null>(null);
+	let undoing = $state(false);
+	let notice = $state('');
 	// svelte-ignore state_referenced_locally
 	let sleepReminder = $state(data.done !== null);
 
@@ -36,7 +43,11 @@
 
 	async function refresh(): Promise<void> {
 		try {
-			today = await (await service()).today(courseId);
+			const wiring = await import('#lib/services/study-wiring.ts');
+			[today, lastImport] = await Promise.all([
+				wiring.coursePlanService.today(courseId),
+				wiring.importUndoService.lastImport(courseId)
+			]);
 		} catch (error: unknown) {
 			logger.error('course', 'not loaded', { error: String(error) });
 			failed = true;
@@ -53,6 +64,17 @@
 		examFormat: ExamFormat;
 	}): Promise<void> {
 		await (await service()).setExam(courseId, exam);
+		await refresh();
+	}
+
+	async function undoImport(): Promise<void> {
+		undoing = true;
+		const wiring = await import('#lib/services/study-wiring.ts');
+		const undone = await wiring.importUndoService.undo(courseId);
+		undoing = false;
+		notice = undone.ok
+			? `Import undone: ${countOf(undone.value.notes, 'note')} and ${countOf(undone.value.cards, 'card')} removed.`
+			: undone.error;
 		await refresh();
 	}
 
@@ -135,6 +157,18 @@
 			onreview={() => start('review')}
 			onblocktwo={() => start('block2')}
 		/>
+		<Button
+			variant="secondary"
+			full
+			href={resolve('/course/[courseId]/cards', { courseId })}
+			data-see-all-cards
+		>
+			See all cards
+		</Button>
+		{#if notice}<Banner tone="success">{notice}</Banner>{/if}
+		{#if lastImport}
+			<UndoImport last={lastImport} busy={undoing} onundo={undoImport} />
+		{/if}
 		{#if today.map}
 			<CourseMapPanel map={today.map} />
 		{/if}

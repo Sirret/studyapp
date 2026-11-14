@@ -1,4 +1,5 @@
-import type { CardStatus } from '#lib/db/schemas/common.ts';
+import type { CardId, CardStatus, MediaId, NoteId } from '#lib/db/schemas/common.ts';
+import type { CardListRow } from '#lib/services/card-list-types.ts';
 import type { CourseMap } from '#lib/db/schemas/course.ts';
 import type { ImportPreview } from '#lib/services/import-service.ts';
 
@@ -77,3 +78,61 @@ export const SAMPLE_IMPORT_TEXT = [
 	'TCP :: reliable byte stream',
 	'@end'
 ].join('\n');
+
+const sampleCard = (status: CardStatus, suspended = false) => ({
+	id: crypto.randomUUID() as CardId,
+	variant: 'forward',
+	status,
+	suspended
+});
+
+/** Card-list rows for the style guide: plain, flagged by the import, paused, and an image card. */
+export const SAMPLE_CARD_ROWS: CardListRow[] = [
+	{
+		noteId: crypto.randomUUID() as NoteId,
+		type: 'keyterm',
+		content: {
+			type: 'keyterm',
+			payload: { term: 'TCP', meaning: 'Transmission Control Protocol' }
+		},
+		prompt: 'TCP',
+		answer: 'Transmission Control Protocol',
+		flagged: false,
+		generated: false,
+		tags: [],
+		cards: [sampleCard('exam-ready'), sampleCard('learning')]
+	},
+	{
+		noteId: crypto.randomUUID() as NoteId,
+		type: 'sequence',
+		content: { type: 'sequence', payload: { name: 'Handshake', steps: ['SYN', 'SYN-ACK', 'ACK'] } },
+		prompt: 'Handshake',
+		answer: 'SYN → SYN-ACK → ACK',
+		flagged: true,
+		generated: true,
+		tags: [],
+		cards: [sampleCard('unseen')]
+	},
+	{
+		noteId: crypto.randomUUID() as NoteId,
+		type: 'fact',
+		content: { type: 'fact', payload: { term: 'UDP', definition: 'reliable delivery' } },
+		prompt: 'UDP',
+		answer: 'reliable delivery',
+		flagged: true,
+		generated: false,
+		tags: [],
+		cards: [sampleCard('needs-work', true)]
+	},
+	{
+		noteId: crypto.randomUUID() as NoteId,
+		type: 'occlusion',
+		content: { type: 'occlusion', payload: { mediaId: crypto.randomUUID() as MediaId, boxes: [] } },
+		prompt: 'Label the image',
+		answer: 'Router, Switch',
+		flagged: false,
+		generated: false,
+		tags: [],
+		cards: [sampleCard('provisional')]
+	}
+];

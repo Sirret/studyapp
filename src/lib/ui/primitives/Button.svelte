@@ -6,7 +6,7 @@
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import type { HTMLButtonAttributes } from 'svelte/elements';
+	import type { HTMLAnchorAttributes, HTMLButtonAttributes } from 'svelte/elements';
 	import Paw from '../motifs/Paw.svelte';
 
 	type Props = HTMLButtonAttributes & {
@@ -46,7 +46,13 @@
 
 {#if href}
 	<!-- eslint-disable svelte/no-navigation-without-resolve -- callers pass resolve()d hrefs -->
-	<a {href} class="button {variant} {size === 'icon' ? 'icon-size' : size}" class:full data-paw>
+	<a
+		{...rest as HTMLAnchorAttributes}
+		{href}
+		class="button {variant} {size === 'icon' ? 'icon-size' : size}"
+		class:full
+		data-paw
+	>
 		{@render inner()}
 	</a>
 	<!-- eslint-enable svelte/no-navigation-without-resolve -->

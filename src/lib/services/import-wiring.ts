@@ -3,6 +3,7 @@ import { DeviceRepo } from '#lib/db/repos/device-repo.ts';
 import { KvRepo } from '#lib/db/repos/kv-repo.ts';
 export { buildPrompt, GIVING_LABELS, PDF_TIP } from '#lib/import/prompt-v2.ts';
 export type { Giving, Intake } from '#lib/import/prompt-v2.ts';
+export { buildFixPrompt } from '#lib/import/fix-prompt.ts';
 import { db, logger } from './app.ts';
 import { ImportService } from './import-service.ts';
 import { seedSampleCourse } from './sample-course.ts';

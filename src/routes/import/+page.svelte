@@ -5,11 +5,12 @@
 	import type { CourseId, Placement } from '#lib/db/schemas/common.ts';
 	import type { Course, ImportGoal } from '#lib/db/schemas/course.ts';
 	import type { ImageSource, ImportPreview, PreparedImage } from '#lib/services/import-service.ts';
-	import { importService } from '#lib/services/import-wiring.ts';
+	import { buildFixPrompt, importService } from '#lib/services/import-wiring.ts';
 	import { DEFAULT_IMPORT_GOAL } from '#lib/config/defaults.ts';
 	import { countOf } from '#lib/util/plural.ts';
 	import { ArrowLeft } from '@lucide/svelte';
 	import Banner from '#lib/ui/components/Banner.svelte';
+	import ImportStep from '#lib/ui/import-screen/ImportStep.svelte';
 	import ImportPreviewPanel from '#lib/ui/import-screen/ImportPreviewPanel.svelte';
 	import PromptIntake from '#lib/ui/import-screen/PromptIntake.svelte';
 	import Row from '#lib/ui/layout/Row.svelte';
@@ -17,7 +18,6 @@
 	import Stack from '#lib/ui/layout/Stack.svelte';
 	import TopBar from '#lib/ui/layout/TopBar.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import Card from '#lib/ui/primitives/Card.svelte';
 	import FileButton from '#lib/ui/primitives/FileButton.svelte';
 	import Icon from '#lib/ui/primitives/Icon.svelte';
 	import Input from '#lib/ui/primitives/Input.svelte';
@@ -38,6 +38,10 @@
 	let notice = $state('');
 	/** The course the last import went into, for "Start studying"; cleared by any new work. */
 	let added = $state<CourseId | null>(null);
+	/** The last import flagged some cards (unsure or starred-word gaps): link to "Check these". */
+	let addedFlagged = $state(false);
+	/** A text paste checks the import as soon as the text is in (preview on paste). */
+	let checkAfterPaste = false;
 	let isBusy = $state(false);
 	let pasteCount = 0;
 	let textArea: HTMLTextAreaElement | undefined = $state();
@@ -67,6 +71,10 @@
 		preview = undefined;
 		notice = '';
 		added = null;
+		if (checkAfterPaste) {
+			checkAfterPaste = false;
+			if (courseId && text.trim() !== '') void checkImport();
+		}
 	}
 
 	/** Prepares images and adds them, replacing any earlier image with the same name. */
@@ -104,6 +112,7 @@
 
 	/** A pasted screenshot has no useful name, so give it one a block can refer to. */
 	function pasteImages(event: ClipboardEvent): void {
+		if (event.clipboardData?.getData('text/plain')) checkAfterPaste = true;
 		const files = [...(event.clipboardData?.files ?? [])].filter((file) =>
 			file.type.startsWith('image/')
 		);
@@ -144,6 +153,7 @@
 		const { notes, cards, topics } = result.value;
 		notice = `Added ${countOf(notes, 'note')} and ${countOf(cards, 'card')} across ${countOf(topics, 'topic')}.`;
 		added = courseId;
+		addedFlagged = preview.checked.length > 0 || preview.starredGaps.length > 0;
 		text = '';
 		images = [];
 		imageErrors = [];
@@ -184,7 +194,7 @@
 		</TopBar>
 	{/snippet}
 
-	<Card tag="section" label="Choose a course">
+	<ImportStep step={1} title="Choose a course">
 		<Stack gap="md">
 			{#if courses.length > 0}
 				<Select
@@ -203,13 +213,13 @@
 				</Stack>
 			</form>
 		</Stack>
-	</Card>
+	</ImportStep>
 
-	<Card tag="section" label="Chatbot prompt">
+	<ImportStep step={2} title="Copy the prompt into your chatbot">
 		<PromptIntake onCopied={promptCopied} bind:goal />
-	</Card>
+	</ImportStep>
 
-	<Card tag="section" label="Text and images">
+	<ImportStep step={3} title="Paste its reply">
 		<Stack gap="md">
 			<TextArea
 				label="Paste the chatbot's text"
@@ -243,7 +253,7 @@
 				Check
 			</Button>
 		</Stack>
-	</Card>
+	</ImportStep>
 
 	{#if preview}
 		<ImportPreviewPanel
@@ -251,6 +261,7 @@
 			{placements}
 			onPlacement={(topicName, placement) => placements.set(topicName, placement)}
 			onJumpToLine={jumpToLine}
+			fixPrompt={buildFixPrompt(preview.errors, text)}
 		/>
 		<Button
 			full
@@ -271,6 +282,20 @@
 				Start studying
 			</Button>
 			<Button variant="secondary" onclick={importMore} data-import-more>Import more</Button>
+		</Row>
+		<Row gap="sm">
+			<Button
+				variant="ghost"
+				href={resolve('/course/[courseId]/cards', { courseId: added })}
+				data-see-all-cards>See all cards</Button
+			>
+			{#if addedFlagged}
+				<Button
+					variant="ghost"
+					href={`${resolve('/course/[courseId]/cards', { courseId: added })}?filter=flagged`}
+					data-check-flagged>Check the unsure cards</Button
+				>
+			{/if}
 		</Row>
 	{/if}
 </Screen>
