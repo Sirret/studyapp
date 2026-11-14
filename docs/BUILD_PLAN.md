@@ -776,8 +776,8 @@ Rows are in build order. Order and status are maintained here. The table below i
 | 8 | Planner | Done | BUILD_PLAN §6.9 |
 | — | Fix pass (tech-check + live bugs) | Done | SESSION_NOTES §A (A1–A10), §B |
 | — | Import v2 | Done | PROMPTS.md |
-| 8.5 | Cards & import fixes | Next | BUILD_PLAN §10 row 8.5 + SESSION_NOTES |
-| 8.6 | Learn & Practice | Pending | SESSION_NOTES §C, §D, §J, §K |
+| 8.5 | Cards & import fixes | Done | BUILD_PLAN §10 row 8.5 + SESSION_NOTES |
+| 8.6 | Learn & Practice | Next | SESSION_NOTES §C, §D, §J, §K |
 | 6 | Diagrams | Outstanding | BUILD_PLAN §7 |
 | 9 | Transfer & offline | Not started | BUILD_PLAN §8 |
 | 10 | Polish & ship | Not started | BUILD_PLAN §10 + §11 |
