@@ -18,18 +18,18 @@ Status key: **DECIDED** · **FIX** (prompt or app change to make) · **OPEN** (n
 10. Replay: order events from the same device by seq; store tzOffsetMin per event. ✅
 11. ⏳ Add Settings and Courses screens; add "installed on Android and used offline" to Phase 10's done-when. Still pending; see 8.6.
 
-## B. Bugs found by using the live app (Nov 13)
-- **FIX:** typed term→definition answers need a word-for-word match, so correct paraphrases are marked wrong (see D3).
-- **FIX:** "Meet the key terms" quizzes before teaching (see D2).
-- **FIX:** a definition was offered as a term option ("record activity").
-- **FIX:** too much ceremony: 2 key terms took about 6 answers and 3 summary screens. No round or session summaries inside Learn.
-- **FIX:** @tag titles are ignored ("part 1, 2…"); the reader heading just says "Read".
-- **FIX:** no "Start studying" after import.
-- **FIX:** the planner's weekday inputs overflow at 1024 px.
-- **FIX:** plurals ("1 comparison tables", "1 sequences").
-- **FIX:** the Course card says "0% exam-ready / Keep it fresh" with no exam date; a disabled "Start review" is shown prominently.
-- **FIX:** typo-accepted answers don't show the correct spelling.
-- **FIX:** the parser needs @coverage content on the next line (superseded by @missing).
+## B. Bugs found by using the live app (Nov 13): 8 applied in the Fix pass; typed paraphrase (→ D3) and Meet the terms (→ D2) open for Phase 8.6; the @coverage bullet is superseded by @missing.
+- **FIX:** typed term→definition answers need a word-for-word match, so correct paraphrases are marked wrong (see D3). ⏳ 8.6 (open, see D3)
+- **FIX:** "Meet the key terms" quizzes before teaching (see D2). ⏳ 8.6 (open, see D2)
+- **FIX:** a definition was offered as a term option ("record activity"). ✅
+- **FIX:** too much ceremony: 2 key terms took about 6 answers and 3 summary screens. No round or session summaries inside Learn. ✅
+- **FIX:** @tag titles are ignored ("part 1, 2…"); the reader heading just says "Read". ✅
+- **FIX:** no "Start studying" after import. ✅
+- **FIX:** the planner's weekday inputs overflow at 1024 px. ✅
+- **FIX:** plurals ("1 comparison tables", "1 sequences"). ✅
+- **FIX:** the Course card says "0% exam-ready / Keep it fresh" with no exam date; a disabled "Start review" is shown prominently. ✅
+- **FIX:** typo-accepted answers don't show the correct spelling. ✅
+- **FIX:** the parser needs @coverage content on the next line (superseded by @missing). Superseded by @missing.
 
 ## C. App structure and modes: DECIDED
 - **Hierarchy:** Course → Topic (may merge lectures; `from:` keeps the lecture names) → Section → Cards.

@@ -7,6 +7,8 @@
 - **Tests updated to the spec:** `build.test.ts` (13 messages now "before any @topic or @deck", PROMPTS §7); `parser.test.ts` (empty text, case-insensitive, unknown ×3 and lone `@` as warnings); `tests/golden/import/malformed.expected.json` (preamble and `@unknown` moved to `warnings`); `import-service.test.ts` asserts `preview.warnings` (golden files without a list expect none).
 - **Coverage (threshold not lowered):** `src/lib/import/**` is below 80% (75.7% lines, 64% branches) until Import v2 is implemented. Same reason the stub check fails at the interface step.
 - **Still open for Import v2:** parser, builder and UI (checklist step 4 onward). The WIP Design lines on warnings are now PROMPTS §7.
+- **Open item:** Full `npm run test` not rerun after 771609b (the hook ran the 19 affected files only). Run it at the next checkpoint.
+- **Open item:** `build-structure.ts` `applyStructure` complexity 22 > 10 (eslint warning, not blocking). Refactor during Import v2.
 
 ## Design (decided; goes into the Decisions log and DATA_MODEL)
 
@@ -46,9 +48,9 @@
 
 ## Checklist
 
-- [x] 1 Interface: schemas, AST types, module signatures (stubs) — commit: pending (backfill). event.ts fields for 8.6 included (ReviewEvent `hinted`, `verdictKind`).
+- [x] 1 Interface: schemas, AST types, module signatures (stubs) — commit: 771609b. event.ts fields for 8.6 included (ReviewEvent `hinted`, `verdictKind`).
 - [ ] 2 spec-test-writer on the import modules (brief below once written)
-- [x] 3 Data model + Dexie v2 migration + DATA_MODEL (one commit) — commit: pending (backfill)
+- [x] 3 Data model + Dexie v2 migration + DATA_MODEL (one commit) — commit: 771609b
 - [ ] 4 Implement parser/build/prompt; services (preview checklist, missing, resume, from: matching, commit new fields)
 - [ ] 5 UI: intake + Copy prompt + PDF tip; preview checklist/missing/resume; course page bigpicture/habit/cheat
 - [ ] 6 e2e; verify; reviewer; PROGRESS; HANDOFF; Decisions log; delete WIP
