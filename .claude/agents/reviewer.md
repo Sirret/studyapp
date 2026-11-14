@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Read-only code reviewer. Run once at the end of each of Phases 7, 8 and 9 (rerun only if it found blockers) to check that phase's diff against CLAUDE.md, the conventions in BUILD_PLAN.md §15, DATA_MODEL.md and the spec. Reports problems; never edits files.
+description: Read-only code reviewer. Run once at the end of every phase, as its own task in a fresh session (rerun only if it found blockers) to check that phase's diff against CLAUDE.md, the conventions in BUILD_PLAN.md §15, DATA_MODEL.md and the spec. Reports problems; never edits files.
 tools: Read, Glob, Grep, Bash
 model: sonnet
 ---

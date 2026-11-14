@@ -76,9 +76,9 @@ Rows are in build order. Order and status are maintained here. The table below i
 
     Effort: S.
 
-    Status: [x] — commit: (this commit). Evidence matched. The HANDOFF line was present and is replaced.
+    Status: [x] — commit: c00ccbb. Evidence matched. The HANDOFF line was present and is replaced.
 
-[ ] 1.4 — Update CLAUDE.md's reviewer rule to match practice
+[x] 1.4 — Update CLAUDE.md's reviewer rule to match practice
 
     Where: CLAUDE.md, workflow step 5, and .claude/agents/reviewer.md description.
 
@@ -94,7 +94,7 @@ In .claude/agents/reviewer.md, replace the description's "Run once at the end of
 
     Effort: S.
 
-    Status: [ ] — commit: _
+    Status: [x] — commit: (this commit). Evidence matched; CLAUDE.md step 5, reviewer.md description and HANDOFF timing updated.
 
 [x] 1.5 — Add two ReviewEvent fields for Phase 8.6 before Import v2 commits
 
