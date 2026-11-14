@@ -4,6 +4,7 @@ The working notes passed from one phase to the next. Unlike `PROGRESS.md` (a his
 
 ## Current state
 - **Checkpoints:** sessions stop at checkpoints (CLAUDE.md, Checkpoints); resume with "Continue from docs/WIP.md".
+- **Design:** cozy direction decided (SESSION_NOTES §G); DESIGN.md rewrite pending; screens use tokens only.
 
 - **Phase order (BUILD_PLAN Decisions log, 2026-11-13): Import v2 → 8.5 → 8.6 → 6 → 9 → 10 → 11** (the Fix pass before it is done). `docs/PROMPTS.md` and `docs/SESSION_NOTES.md` are newer than CONCEPT/BUILD_PLAN and win where they disagree. Phase order and status are in BUILD_PLAN §10's "Phase status" table.
 

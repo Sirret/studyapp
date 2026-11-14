@@ -189,9 +189,9 @@ Tier 2 — High (do before 8.5)
 
     Effort: S.
 
-    Status: [x] — commit: (this commit). Evidence matched. Brief cut to the parser's spec sections; Haiku agent added for plumbing; module rule in CLAUDE.md step 2 and HANDOFF.
+    Status: [x] — commit: 217058c. Evidence matched. Brief cut to the parser's spec sections; Haiku agent added for plumbing; module rule in CLAUDE.md step 2 and HANDOFF.
 
-[ ] 2.2 — Enforce tokens-only for every new screen until DESIGN.md is rewritten
+[!] 2.2 — Enforce tokens-only for every new screen until DESIGN.md is rewritten
 
     Where: docs/WIP.md Import v2 checklist (top) and docs/DESIGN.md section 1 (before section 3).
 
@@ -207,7 +207,7 @@ Tier 2 — High (do before 8.5)
 
     Effort: S.
 
-    Status: [ ] — commit: _
+    Status: [!] — blocked: Evidence does not match. SESSION_NOTES §G is headed "DECIDED direction, details OPEN" and has no "cozy style is the Snowpack design" line and no record of 42 screens. Waiting for the user (see final report). Commit: pending.
 
 [ ] 2.3 — SESSION_NOTES section F: record the provisional PDF decision
 
@@ -280,7 +280,7 @@ Tier 3 — Medium (do alongside the next related phase)
 
     Status: [ ] — commit: _
 
-[ ] 3.3 — SESSION_NOTES section G: move the decided line to the top
+[x] 3.3 — SESSION_NOTES section G: move the decided line to the top
 
     Where: docs/SESSION_NOTES.md section G.
 
@@ -292,7 +292,7 @@ Tier 3 — Medium (do alongside the next related phase)
 
     Effort: S.
 
-    Status: [ ] — commit: _
+    Status: [x] — commit: (this commit). The decision line is at the top of §G (SESSION_NOTES §G heading renamed, OPEN line removed). HANDOFF design line added.
 
 Tier 4 — Low (housekeeping)
 [ ] 4.1 — HANDOFF.md "Current state": point to the phase-status table
