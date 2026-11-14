@@ -165,7 +165,8 @@ export function oneNight(
 		breakMinutes: plan.breakMinutes,
 		block2Cards: plan.block2.length,
 		minutes: Math.ceil(plan.minutes),
-		complete: plan.complete
+		complete: plan.complete,
+		minimumBlock: plan.minimumBlock
 	};
 	return { plan, view, ...open };
 }

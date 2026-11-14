@@ -52,7 +52,7 @@ afterEach(async () => {
 	await db.delete();
 });
 
-async function setup(text = COURSE_TEXT) {
+async function setup(text = COURSE_TEXT, shares?: () => Promise<number[] | null>) {
 	db = createDb(`plan-${randomUUID()}`);
 	let tick = start;
 	const clock = () => (tick += 1000);
@@ -81,7 +81,16 @@ async function setup(text = COURSE_TEXT) {
 		logger
 	});
 	const study = new StudyService({ sessions, repos, events, kv, replay, clock, logger });
-	const plans = new CoursePlanService({ repos, events, kv, study, replayConfig, clock, logger });
+	const plans = new CoursePlanService({
+		repos,
+		events,
+		kv,
+		study,
+		replayConfig,
+		clock,
+		logger,
+		shares
+	});
 	const importer = new ImportService(new ContentStore(db, context), encoder, randomUUID, logger);
 	const course = await importer.createCourse('Networking');
 	const preview = await importer.preview(course.id, text, []);
@@ -259,6 +268,21 @@ Firewall :: filters traffic between networks by rules
 			);
 			expect(flagged).toBe(true);
 			expect((await env.repos.chunks.get(read.chunkId))?.splitFlag).toBe(true);
+		});
+
+		it('one-night with no minutes left tonight plans the minimum block and flags it (SESSION_NOTES A1)', async () => {
+			const tomorrow = { examDate: localDateOf(dayIndex(start, 0) + 1), examTime: '09:00' };
+			const late = await setup(COURSE_TEXT, async () => [0]);
+			await late.plans.setExam(late.courseId, { ...tomorrow, examFormat: 'mixed' });
+			const night = await late.plans.today(late.courseId);
+			if (night.learn?.mode !== 'onenight') throw new Error('expected one-night');
+			expect(night.learn.plan.minimumBlock).toBe(true);
+			expect(night.learn.plan.chosen.length).toBeGreaterThan(0);
+			const normal = await setup();
+			await normal.plans.setExam(normal.courseId, { ...tomorrow, examFormat: 'mixed' });
+			const roomy = await normal.plans.today(normal.courseId);
+			if (roomy.learn?.mode !== 'onenight') throw new Error('expected one-night');
+			expect(roomy.learn.plan.minimumBlock).toBe(false);
 		});
 
 		it('one-night block 2 re-quizzes the cards met tonight, logged as one-night', async () => {

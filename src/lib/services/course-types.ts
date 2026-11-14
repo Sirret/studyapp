@@ -57,6 +57,11 @@ export interface OneNightView {
 	block2Cards: number;
 	minutes: number;
 	complete: boolean;
+	/**
+	 * Nothing fitted tonight's time (late, or past the sleep start), so this is the minimum block;
+	 * the course page shows the sleep reminder with it. @see SESSION_NOTES A1
+	 */
+	minimumBlock: boolean;
 }
 
 export interface CourseToday {

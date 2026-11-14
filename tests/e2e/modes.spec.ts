@@ -91,5 +91,25 @@ test.describe('modes', () => {
 		// Nothing learnt tonight yet: no dead button, a line saying when the re-quiz opens.
 		await expect(page.locator('[data-block-two]')).toHaveCount(0);
 		await expect(page.locator('[data-block-two-waiting]')).toBeVisible();
+		await expect(page.locator('[data-minimum-block]')).toHaveCount(0);
+	});
+
+	test('one-night with no study time left still plans a short block, with the sleep reminder', async ({
+		page
+	}) => {
+		await importCourse(page);
+		const course = page.url();
+		await page.locator('[data-exam-date]').fill(localDate(1));
+		await page.locator('[data-save-exam]').click();
+		await expect(page.getByRole('heading', { name: 'One-night triage' })).toBeVisible();
+		await page.goto('/planner');
+		for (let day = 0; day < 7; day += 1) await page.locator(`[data-weekday="${day}"]`).fill('0');
+		await page.getByLabel('Exam-morning top-up (min)').fill('0');
+		await page.locator('[data-save-availability]').click();
+		await expect(page.locator('[data-short="Networks"]')).toBeVisible();
+		await page.goto(course);
+		await expect(page.getByRole('heading', { name: 'One-night triage' })).toBeVisible();
+		await expect(page.locator('[data-minimum-block]')).toContainText('Then sleep');
+		await expect(page.getByRole('link', { name: 'Start' }).first()).toBeVisible();
 	});
 });

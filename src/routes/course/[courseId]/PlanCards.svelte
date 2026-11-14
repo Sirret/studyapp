@@ -120,6 +120,14 @@
 				The exam is tomorrow, so tonight covers what matters most: learn, a {night.breakMinutes}-minute
 				break, a mixed re-quiz, then sleep. Tomorrow morning there's a short check.
 			</p>
+			{#if night.minimumBlock}
+				<Banner tone="info">
+					<span data-minimum-block
+						>Not much time is left tonight, so this is a short ~{night.minutes}-minute block of what
+						matters most. Then sleep: it's what makes tonight's work stick for the morning.</span
+					>
+				</Banner>
+			{/if}
 			{#if night.skipped.length > 0}
 				<Banner tone="warning">
 					Tonight can hold {night.chosen.length} of {night.chosen.length + night.skipped.length} parts.
