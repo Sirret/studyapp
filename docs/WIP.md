@@ -5,7 +5,7 @@
 | Date | Phase | Step | Model | Done | Files | Next | Commit |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 2026-11-14 | 8.5 | 0 do-first cleanups | Opus 5.5 | HANDOFF "do first" items 1–4 | 8 | Step 1: interface for the card list + import fixes | bdf57a8 |
-| 2026-11-14 | 8.5 | 1 interface | Opus 5.5 | importId + course.lastImport schema/DATA_MODEL; stubs for card-regen, duplicates, fix-prompt, card list, import undo | 14 | Step 2: tests (spec-test-writer for duplicates + card-regen; direct for services) | (this commit) |
+| 2026-11-14 | 8.5 | 1 interface | Opus 5.5 | importId + course.lastImport schema/DATA_MODEL; stubs for card-regen, duplicates, fix-prompt, card list, import undo | 14 | Step 2: tests (spec-test-writer for duplicates + card-regen; direct for services) | 601f819 |
 
 ## Task and spec
 
