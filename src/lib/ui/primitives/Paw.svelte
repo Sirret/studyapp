@@ -1,15 +1,21 @@
 <!--
 	Paw glyph, the shared motif: one pad plus four toes, filled with the current colour (DESIGN §7).
-	Solid by default; `outline` draws it as a stroke (PawRing "current", PawTrail upcoming).
+	Solid by default; `outline` draws it as a stroke (PawRing "current"), `dashed` as a dashed
+	stroke (PawTrail upcoming).
 	Decorative.
 -->
 <script lang="ts">
-	let { size = 24, outline = false }: { size?: number; outline?: boolean } = $props();
+	let {
+		size = 24,
+		outline = false,
+		dashed = false
+	}: { size?: number; outline?: boolean; dashed?: boolean } = $props();
 </script>
 
 <svg
 	class="paw"
-	class:outline
+	class:outline={outline || dashed}
+	class:dashed
 	viewBox="0 0 24 24"
 	width={size}
 	height={size}
@@ -34,5 +40,9 @@
 		fill: none;
 		stroke: currentcolor;
 		stroke-width: 1.5;
+	}
+
+	.dashed {
+		stroke-dasharray: 2 1.5;
 	}
 </style>

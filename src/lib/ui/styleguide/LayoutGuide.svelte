@@ -1,6 +1,6 @@
 <!-- Layer 8 in the style guide: the layout pieces screens are built from. Dev builds only. -->
 <script lang="ts">
-	import { X } from '@lucide/svelte';
+	import { ArrowLeft, Settings, X } from '@lucide/svelte';
 	import PhaseLabel from '../components/PhaseLabel.svelte';
 	import ProgressStrip from '../components/ProgressStrip.svelte';
 	import BottomNav from '../layout/BottomNav.svelte';
@@ -14,20 +14,40 @@
 	import GuideRow from './GuideRow.svelte';
 	import GuideSection from './GuideSection.svelte';
 
-	const hrefs = { today: '#today', courses: '#courses', plan: '#plan', settings: '#settings' };
+	const hrefs = { den: '#den', shelf: '#shelf', import: '#import' };
+	const withPlay = { ...hrefs, play: '#play' };
 </script>
 
 <GuideSection id="layout" title="Layout" layer="Layer 8">
+	<GuideRow label="Top bars: wordmark (home), breadcrumb with back and settings">
+		<div class="wide">
+			<Card padding="none">
+				<TopBar title="Snowpack" wordmark>
+					{#snippet trailing()}<Icon icon={Settings} size="nav" label="Settings" />{/snippet}
+				</TopBar>
+			</Card>
+		</div>
+		<div class="wide">
+			<Card padding="none">
+				<TopBar title="Networking · Topics">
+					{#snippet leading()}<Icon icon={ArrowLeft} size="nav" label="Back" />{/snippet}
+					{#snippet trailing()}<Icon icon={Settings} size="nav" label="Settings" />{/snippet}
+				</TopBar>
+			</Card>
+		</div>
+	</GuideRow>
 	<GuideRow label="Session top bar">
-		<Card padding="none">
-			<TopBar>
-				{#snippet leading()}<Icon icon={X} size="nav" label="Close" />{/snippet}
-				{#snippet middle()}<Chip color="lavender">Databases</Chip><PhaseLabel
-						phase="recall"
-					/>{/snippet}
-				{#snippet below()}<ProgressStrip done={8} total={20} />{/snippet}
-			</TopBar>
-		</Card>
+		<div class="wide">
+			<Card padding="none">
+				<TopBar knit={false}>
+					{#snippet leading()}<Icon icon={X} size="nav" label="Close" />{/snippet}
+					{#snippet middle()}<Chip color="lavender">Databases</Chip><PhaseLabel
+							phase="recall"
+						/>{/snippet}
+					{#snippet below()}<ProgressStrip done={8} total={20} />{/snippet}
+				</TopBar>
+			</Card>
+		</div>
 	</GuideRow>
 	<GuideRow label="Stack, row and grid (two columns from 1024 px)">
 		<Stack gap="sm">
@@ -38,7 +58,14 @@
 			</Grid>
 		</Stack>
 	</GuideRow>
-	<GuideRow label="Bottom navigation">
-		<BottomNav active="today" {hrefs} fixed={false} />
+	<GuideRow label="Bottom navigation (now, and with Play from Phase 11)">
+		<div class="wide"><BottomNav active="den" {hrefs} fixed={false} /></div>
+		<div class="wide"><BottomNav active="shelf" hrefs={withPlay} fixed={false} /></div>
 	</GuideRow>
 </GuideSection>
+
+<style>
+	.wide {
+		width: 100%;
+	}
+</style>

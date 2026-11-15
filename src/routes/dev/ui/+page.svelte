@@ -1,6 +1,7 @@
 <script lang="ts">
 	import CardListGuide from '#lib/ui/styleguide/CardListGuide.svelte';
 	import ComponentsGuide from '#lib/ui/styleguide/ComponentsGuide.svelte';
+	import CozyComponentsGuide from '#lib/ui/styleguide/CozyComponentsGuide.svelte';
 	import DelightGuide from '#lib/ui/styleguide/DelightGuide.svelte';
 	import LayoutGuide from '#lib/ui/styleguide/LayoutGuide.svelte';
 	import PrimitivesGuide from '#lib/ui/styleguide/PrimitivesGuide.svelte';
@@ -14,6 +15,7 @@
 	<TokensGuide />
 	<PrimitivesGuide />
 	<ComponentsGuide />
+	<CozyComponentsGuide />
 	<CardListGuide />
 	<YukiGuide />
 	<DelightGuide />

@@ -31,6 +31,9 @@
 	--correct: var(--c-pine);
 	--wrong: var(--c-oxblood);
 	--keyterm: var(--c-keyterm);
+	/* Labels on mode fills (DESIGN §7 ModeDoor): dark fills (pine, night, oxblood), light fills (brass) */
+	--on-dark-fill: var(--c-wool);
+	--on-light-fill: var(--c-ink);
 	--glow: var(--c-lamp);
 
 	/* Illustration and texture colours (DESIGN §3.1, §6): wool band, snow, Yuki's blush and mask */

@@ -104,6 +104,11 @@
 	--rise-distance: var(--space-12);
 	--stamp-tilt: -2deg;
 	--stamp-land: -8deg;
+	--tag-tilt: 4deg;
+	--door-dot: var(--size-px-6);
+	--trail-paw: var(--size-px-16);
+	--ring-size: var(--size-px-24);
+	--deck-offset: var(--size-px-6);
 	--mask-paw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12,22 C7,22 5,18 7,15 C9,12 10,11 12,11 C14,11 15,12 17,15 C19,18 17,22 12,22 Z'/%3E%3Ccircle cx='6' cy='9' r='2.3'/%3E%3Ccircle cx='10' cy='5.5' r='2.4'/%3E%3Ccircle cx='14' cy='5.5' r='2.4'/%3E%3Ccircle cx='18' cy='9' r='2.3'/%3E%3C/svg%3E");
 	--rim-inset: inset 0 0 0 var(--size-px-3) var(--rim);
 	--focus-width: var(--size-px-3);
@@ -124,6 +129,8 @@
 	--dur-burst: var(--ms-450);
 	--dur-trot: var(--ms-500);
 	--dur-count-up: var(--ms-600);
+	--dur-card-flip: var(--ms-450);
+	--dur-pawin: var(--ms-2500);
 	--dur-flurry: var(--ms-800);
 	--dur-walk: var(--ms-1200);
 	--dur-yuki-hop: var(--ms-400);
@@ -181,6 +188,7 @@
 		--dur-burst: 0ms;
 		--dur-trot: 0ms;
 		--dur-count-up: 0ms;
+		--dur-card-flip: 0ms;
 		--dur-flurry: 0ms;
 		--dur-walk: 0ms;
 	}

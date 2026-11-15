@@ -34,6 +34,8 @@ export type ColorToken =
 	| 'correct'
 	| 'wrong'
 	| 'keyterm'
+	| 'on-dark-fill'
+	| 'on-light-fill'
 	| 'glow'
 	| 'on-course';
 
@@ -67,6 +69,8 @@ export const THEME_COLORS: Readonly<Record<ThemeName, Readonly<Record<ColorToken
 		correct: '#2e4a3b',
 		wrong: '#7a2621',
 		keyterm: '#c79e6e',
+		'on-dark-fill': '#efe3cc',
+		'on-light-fill': '#1d2230',
 		glow: '#e0913a',
 		'on-course': '#1d2230'
 	},
@@ -96,6 +100,8 @@ export const THEME_COLORS: Readonly<Record<ThemeName, Readonly<Record<ColorToken
 		correct: '#9cc7a6',
 		wrong: '#d98c70',
 		keyterm: '#8a6a45',
+		'on-dark-fill': '#efe3cc',
+		'on-light-fill': '#231c16',
 		glow: '#e3a35c',
 		'on-course': '#231c16'
 	}
@@ -133,7 +139,12 @@ export const TEXT_PAIRS: readonly (readonly [ColorToken, ColorToken])[] = [
 		)
 	),
 	['btn-primary-fg', 'btn-primary-bg'],
-	['on-accent', 'accent']
+	['on-accent', 'accent'],
+	// ModeDoor labels follow the fill (DESIGN §7)
+	['on-dark-fill', 'mode-learn'],
+	['on-dark-fill', 'mode-practice'],
+	['on-dark-fill', 'mode-exam'],
+	['on-light-fill', 'mode-play']
 ];
 
 /** Outlines of pressables, focus rings and the button lip must reach 3:1. @see DESIGN §6, §11 */

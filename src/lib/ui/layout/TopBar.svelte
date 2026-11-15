@@ -1,6 +1,7 @@
 <!--
-	Top bar (DESIGN §4, §6): a row with a leading action (close or back), a title or middle content,
-	and a trailing slot; an optional second line underneath (the session's progress strip).
+	Top bar (DESIGN §7 TopBar): 44 px icon-button slots either side (back, settings), the title in
+	the middle — the IM Fell SC wordmark with `wordmark`, otherwise a Courier breadcrumb — or
+	custom middle content, an optional second line (the session's progress), then the knit band.
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
@@ -8,32 +9,40 @@
 	let {
 		leading,
 		title,
+		wordmark = false,
 		middle,
 		trailing,
-		below
+		below,
+		knit = true
 	}: {
 		leading?: Snippet;
 		title?: string;
+		/** Shows the title as the wordmark ("Snowpack") instead of a breadcrumb. */
+		wordmark?: boolean;
 		middle?: Snippet;
 		trailing?: Snippet;
 		below?: Snippet;
+		knit?: boolean;
 	} = $props();
 </script>
 
-<header class="bar">
-	<div class="line">
-		<div class="slot">
-			{#if leading}{@render leading()}{/if}
+<header class="top">
+	<div class="bar">
+		<div class="line">
+			<div class="slot">
+				{#if leading}{@render leading()}{/if}
+			</div>
+			<div class="middle">
+				{#if title}<h1 class:wordmark>{title}</h1>{/if}
+				{#if middle}{@render middle()}{/if}
+			</div>
+			<div class="slot end">
+				{#if trailing}{@render trailing()}{/if}
+			</div>
 		</div>
-		<div class="middle">
-			{#if title}<h1>{title}</h1>{/if}
-			{#if middle}{@render middle()}{/if}
-		</div>
-		<div class="slot end">
-			{#if trailing}{@render trailing()}{/if}
-		</div>
+		{#if below}<div class="below">{@render below()}</div>{/if}
 	</div>
-	{#if below}<div class="below">{@render below()}</div>{/if}
+	{#if knit}<div class="knit" aria-hidden="true"></div>{/if}
 </header>
 
 <style>
@@ -53,6 +62,13 @@
 		min-height: var(--touch-min);
 	}
 
+	.slot {
+		display: grid;
+		place-items: center;
+		min-width: var(--touch-min);
+		min-height: var(--touch-min);
+	}
+
 	.middle {
 		display: flex;
 		flex-wrap: wrap;
@@ -64,13 +80,24 @@
 
 	h1 {
 		margin: 0;
-		font-size: var(--type-title-size);
-		line-height: var(--type-title-leading);
-		font-weight: var(--type-title-weight);
+		overflow-wrap: anywhere;
+		color: var(--text);
+		font-family: var(--font-label);
+		font-size: var(--type-label-size-lg);
+		line-height: var(--type-caption-leading);
+		font-weight: var(--type-label-weight);
+		letter-spacing: var(--type-label-tracking-wide);
+		text-align: center;
+		text-transform: uppercase;
 	}
 
-	.end {
-		justify-self: end;
+	h1.wordmark {
+		color: var(--text-strong);
+		font-family: var(--font-wordmark);
+		font-size: var(--type-wordmark-size);
+		font-weight: var(--type-heading-weight);
+		letter-spacing: var(--type-wordmark-tracking);
+		text-transform: none;
 	}
 
 	.below {

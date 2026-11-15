@@ -31,6 +31,9 @@
 	--correct: var(--l-correct);
 	--wrong: var(--l-accent);
 	--keyterm: var(--l-keyterm);
+	/* Labels on mode fills (DESIGN §7 ModeDoor): dark fills (pine, night, oxblood), light fills (brass) */
+	--on-dark-fill: var(--l-text-strong);
+	--on-light-fill: var(--l-bg);
 	--glow: var(--l-amber);
 
 	/* Illustration and texture colours: Yuki keeps her fur in both themes (DESIGN §9) */
