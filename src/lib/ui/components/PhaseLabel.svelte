@@ -17,11 +17,12 @@
 
 <style>
 	.phase {
-		color: var(--text-muted);
-		font-size: var(--type-caption-size);
+		color: var(--text-soft);
+		font-family: var(--font-label);
+		font-size: var(--type-label-size);
 		line-height: var(--type-caption-leading);
-		font-weight: var(--type-caption-weight);
-		letter-spacing: 0.06em;
+		font-weight: var(--type-label-weight);
+		letter-spacing: var(--type-label-tracking-wide);
 		text-transform: uppercase;
 	}
 </style>

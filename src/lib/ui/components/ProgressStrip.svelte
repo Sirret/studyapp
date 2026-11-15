@@ -1,10 +1,9 @@
 <!--
-	Progress strip (DESIGN §5, §7.3, §11.2): a 10 px track with the moon at the end, a fill with a
-	faint paw trail (Yuki full), and Yuki trotting along the fill (hidden when Yuki is off). The
-	fill and runner move by transform only. Read as "12 of 30 cards".
+	Progress strip (DESIGN §7 PawTrail, for long sessions): a dashed path walked by a row of ink paws,
+	a Courier "12/30" counter, and Yuki trotting along (hidden when Yuki is off). PawTrail replaces
+	bars, so there is no filled bar. The paws and runner move by transform only. Read as "12 of 30 cards".
 -->
 <script lang="ts">
-	import Moon from '../motifs/Moon.svelte';
 	import Yuki from './yuki/Yuki.svelte';
 
 	let { done, total, runner = true }: { done: number; total: number; runner?: boolean } = $props();
@@ -31,9 +30,9 @@
 	style:--share={share}
 >
 	<div class="track">
-		<div class="fill"></div>
+		<div class="fill"><div class="paws"></div></div>
 	</div>
-	<span class="moon"><Moon size={18} /></span>
+	<span class="count" aria-hidden="true">{done}/{total}</span>
 	{#if runner}
 		<div class="lane" aria-hidden="true">
 			<span class="runner" onanimationend={() => (trotting = false)} class:trotting>
@@ -45,52 +44,67 @@
 
 <style>
 	.strip {
-		--strip-height: var(--size-px-10);
+		--strip-height: var(--size-px-16);
 
 		position: relative;
+		display: flex;
+		align-items: center;
+		gap: var(--gap-sm);
 		padding-top: var(--space-20);
-		padding-right: var(--size-px-6);
 		/* The runner moves in container units and never widens the page (it would scroll sideways). */
 		container-type: inline-size;
 		overflow-x: clip;
 	}
 
 	.track {
-		height: var(--strip-height);
+		position: relative;
+		flex: 1;
 		overflow: hidden;
-		border-radius: var(--r-pill);
-		background: var(--primary-soft);
+		height: var(--strip-height);
+	}
+
+	/* Upcoming path: a dashed faint line; the walked part is a row of ink paws over it. */
+	.track::before {
+		content: '';
+		position: absolute;
+		inset: 50% 0 auto;
+		border-top: var(--border-dashed) dashed var(--decor);
+	}
+
+	/* A sliding window: .fill moves right by the walked share and .paws moves back the same
+	   amount, so the paws stay put and only the window over them grows (transform only). */
+	.fill,
+	.paws {
+		height: 100%;
+		transition: transform var(--dur-trot) var(--ease-out);
 	}
 
 	.fill {
 		position: relative;
-		height: 100%;
-		border-radius: var(--r-pill);
-		background: var(--primary);
-		transform: scaleX(var(--share));
-		transform-origin: left center;
-		transition: transform var(--dur-trot) var(--ease-out);
+		overflow: hidden;
+		background: var(--bg);
+		transform: translateX(calc((var(--share) - 1) * 100%));
 	}
 
-	:global([data-companion='full']) .fill::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		background: var(--paw-trail);
-		mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 11.2c2.9 0 5.4 2.2 5.4 4.6 0 1.8-1.4 2.6-3 2.6-.9 0-1.6-.4-2.4-.4s-1.5.4-2.4.4c-1.6 0-3-.8-3-2.6 0-2.4 2.5-4.6 5.4-4.6z'/%3E%3Cellipse cx='6.6' cy='9.6' rx='1.7' ry='2.2'/%3E%3Cellipse cx='10' cy='6.6' rx='1.7' ry='2.3'/%3E%3Cellipse cx='14' cy='6.6' rx='1.7' ry='2.3'/%3E%3Cellipse cx='17.4' cy='9.6' rx='1.7' ry='2.2'/%3E%3C/svg%3E")
-			repeat-x left center / var(--strip-height) var(--strip-height);
+	.paws {
+		background: var(--text);
+		mask: var(--mask-paw) repeat-x left center / var(--strip-height) var(--strip-height);
+		transform: translateX(calc((1 - var(--share)) * 100%));
 	}
 
-	.moon {
-		position: absolute;
-		right: 0;
-		bottom: calc(var(--size-px-4) * -1);
+	.count {
+		flex: none;
+		color: var(--text);
+		font-family: var(--font-label);
+		font-size: var(--type-label-size-lg);
+		font-weight: var(--type-label-weight);
+		font-variant-numeric: tabular-nums;
 	}
 
 	.lane {
 		position: absolute;
 		inset: 0 auto auto 0;
-		transform: translateX(calc(var(--share) * (100cqw - var(--size-px-20))));
+		transform: translateX(calc(var(--share) * (100cqw - var(--size-px-64))));
 		transition: transform var(--dur-trot) var(--ease-out);
 	}
 

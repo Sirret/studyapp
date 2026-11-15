@@ -7,25 +7,16 @@
  */
 :root,
 [data-theme] {
-	--surface-alt: var(--surface-tag);
 	--border: var(--line);
 	--text-muted: var(--text-soft);
 	--primary: var(--accent);
 	--primary-soft: var(--surface-tag);
-	--on-primary: var(--on-accent);
 	--success: var(--correct);
-	--success-soft: var(--surface-tag);
 	--error: var(--wrong);
-	--error-soft: var(--surface-tag);
 	--warning-soft: var(--surface-tag);
 	--moon: var(--rim);
 
 	--paw-press: color-mix(in srgb, var(--accent) 35%, transparent);
-	--paw-trail: color-mix(in srgb, var(--on-accent) 18%, transparent);
-	--tape: color-mix(in srgb, var(--surface-tag) 70%, transparent);
 
-	--shadow-1: var(--shadow-raised);
-	--shadow-2: var(--shadow-raised);
-	--card-edge: var(--outline);
 	--yuki-glow: none;
 }

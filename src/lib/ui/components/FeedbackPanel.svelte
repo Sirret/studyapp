@@ -1,5 +1,5 @@
 <!--
-	Feedback panel (DESIGN §5): slides up under the card after every answer, right or wrong
+	Feedback panel (DESIGN §4, §7): a paper card, pine outline when right, oxblood dashed when wrong;: slides up under the card after every answer, right or wrong
 	(feedback always shows the answer). Correct: ✓ and the answer; when a typo was let through,
 	a line asking to check the spelling. Wrong: ✕, the right answer and, when the pick was another
 	card's answer, the contrastive line. Actions come from the caller.
@@ -60,25 +60,32 @@
 
 <style>
 	.feedback {
-		--feedback-bg: var(--surface-alt);
-		--feedback-accent: var(--primary);
+		--feedback-border: var(--outline);
+		--feedback-style: solid;
+		--feedback-accent: var(--text-strong);
 
 		display: grid;
 		gap: var(--gap-sm);
 		padding: var(--gap-lg);
-		border-radius: var(--r-lg);
-		background: var(--feedback-bg);
+		border: var(--stroke) var(--feedback-style) var(--feedback-border);
+		border-radius: var(--r-md);
+		background: var(--surface);
+		color: var(--text);
+		font-family: var(--font-body);
+		font-size: var(--type-body-size);
+		line-height: var(--type-body-leading);
 		animation: rise var(--dur-base) var(--ease-out);
 	}
 
 	.right {
-		--feedback-bg: var(--success-soft);
-		--feedback-accent: var(--success);
+		--feedback-border: var(--correct);
+		--feedback-accent: var(--correct);
 	}
 
 	.wrong {
-		--feedback-bg: var(--error-soft);
-		--feedback-accent: var(--error);
+		--feedback-border: var(--wrong);
+		--feedback-style: dashed;
+		--feedback-accent: var(--wrong);
 	}
 
 	.title {
@@ -87,13 +94,18 @@
 		gap: var(--gap-sm);
 		margin: 0;
 		color: var(--feedback-accent);
-		font-size: var(--type-heading-size);
-		line-height: var(--type-heading-leading);
-		font-weight: var(--type-heading-weight);
+		font-family: var(--font-display);
+		font-size: var(--type-term-size);
+		line-height: var(--type-title-leading);
+		font-weight: var(--type-display-weight);
+		font-style: italic;
 	}
 
 	.icon {
-		font-weight: var(--type-display-weight);
+		font-family: var(--font-body);
+		font-size: var(--type-heading-size);
+		font-style: normal;
+		font-weight: var(--type-strong-weight);
 	}
 
 	.contrast,
@@ -102,7 +114,7 @@
 	}
 
 	.note {
-		color: var(--text-muted);
+		color: var(--text-soft);
 		font-size: var(--type-small-size);
 	}
 
@@ -112,13 +124,16 @@
 	}
 
 	.label {
-		color: var(--text-muted);
-		font-size: var(--type-caption-size);
-		font-weight: var(--type-caption-weight);
+		color: var(--text-soft);
+		font-family: var(--font-label);
+		font-size: var(--type-label-size);
+		font-weight: var(--type-label-weight);
+		letter-spacing: var(--type-label-tracking);
 		text-transform: uppercase;
 	}
 
 	.line {
+		font-size: var(--type-answer-size);
 		font-weight: var(--type-answer-weight);
 		overflow-wrap: anywhere;
 		white-space: pre-line;
@@ -133,7 +148,7 @@
 	@keyframes rise {
 		from {
 			opacity: 0;
-			transform: translateY(var(--space-12));
+			transform: translateY(var(--rise-distance));
 		}
 	}
 </style>

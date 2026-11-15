@@ -38,22 +38,27 @@
 		gap: var(--gap-md);
 		width: 100%;
 		padding: var(--gap-2xl) var(--gap-lg);
-		border: var(--hairline) solid var(--card-edge);
-		border-radius: var(--r-xl);
+		border: var(--border-width) solid var(--outline);
+		border-radius: var(--r-md);
 		background: var(--surface);
-		box-shadow: var(--shadow-1);
+		box-shadow: var(--shadow-raised);
 		color: var(--text);
+		font-family: var(--font-body);
 		cursor: pointer;
 		animation: fade var(--dur-base) var(--ease-out);
 	}
 
 	.line {
-		font-size: var(--type-heading-size);
-		font-weight: var(--type-heading-weight);
+		color: var(--text-strong);
+		font-family: var(--font-display);
+		font-size: var(--type-title-size);
+		line-height: var(--type-title-leading);
+		font-style: italic;
+		font-weight: var(--type-title-weight);
 	}
 
 	.skip {
-		color: var(--text-muted);
+		color: var(--text-soft);
 		font-size: var(--type-small-size);
 	}
 

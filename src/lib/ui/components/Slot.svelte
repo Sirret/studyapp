@@ -1,5 +1,5 @@
 <!--
-	Slot (DESIGN §5 DropZone): a labelled place to put a chip. Highlights in `--primary-soft` while
+	Slot (DESIGN §7, DropZone): a dashed place to put a chip. Takes the kraft tint while
 	a chip is picked up; tap it to place the chip, tap a filled slot to take the chip back.
 -->
 <script module lang="ts">
@@ -41,62 +41,74 @@
 <style>
 	.slot {
 		--slot-bg: transparent;
-		--slot-border: var(--border);
+		--slot-border: var(--decor);
+		--slot-style: dashed;
 
 		display: grid;
 		gap: var(--gap-xs);
 		width: 100%;
 		min-height: var(--option-min-height);
 		padding: var(--gap-sm) var(--gap-md);
-		border: var(--stroke) dashed var(--slot-border);
+		border: var(--stroke) var(--slot-style) var(--slot-border);
 		border-radius: var(--r-md);
 		background: var(--slot-bg);
 		color: var(--text);
+		font-family: var(--font-body);
 		text-align: start;
 		cursor: pointer;
 		touch-action: manipulation;
 	}
 
 	.label {
-		color: var(--text-muted);
-		font-size: var(--type-small-size);
-		line-height: var(--type-small-leading);
-		font-weight: var(--type-small-weight);
+		color: var(--text-soft);
+		font-family: var(--font-label);
+		font-size: var(--type-label-size);
+		line-height: var(--type-caption-leading);
+		font-weight: var(--type-label-weight);
+		letter-spacing: var(--type-label-tracking);
+		text-transform: uppercase;
 		overflow-wrap: anywhere;
 	}
 
 	.value {
-		font-weight: var(--type-strong-weight);
+		font-size: var(--type-answer-size);
+		font-weight: var(--type-answer-weight);
 		overflow-wrap: anywhere;
 	}
 
 	.empty .value {
-		color: var(--text-muted);
+		color: var(--text-soft);
+		font-weight: var(--type-body-weight);
 	}
 
 	.ready {
-		--slot-bg: var(--primary-soft);
-		--slot-border: var(--primary);
+		--slot-bg: var(--surface-tag);
+		--slot-border: var(--outline);
 	}
 
 	.filled {
-		--slot-border: var(--primary);
-
-		border-style: solid;
+		--slot-bg: var(--surface);
+		--slot-border: var(--outline);
+		--slot-style: solid;
 	}
 
 	.correct {
-		--slot-bg: var(--success-soft);
-		--slot-border: var(--success);
-
-		border-style: solid;
+		--slot-bg: var(--surface);
+		--slot-border: var(--correct);
+		--slot-style: solid;
 	}
 
 	.wrong {
-		--slot-bg: var(--error-soft);
-		--slot-border: var(--error);
+		--slot-bg: var(--surface);
+		--slot-border: var(--wrong);
+	}
 
-		border-style: solid;
+	.correct .value > :first-child {
+		color: var(--correct);
+	}
+
+	.wrong .value > :first-child {
+		color: var(--wrong);
 	}
 
 	.slot:disabled {

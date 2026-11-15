@@ -50,11 +50,14 @@
 		width: calc(100% - var(--space-32));
 		max-width: calc(var(--content-max) * 0.75);
 		padding: var(--gap-xl);
-		border: 0;
-		border-radius: var(--r-xl);
+		border: var(--border-width) solid var(--outline);
+		border-radius: var(--r-md);
 		background: var(--surface);
 		color: var(--text);
-		box-shadow: var(--shadow-2);
+		font-family: var(--font-body);
+		font-size: var(--type-body-size);
+		line-height: var(--type-body-leading);
+		box-shadow: var(--shadow-raised);
 	}
 
 	.confirm[open] {
@@ -69,13 +72,16 @@
 
 	h2 {
 		margin: 0;
+		color: var(--text-strong);
+		font-family: var(--font-wordmark);
 		font-size: var(--type-heading-size);
 		line-height: var(--type-heading-leading);
 		font-weight: var(--type-heading-weight);
+		letter-spacing: var(--type-heading-tracking);
 	}
 
 	.body {
-		color: var(--text-muted);
+		color: var(--text-soft);
 	}
 
 	.actions {

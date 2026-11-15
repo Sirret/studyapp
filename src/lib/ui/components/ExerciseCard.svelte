@@ -1,5 +1,5 @@
 <!--
-	Exercise card (DESIGN §5): the one frame every exercise kind uses — instruction, progress dots
+	Exercise card (DESIGN §7 Card): the one frame every exercise kind uses — instruction, progress dots
 	top-right, optional context lines (a worked example's shown steps), the prompt, the body, then
 	feedback. Yuki never appears inside it (§7.3).
 -->
@@ -45,10 +45,12 @@
 		display: grid;
 		gap: var(--gap-lg);
 		padding: var(--gap-lg);
-		border: var(--hairline) solid var(--card-edge);
-		border-radius: var(--r-lg);
+		border: var(--border-width) solid var(--outline);
+		border-radius: var(--r-md);
 		background: var(--surface);
-		box-shadow: var(--shadow-1);
+		color: var(--text);
+		font-family: var(--font-body);
+		box-shadow: var(--shadow-raised);
 	}
 
 	.head {
@@ -59,10 +61,13 @@
 	}
 
 	.instruction {
-		color: var(--text-muted);
-		font-size: var(--type-small-size);
-		line-height: var(--type-small-leading);
-		font-weight: var(--type-small-weight);
+		color: var(--text-soft);
+		font-family: var(--font-label);
+		font-size: var(--type-label-size);
+		line-height: var(--type-caption-leading);
+		font-weight: var(--type-label-weight);
+		letter-spacing: var(--type-label-tracking);
+		text-transform: uppercase;
 	}
 
 	.context {
@@ -70,15 +75,17 @@
 		gap: var(--gap-xs);
 		margin: 0;
 		padding: var(--gap-md) var(--gap-md) var(--gap-md) var(--gap-2xl);
+		border: var(--hairline) solid var(--line);
 		border-radius: var(--r-sm);
-		background: var(--surface-alt);
-		color: var(--text-muted);
+		background: var(--bg);
+		color: var(--text-soft);
 		font-size: var(--type-small-size);
 		line-height: var(--type-small-leading);
 	}
 
 	.prompt {
 		margin: 0;
+		color: var(--text-strong);
 		font-size: var(--type-answer-size);
 		line-height: var(--type-answer-leading);
 		font-weight: var(--type-answer-weight);

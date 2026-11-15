@@ -91,15 +91,20 @@
 		justify-items: center;
 		gap: var(--gap-md);
 		padding: var(--gap-xl) var(--gap-lg);
-		border: var(--hairline) solid var(--card-edge);
-		border-radius: var(--r-xl);
+		border: var(--border-width) solid var(--outline);
+		border-radius: var(--r-md);
 		background: var(--surface);
-		box-shadow: var(--shadow-1);
+		color: var(--text);
+		font-family: var(--font-body);
+		box-shadow: var(--shadow-raised);
 		text-align: center;
 	}
 
 	h2 {
 		margin: 0;
+		color: var(--text-strong);
+		font-family: var(--font-display);
+		font-style: italic;
 		font-size: var(--type-title-size);
 		line-height: var(--type-title-leading);
 		font-weight: var(--type-title-weight);
@@ -114,13 +119,19 @@
 	}
 
 	dt {
-		color: var(--text-muted);
-		font-size: var(--type-caption-size);
-		font-weight: var(--type-caption-weight);
+		color: var(--text-soft);
+		font-family: var(--font-label);
+		font-size: var(--type-label-size);
+		line-height: var(--type-caption-leading);
+		font-weight: var(--type-label-weight);
+		letter-spacing: var(--type-label-tracking);
+		text-transform: uppercase;
 	}
 
 	dd {
 		margin: 0;
+		color: var(--text-strong);
+		font-family: var(--font-display);
 		font-size: var(--type-title-size);
 		font-weight: var(--type-title-weight);
 		font-variant-numeric: tabular-nums;
@@ -128,6 +139,7 @@
 
 	.timer {
 		margin: 0;
+		font-family: var(--font-label);
 		font-size: var(--type-display-size);
 		font-weight: var(--type-display-weight);
 		font-variant-numeric: tabular-nums;
@@ -135,7 +147,7 @@
 
 	.hint {
 		margin: 0;
-		color: var(--text-muted);
+		color: var(--text-soft);
 	}
 
 	.actions {

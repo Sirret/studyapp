@@ -1,5 +1,5 @@
 <!--
-	Step list (DESIGN §6, acquisition and worked examples): numbered steps, each with its subgoal
+	Step list (DESIGN §7 type roles, acquisition and worked examples): numbered steps, each with its subgoal
 	label as a caption above it, for worked-example study.
 -->
 <script lang="ts">
@@ -30,18 +30,22 @@
 	}
 
 	li::marker {
-		color: var(--primary);
-		font-weight: var(--type-strong-weight);
+		color: var(--accent);
+		font-family: var(--font-label);
+		font-weight: var(--type-label-weight);
 	}
 
 	.subgoal {
-		color: var(--primary);
-		font-size: var(--type-caption-size);
-		font-weight: var(--type-caption-weight);
+		color: var(--accent);
+		font-family: var(--font-label);
+		font-size: var(--type-label-size);
+		font-weight: var(--type-label-weight);
+		letter-spacing: var(--type-label-tracking);
 		text-transform: uppercase;
 	}
 
 	.step {
+		font-family: var(--font-body);
 		font-size: var(--type-reading-size);
 		line-height: var(--type-answer-leading);
 		overflow-wrap: anywhere;

@@ -47,8 +47,13 @@
 		stroke-width: 8;
 	}
 
+	svg {
+		border-radius: var(--r-full);
+		box-shadow: inset 0 0 0 var(--stroke) var(--outline);
+	}
+
 	.track {
-		stroke: var(--primary-soft);
+		stroke: var(--surface-sunk);
 	}
 
 	.value {
@@ -59,14 +64,18 @@
 	}
 
 	.number {
-		fill: var(--text);
+		fill: var(--text-strong);
+		font-family: var(--font-label);
 		font-weight: var(--type-display-weight);
 		font-variant-numeric: tabular-nums;
 	}
 
 	figcaption {
-		color: var(--text-muted);
-		font-size: var(--type-caption-size);
-		font-weight: var(--type-caption-weight);
+		color: var(--text-soft);
+		font-family: var(--font-label);
+		font-size: var(--type-label-size);
+		font-weight: var(--type-label-weight);
+		letter-spacing: var(--type-label-tracking);
+		text-transform: uppercase;
 	}
 </style>

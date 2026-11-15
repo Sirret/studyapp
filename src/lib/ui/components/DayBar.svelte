@@ -1,5 +1,5 @@
 <!--
-	Day bar (DESIGN §6 Plan): one day of the planner — a date pill (today highlighted), a stacked
+	Day bar (DESIGN §7, planner): one day of the planner — a date pill (today highlighted), a stacked
 	bar of the day's minutes in course colours over the available minutes, and a flag per exam on
 	that day. Read as "Tue 12: Networks 30 min, Databases 10 min of 60".
 -->
@@ -70,17 +70,22 @@
 		flex: none;
 		min-width: var(--size-px-64);
 		padding: var(--gap-xs) var(--gap-sm);
+		border: var(--border-dashed) solid var(--line-strong);
 		border-radius: var(--r-pill);
-		background: var(--surface-alt);
-		color: var(--text-muted);
-		font-size: var(--type-small-size);
-		font-weight: var(--type-small-weight);
+		background: var(--surface);
+		color: var(--text-soft);
+		font-family: var(--font-label);
+		font-size: var(--type-label-size);
+		font-weight: var(--type-label-weight);
+		letter-spacing: var(--type-label-tracking);
+		text-transform: uppercase;
 		text-align: center;
 	}
 
 	.today .pill {
-		background: var(--primary);
-		color: var(--on-primary);
+		border-color: var(--btn-primary-bg);
+		background: var(--btn-primary-bg);
+		color: var(--btn-primary-fg);
 	}
 
 	.bar {
@@ -89,7 +94,8 @@
 		height: var(--size-px-10);
 		overflow: hidden;
 		border-radius: var(--r-pill);
-		background: var(--primary-soft);
+		background: var(--surface-sunk);
+		box-shadow: inset 0 0 0 var(--hairline) var(--line-strong);
 	}
 
 	.segment {
@@ -99,9 +105,10 @@
 
 	.minutes {
 		flex: none;
-		color: var(--text-muted);
-		font-size: var(--type-caption-size);
-		font-weight: var(--type-caption-weight);
+		color: var(--text-soft);
+		font-family: var(--font-label);
+		font-size: var(--type-label-size);
+		font-weight: var(--type-body-weight);
 	}
 
 	.flag {

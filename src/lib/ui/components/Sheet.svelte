@@ -1,6 +1,6 @@
 <!--
-	Bottom sheet (DESIGN §5): secondary choices on a native <dialog> (focus trap, Escape closes),
-	extra-large top corners and a drag handle. Closing is always possible.
+	Sheet (DESIGN §7): secondary choices on a native <dialog> (focus trap, Escape closes): paper,
+	a 2 px outline, radius 14 at the top and a knit band along the top edge. Closing is always possible.
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
@@ -26,7 +26,7 @@
 	onclose={() => (open = false)}
 	onclick={(event) => event.target === dialog && (open = false)}
 >
-	<span class="handle" aria-hidden="true"></span>
+	<span class="knit band" aria-hidden="true"></span>
 	<h2>{title}</h2>
 	{@render children()}
 </dialog>
@@ -36,12 +36,16 @@
 		width: 100%;
 		max-width: var(--content-max);
 		margin: auto auto 0;
-		padding: var(--gap-md) var(--screen-gutter) calc(var(--gap-xl) + env(safe-area-inset-bottom));
-		border: 0;
-		border-radius: var(--r-xl) var(--r-xl) 0 0;
+		overflow: hidden;
+		padding: 0 var(--screen-gutter) calc(var(--gap-xl) + env(safe-area-inset-bottom));
+		border: var(--border-width) solid var(--outline);
+		border-bottom: 0;
+		border-radius: var(--r-md) var(--r-md) 0 0;
 		background: var(--surface);
 		color: var(--text);
-		box-shadow: var(--shadow-2);
+		font-family: var(--font-body);
+		font-size: var(--type-body-size);
+		line-height: var(--type-body-leading);
 	}
 
 	.sheet[open] {
@@ -54,18 +58,18 @@
 		background: var(--scrim);
 	}
 
-	.handle {
-		justify-self: center;
-		width: var(--size-px-44);
-		height: var(--size-px-4);
-		border-radius: var(--r-pill);
-		background: var(--border);
+	.band {
+		margin: 0 calc(var(--screen-gutter) * -1);
 	}
 
 	h2 {
 		margin: 0;
+		color: var(--text-strong);
+		font-family: var(--font-wordmark);
 		font-size: var(--type-heading-size);
+		line-height: var(--type-heading-leading);
 		font-weight: var(--type-heading-weight);
+		letter-spacing: var(--type-heading-tracking);
 	}
 
 	@keyframes up {

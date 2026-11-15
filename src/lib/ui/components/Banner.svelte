@@ -1,4 +1,4 @@
-<!-- Banner (DESIGN §5): a passive top strip — offline, update available, ready offline. -->
+<!-- Banner (DESIGN §7 palette): a passive sunk-paper strip — offline, update available, ready offline. -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
@@ -16,7 +16,9 @@
 
 <style>
 	.banner {
-		--banner-bg: var(--primary-soft);
+		--banner-bg: var(--surface-sunk);
+		--banner-edge: var(--line-strong);
+		--banner-style: solid;
 
 		display: flex;
 		align-items: center;
@@ -24,17 +26,20 @@
 		gap: var(--gap-md);
 		min-height: var(--touch-min);
 		padding: var(--gap-xs) var(--screen-gutter);
+		border-bottom: var(--border-dashed) var(--banner-style) var(--banner-edge);
 		background: var(--banner-bg);
 		color: var(--text);
+		font-family: var(--font-body);
 		font-size: var(--type-small-size);
 		font-weight: var(--type-small-weight);
 	}
 
 	.success {
-		--banner-bg: var(--success-soft);
+		--banner-edge: var(--correct);
 	}
 
 	.warning {
-		--banner-bg: var(--warning-soft);
+		--banner-edge: var(--accent);
+		--banner-style: dashed;
 	}
 </style>

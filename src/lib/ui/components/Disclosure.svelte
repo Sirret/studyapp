@@ -19,8 +19,10 @@
 
 <style>
 	.disclosure {
-		border-radius: var(--r-md);
-		background: var(--surface-alt);
+		border: var(--border-dashed) dashed var(--line-strong);
+		border-radius: var(--r-sm);
+		background: var(--surface);
+		font-family: var(--font-body);
 	}
 
 	summary {
@@ -34,11 +36,15 @@
 		cursor: pointer;
 	}
 
+	summary::marker {
+		color: var(--accent);
+	}
+
 	.body {
 		display: grid;
 		gap: var(--gap-xs);
 		padding: 0 var(--gap-md) var(--gap-md);
-		color: var(--text-muted);
+		color: var(--text-soft);
 		font-size: var(--type-small-size);
 		overflow-wrap: anywhere;
 	}

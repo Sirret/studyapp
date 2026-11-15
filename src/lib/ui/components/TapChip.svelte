@@ -1,6 +1,6 @@
 <!--
-	Tap chip (DESIGN §5 WordBank, DragList): a chip in a bank. Tap to pick it up (it lifts and
-	fills `--primary-soft`), then tap a slot to place it — the tap alternative to every drag.
+	Tap chip (DESIGN §7 Chip, for WordBank and DragList): a chip in a bank. Tap to pick it up (it lifts and
+	fills ink, like a selected Chip), then tap a slot to place it — the tap alternative to every drag.
 	After checking, chips show correct (✓) or wrong (✕) with icon and colour.
 -->
 <script module lang="ts">
@@ -33,22 +33,25 @@
 
 <style>
 	.tap {
-		--tap-bg: var(--surface-alt);
-		--tap-border: transparent;
+		--tap-bg: var(--surface);
+		--tap-fg: var(--text);
+		--tap-border: var(--outline);
+		--tap-style: solid;
 
 		display: inline-flex;
 		align-items: center;
 		gap: var(--gap-xs);
 		max-width: 100%;
 		min-height: var(--touch-min);
-		padding: var(--gap-xs) var(--gap-md);
-		border: var(--stroke) solid var(--tap-border);
-		border-radius: var(--r-sm);
+		padding: var(--gap-xs) var(--gap-lg);
+		border: var(--border-dashed) var(--tap-style) var(--tap-border);
+		border-radius: var(--r-pill);
 		background: var(--tap-bg);
-		color: var(--text);
+		color: var(--tap-fg);
+		font-family: var(--font-body);
 		font-size: var(--type-body-size);
-		line-height: var(--type-body-leading);
-		font-weight: var(--type-strong-weight);
+		line-height: var(--type-caption-leading);
+		font-weight: var(--type-body-weight);
 		text-align: start;
 		overflow-wrap: anywhere;
 		cursor: pointer;
@@ -57,24 +60,39 @@
 	}
 
 	.selected {
-		--tap-bg: var(--primary-soft);
-		--tap-border: var(--primary);
+		--tap-bg: var(--btn-primary-bg);
+		--tap-fg: var(--btn-primary-fg);
+		--tap-border: var(--btn-primary-bg);
 
 		transform: translateY(calc(var(--press-travel) * -1));
 	}
 
 	.used {
-		opacity: 0.4;
+		--tap-border: var(--decor);
+		--tap-style: dashed;
+		--tap-fg: var(--text-soft);
 	}
 
 	.correct {
-		--tap-bg: var(--success-soft);
-		--tap-border: var(--success);
+		--tap-border: var(--correct);
+
+		border-width: var(--stroke);
+		font-weight: var(--type-strong-weight);
 	}
 
 	.wrong {
-		--tap-bg: var(--error-soft);
-		--tap-border: var(--error);
+		--tap-border: var(--wrong);
+		--tap-style: dashed;
+
+		border-width: var(--stroke);
+	}
+
+	.correct > :first-child {
+		color: var(--correct);
+	}
+
+	.wrong > :first-child {
+		color: var(--wrong);
 	}
 
 	.tap:disabled {

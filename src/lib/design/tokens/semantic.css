@@ -9,8 +9,6 @@
 	--font-wordmark: var(--font-im-fell-sc);
 	--font-body: var(--font-literata);
 	--font-label: var(--font-courier-prime);
-	/* Accent face of the previous design; read by components until steps 2a–2c rebuild them */
-	--font-hand: var(--font-im-fell);
 
 	/* Type roles (DESIGN §5): size / line height / weight */
 	--type-display-size: var(--size-34);
@@ -50,7 +48,6 @@
 	--type-reading-size: var(--size-17);
 	--type-reading-leading: var(--leading-155);
 	--type-term-size: var(--size-26);
-	--type-hand-size: var(--size-26);
 	--measure-min: var(--measure-45);
 	--measure-max: var(--measure-65);
 	--measure-desktop: var(--measure-70);
@@ -63,7 +60,6 @@
 	--gap-lg: var(--space-16);
 	--gap-xl: var(--space-24);
 	--gap-2xl: var(--space-32);
-	--gap-3xl: var(--space-40);
 	--screen-gutter: var(--space-16);
 	--reader-gutter: var(--space-20);
 	--card-gap: var(--space-12);
@@ -71,13 +67,12 @@
 	--page-max: var(--size-px-1280);
 	--sidebar-width: var(--size-px-260);
 
-	/* Radii (DESIGN §6). --r-lg and --r-xl are the previous design's, until step 2a */
+	/* Radii (DESIGN §6). --r-lg is the previous design's, until it goes unused */
 	--r-xs: var(--radius-3);
 	--r-sm: var(--radius-8);
 	--r-md: var(--radius-14);
 	--r-input: var(--radius-12);
 	--r-lg: var(--radius-14);
-	--r-xl: var(--radius-14);
 	--r-pill: var(--radius-30);
 	--r-full: var(--radius-circle);
 	--r-arch: var(--radius-arch);
@@ -102,6 +97,15 @@
 	--knit-height: var(--size-px-12);
 	--hairline: var(--size-px-1);
 	--stroke: var(--size-px-2);
+	--stroke-strong: var(--size-px-3);
+	--bean-size: var(--size-px-32);
+	--mark-size: var(--size-px-28);
+	--shake-distance: var(--space-6);
+	--rise-distance: var(--space-12);
+	--stamp-tilt: -2deg;
+	--stamp-land: -8deg;
+	--mask-paw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12,22 C7,22 5,18 7,15 C9,12 10,11 12,11 C14,11 15,12 17,15 C19,18 17,22 12,22 Z'/%3E%3Ccircle cx='6' cy='9' r='2.3'/%3E%3Ccircle cx='10' cy='5.5' r='2.4'/%3E%3Ccircle cx='14' cy='5.5' r='2.4'/%3E%3Ccircle cx='18' cy='9' r='2.3'/%3E%3C/svg%3E");
+	--rim-inset: inset 0 0 0 var(--size-px-3) var(--rim);
 	--focus-width: var(--size-px-3);
 	--focus-offset: var(--size-px-2);
 	--lip-height: var(--size-px-3);

@@ -1,5 +1,5 @@
 <!--
-	Status badge (DESIGN §5, §11.1): a pill with an icon and the status label, never colour alone.
+	Status badge (DESIGN §7 Stamp style): a Courier label with an icon and the status label, never colour alone.
 	Exam-ready, Long-term secure and One-night triage use the paw, snowflake and moon motifs; the
 	rest use Lucide. Labels follow DATA_MODEL §4.4.
 -->
@@ -45,21 +45,30 @@
 
 <style>
 	.badge {
-		--badge-bg: var(--surface-alt);
-		--badge-fg: var(--text);
+		--badge-border: var(--line-strong);
+		--badge-style: solid;
+		--badge-icon: var(--text-soft);
 
 		display: inline-flex;
 		align-items: center;
 		gap: var(--gap-xs);
 		min-height: var(--size-px-28);
-		padding: 0 var(--gap-md) 0 var(--gap-sm);
-		border-radius: var(--r-pill);
-		background: var(--badge-bg);
-		color: var(--badge-fg);
-		font-size: var(--type-caption-size);
+		padding: 0 var(--gap-sm);
+		border: var(--border-dashed) var(--badge-style) var(--badge-border);
+		border-radius: var(--r-xs);
+		background: var(--surface);
+		color: var(--text);
+		font-family: var(--font-label);
+		font-size: var(--type-label-size);
 		line-height: var(--type-caption-leading);
-		font-weight: var(--type-caption-weight);
+		font-weight: var(--type-label-weight);
+		letter-spacing: var(--type-label-tracking);
+		text-transform: uppercase;
 		white-space: nowrap;
+	}
+
+	.badge > :first-child {
+		color: var(--badge-icon);
 	}
 
 	.badge :global(.icon svg) {
@@ -67,21 +76,31 @@
 		height: var(--size-px-16);
 	}
 
+	.unseen {
+		--badge-border: var(--decor);
+		--badge-style: dashed;
+	}
+
 	.needs-work {
-		--badge-bg: var(--error-soft);
+		--badge-border: var(--wrong);
+		--badge-style: dashed;
+		--badge-icon: var(--wrong);
 	}
 
 	.provisional,
 	.learning {
-		--badge-bg: var(--primary-soft);
+		--badge-border: var(--outline);
+		--badge-icon: var(--text);
 	}
 
 	.exam-ready,
 	.secure {
-		--badge-bg: var(--success-soft);
+		--badge-border: var(--correct);
+		--badge-icon: var(--correct);
 	}
 
 	.one-night {
-		--badge-bg: var(--warning-soft);
+		--badge-border: var(--accent);
+		--badge-icon: var(--accent);
 	}
 </style>

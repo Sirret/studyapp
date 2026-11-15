@@ -29,6 +29,9 @@
 
 	p {
 		margin: 0;
-		color: var(--text-muted);
+		color: var(--text-soft);
+		font-family: var(--font-body);
+		font-size: var(--type-body-size);
+		line-height: var(--type-body-leading);
 	}
 </style>

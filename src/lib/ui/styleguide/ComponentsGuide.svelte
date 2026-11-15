@@ -49,12 +49,12 @@
 </script>
 
 <GuideSection id="components" title="Components" layer="Layer 6">
-	<GuideRow label="Option button states">
+	<GuideRow label="Option bubbles (toe-bean): default, selected, correct, wrong, revealed">
 		{#each optionStates as state, i (state)}
 			<OptionButton letter={'ABCDE'[i] ?? 'A'} text="Transmission Control Protocol" {state} />
 		{/each}
 	</GuideRow>
-	<GuideRow label="Progress dots, phase label, progress strip">
+	<GuideRow label="Paw dots, phase label, paw-trail strip">
 		<ProgressDots count={0} required={3} />
 		<ProgressDots count={2} required={3} />
 		<ProgressDots count={2} required={2} />
@@ -62,7 +62,7 @@
 		<div class="wide"><ProgressStrip done={12} total={30} /></div>
 		<div class="wide"><ProgressStrip done={4} total={30} runner={false} /></div>
 	</GuideRow>
-	<GuideRow label="Status badges">
+	<GuideRow label="Status badges (stamp style)">
 		{#each CARD_STATUSES as status (status)}<StatusBadge {status} />{/each}
 	</GuideRow>
 	<GuideRow label="Readiness rings">
@@ -70,22 +70,24 @@
 		<ReadinessRing percent={18} color="peach" label="secure" />
 	</GuideRow>
 	<GuideRow label="Day bars (Plan)">
-		<DayBar
-			label="Today"
-			today
-			capMinutes={60}
-			segments={[
-				{ name: 'Networks', color: 'lavender', minutes: 40 },
-				{ name: 'Databases', color: 'peach', minutes: 10 }
-			]}
-		/>
-		<DayBar
-			label="Thu 14"
-			capMinutes={30}
-			segments={[{ name: 'Databases', color: 'peach', minutes: 30 }]}
-			exams={[{ name: 'Networks', color: 'lavender' }]}
-		/>
-		<DayBar label="Fri 15" capMinutes={0} segments={[]} />
+		<div class="wide stack">
+			<DayBar
+				label="Today"
+				today
+				capMinutes={60}
+				segments={[
+					{ name: 'Networks', color: 'lavender', minutes: 40 },
+					{ name: 'Databases', color: 'peach', minutes: 10 }
+				]}
+			/>
+			<DayBar
+				label="Thu 14"
+				capMinutes={30}
+				segments={[{ name: 'Databases', color: 'peach', minutes: 30 }]}
+				exams={[{ name: 'Networks', color: 'lavender' }]}
+			/>
+			<DayBar label="Fri 15" capMinutes={0} segments={[]} />
+		</div>
 	</GuideRow>
 	<GuideRow label="Tap chips and slots">
 		<TapChip text="SYN" />
@@ -227,5 +229,10 @@
 <style>
 	.wide {
 		width: 100%;
+	}
+
+	.stack {
+		display: grid;
+		gap: var(--gap-xs);
 	}
 </style>

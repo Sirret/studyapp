@@ -1,6 +1,6 @@
 <!--
-	Sticky note (DESIGN §5, §12): warnings that need a decision — a slightly rotated note with a
-	tape strip, a Caveat heading and a Nunito body. Never alarmist; no exclamation marks.
+	Sticky note (DESIGN §7 HangingTag look): warnings that need a decision, a slightly rotated kraft
+	note with a 2 px outline, a small-caps heading and a Literata body. Never alarmist; no exclamation marks.
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
@@ -10,7 +10,6 @@
 </script>
 
 <aside class="note" role="note">
-	<span class="tape" aria-hidden="true"></span>
 	<h3>{title}</h3>
 	<div class="body">{@render children()}</div>
 	{#if actions}<div class="actions">{@render actions()}</div>{/if}
@@ -21,34 +20,29 @@
 		position: relative;
 		display: grid;
 		gap: var(--gap-sm);
-		padding: var(--gap-xl) var(--gap-lg) var(--gap-lg);
+		padding: var(--gap-lg);
+		border: var(--border-width) solid var(--outline);
 		border-radius: var(--r-sm);
-		background: var(--warning-soft);
+		background: var(--surface-tag);
 		color: var(--text);
-		box-shadow: var(--shadow-1);
-		transform: rotate(-1.5deg);
-	}
-
-	.tape {
-		position: absolute;
-		top: calc(var(--size-px-8) * -1);
-		left: 50%;
-		width: var(--size-px-64);
-		height: var(--size-px-20);
-		background: var(--tape);
-		transform: translateX(-50%) rotate(2deg);
+		font-family: var(--font-body);
+		box-shadow: var(--shadow-raised);
+		transform: rotate(calc(var(--stamp-tilt) / 2));
 	}
 
 	h3 {
 		margin: 0;
-		font-family: var(--font-hand);
-		font-size: var(--type-hand-size);
-		line-height: var(--type-title-leading);
-		font-weight: var(--type-caption-weight);
+		color: var(--text-strong);
+		font-family: var(--font-wordmark);
+		font-size: var(--type-heading-size);
+		line-height: var(--type-heading-leading);
+		font-weight: var(--type-heading-weight);
+		letter-spacing: var(--type-heading-tracking);
 	}
 
 	.body {
 		font-size: var(--type-body-size);
+		line-height: var(--type-body-leading);
 	}
 
 	.actions {
