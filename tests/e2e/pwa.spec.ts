@@ -10,7 +10,7 @@ async function waitForServiceWorker(page: Page): Promise<void> {
 test.describe('app shell', () => {
 	test('shows the app name with no sideways scroll', { tag: '@both' }, async ({ page }) => {
 		await page.goto('/');
-		await expect(page.getByRole('heading', { name: APP_NAME })).toBeVisible();
+		await expect(page.getByRole('heading', { name: APP_SHORT_NAME, exact: true })).toBeVisible();
 		await expect(page).toHaveTitle(APP_NAME);
 		const overflow = await page.evaluate(
 			() => document.documentElement.scrollWidth - document.documentElement.clientWidth
@@ -59,7 +59,7 @@ test.describe('offline', () => {
 		await context.setOffline(true);
 		await page.reload();
 
-		await expect(page.getByRole('heading', { name: APP_NAME })).toBeVisible();
+		await expect(page.getByRole('heading', { name: APP_SHORT_NAME, exact: true })).toBeVisible();
 	});
 
 	test('serves the SPA fallback for a deep link with the network off', async ({

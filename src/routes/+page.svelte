@@ -1,18 +1,22 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { APP_NAME } from '#lib/config/defaults.ts';
+	import { APP_SHORT_NAME } from '#lib/config/defaults.ts';
 	import type { CourseId } from '#lib/db/schemas/common.ts';
 	import { logger } from '#lib/services/app.ts';
 	import type { TodayCourseView, TodayPlanView } from '#lib/services/planner-types.ts';
 	import { prefs } from '#lib/services/preferences.svelte.ts';
 	import ConfirmDialog from '#lib/ui/components/ConfirmDialog.svelte';
 	import EmptyState from '#lib/ui/components/EmptyState.svelte';
-	import ReadinessRing from '#lib/ui/components/ReadinessRing.svelte';
+	import Hero from '#lib/ui/components/Hero.svelte';
+	import ReadinessMeter from '#lib/ui/components/ReadinessMeter.svelte';
+	import SectionHeading from '#lib/ui/components/SectionHeading.svelte';
 	import SpeechBubble from '#lib/ui/components/SpeechBubble.svelte';
 	import StickyNote from '#lib/ui/components/StickyNote.svelte';
 	import Yuki from '#lib/ui/components/yuki/Yuki.svelte';
 	import PawLoader from '#lib/ui/delight/PawLoader.svelte';
+	import { effectOn } from '#lib/ui/delight/delight.ts';
+	import BottomNav from '#lib/ui/layout/BottomNav.svelte';
 	import Row from '#lib/ui/layout/Row.svelte';
 	import Screen from '#lib/ui/layout/Screen.svelte';
 	import Stack from '#lib/ui/layout/Stack.svelte';
@@ -23,7 +27,14 @@
 	import Icon from '#lib/ui/primitives/Icon.svelte';
 	import { X } from '@lucide/svelte';
 
-	/** Today (DESIGN §6, BUILD_PLAN §9): the planner's minutes per course, shortfall, rest. */
+	/** Den tabs (DESIGN §7 BottomNav); the Shelf is the course list below until 8.6 adds its screen. */
+	const navHrefs = {
+		den: resolve('/'),
+		shelf: `${resolve('/')}#shelf`,
+		import: resolve('/import')
+	};
+
+	/** Today (DESIGN §12 Home, BUILD_PLAN §9): the planner's minutes per course, shortfall, rest. */
 	let plan = $state<TodayPlanView | null>(null);
 	let starting = $state<string | null>(null);
 	let failed = $state(false);
@@ -110,8 +121,8 @@
 	});
 </script>
 
-<Screen>
-	{#snippet top()}<TopBar title={APP_NAME} />{/snippet}
+<Screen nav>
+	{#snippet top()}<TopBar title={APP_SHORT_NAME} wordmark />{/snippet}
 	{#if failed}
 		<StickyNote title="Today's plan didn't load">
 			Reload the page to try again. Nothing was lost.
@@ -122,12 +133,18 @@
 			{#snippet action()}<PawLoader />{/snippet}
 		</EmptyState>
 	{:else if plan.courses.length === 0}
+		<Hero title="Welcome." snow={effectOn('snowFall', prefs.companion)} />
 		<EmptyState message="No courses yet." companion={prefs.companion !== 'off'}>
 			{#snippet action()}
 				<Button href={resolve('/import')}>Import your first lecture</Button>
 			{/snippet}
 		</EmptyState>
 	{:else}
+		<Hero
+			title="Welcome back."
+			subline="Snow's still falling. Your place is kept."
+			snow={effectOn('snowFall', prefs.companion)}
+		/>
 		{#if plan.done}
 			<Row gap="md">
 				{#if prefs.companion !== 'off'}<Yuki state="sleepy" size={96} />{/if}
@@ -154,6 +171,11 @@
 				</StickyNote>
 			</Row>
 		{/if}
+		<SectionHeading title="Your shelf" id="shelf">
+			{#snippet action()}
+				<Button variant="ghost" href={resolve('/import')}>+ Add</Button>
+			{/snippet}
+		</SectionHeading>
 		{#each plan.courses as course (course.id)}
 			<Card stripe={course.color} tag="article" label={course.name}>
 				<Stack gap="md">
@@ -179,8 +201,7 @@
 							>
 						</Stack>
 					{:else}
-						<Row gap="md">
-							<ReadinessRing percent={course.readiness * 100} color={course.color} size={56} />
+						<Stack gap="sm">
 							<Stack gap="xs">
 								<strong data-planned={course.name}>
 									{course.plannedMinutes === null
@@ -189,7 +210,8 @@
 								</strong>
 								<span>{examLine(course)} · {workLine(course)}</span>
 							</Stack>
-						</Row>
+							<ReadinessMeter percent={course.readiness * 100} />
+						</Stack>
 					{/if}
 					{#if course.dueCards > 0}
 						<Button
@@ -221,4 +243,5 @@
 	>
 		This deletes the course and all its topics and cards. This can't be undone.
 	</ConfirmDialog>
+	<BottomNav active="den" hrefs={navHrefs} />
 </Screen>

@@ -6,6 +6,8 @@
 <script lang="ts">
 	import ChecklistRow from '../components/ChecklistRow.svelte';
 	import Flashcard from '../components/Flashcard.svelte';
+	import Hero from '../components/Hero.svelte';
+	import SectionHeading from '../components/SectionHeading.svelte';
 	import HangingTag from '../components/HangingTag.svelte';
 	import KeyTerm from '../components/KeyTerm.svelte';
 	import ModeDoor from '../components/ModeDoor.svelte';
@@ -44,6 +46,16 @@
 					answers are a trap.
 				</p>
 			</TrapAside>
+		</div>
+	</GuideRow>
+	<GuideRow label="Hero (with and without snow) and section heading">
+		<div class="wide stack">
+			<Hero title="Welcome back." subline="Snow's still falling. Your place is kept." snow />
+			<Hero title="Welcome." />
+			<SectionHeading title="Your shelf">
+				{#snippet action()}<a href="#cozy-components">+ Add</a>{/snippet}
+			</SectionHeading>
+			<SectionHeading title="Topics" />
 		</div>
 	</GuideRow>
 	<GuideRow label="Hanging tag (hero greetings only)">

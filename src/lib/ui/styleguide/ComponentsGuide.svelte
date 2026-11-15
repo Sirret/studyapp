@@ -21,7 +21,6 @@
 	import ProgressDots from '../components/ProgressDots.svelte';
 	import ProgressStrip from '../components/ProgressStrip.svelte';
 	import DayBar from '../components/DayBar.svelte';
-	import ReadinessRing from '../components/ReadinessRing.svelte';
 	import RoundSummary from '../components/RoundSummary.svelte';
 	import SessionSummary from '../components/SessionSummary.svelte';
 	import Slot from '../components/Slot.svelte';
@@ -64,10 +63,6 @@
 	</GuideRow>
 	<GuideRow label="Status badges (stamp style)">
 		{#each CARD_STATUSES as status (status)}<StatusBadge {status} />{/each}
-	</GuideRow>
-	<GuideRow label="Readiness rings">
-		<ReadinessRing percent={62} color="lavender" />
-		<ReadinessRing percent={18} color="peach" label="secure" />
 	</GuideRow>
 	<GuideRow label="Day bars (Plan)">
 		<div class="wide stack">
