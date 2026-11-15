@@ -56,7 +56,8 @@
 
 	.line {
 		display: grid;
-		grid-template-columns: var(--touch-min) 1fr var(--touch-min);
+		/* Side slots are 44 px unless their content is wider (the course page's "Cheat sheet" stamp). */
+		grid-template-columns: minmax(var(--touch-min), auto) 1fr minmax(var(--touch-min), auto);
 		align-items: center;
 		gap: var(--gap-sm);
 		min-height: var(--touch-min);
@@ -67,6 +68,10 @@
 		place-items: center;
 		min-width: var(--touch-min);
 		min-height: var(--touch-min);
+	}
+
+	.end {
+		justify-items: end;
 	}
 
 	.middle {

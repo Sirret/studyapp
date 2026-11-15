@@ -4,10 +4,24 @@
 	The stamp-landing motion is delight (§8), not part of this component.
 -->
 <script lang="ts">
-	let { text, dashed = false }: { text: string; dashed?: boolean } = $props();
+	let {
+		text,
+		dashed = false,
+		href
+	}: {
+		text: string;
+		dashed?: boolean;
+		/** Makes the stamp a link (a resolve()d href or an in-page `#id`), with a 44 px target. */
+		href?: string;
+	} = $props();
 </script>
 
-<span class="stamp" class:dashed>{text}</span>
+{#if href}
+	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- callers pass resolve()d hrefs or #ids -->
+	<a class="stamp-link" {href}><span class="stamp" class:dashed>{text}</span></a>
+{:else}
+	<span class="stamp" class:dashed>{text}</span>
+{/if}
 
 <style>
 	.stamp {
@@ -27,6 +41,13 @@
 		text-transform: uppercase;
 		white-space: nowrap;
 		transform: rotate(var(--stamp-tilt));
+	}
+
+	.stamp-link {
+		display: inline-flex;
+		align-items: center;
+		min-height: var(--touch-min);
+		text-decoration: none;
 	}
 
 	.dashed {

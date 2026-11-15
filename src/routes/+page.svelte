@@ -17,6 +17,7 @@
 	import PawLoader from '#lib/ui/delight/PawLoader.svelte';
 	import { effectOn } from '#lib/ui/delight/delight.ts';
 	import BottomNav from '#lib/ui/layout/BottomNav.svelte';
+	import { bottomNavHrefs } from '#lib/ui/layout/nav-hrefs.ts';
 	import Row from '#lib/ui/layout/Row.svelte';
 	import Screen from '#lib/ui/layout/Screen.svelte';
 	import Stack from '#lib/ui/layout/Stack.svelte';
@@ -27,12 +28,7 @@
 	import Icon from '#lib/ui/primitives/Icon.svelte';
 	import { X } from '@lucide/svelte';
 
-	/** Den tabs (DESIGN §7 BottomNav); the Shelf is the course list below until 8.6 adds its screen. */
-	const navHrefs = {
-		den: resolve('/'),
-		shelf: `${resolve('/')}#shelf`,
-		import: resolve('/import')
-	};
+	const navHrefs = bottomNavHrefs();
 
 	/** Today (DESIGN §12 Home, BUILD_PLAN §9): the planner's minutes per course, shortfall, rest. */
 	let plan = $state<TodayPlanView | null>(null);

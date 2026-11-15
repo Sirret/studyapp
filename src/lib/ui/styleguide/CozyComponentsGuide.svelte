@@ -11,6 +11,7 @@
 	import HangingTag from '../components/HangingTag.svelte';
 	import KeyTerm from '../components/KeyTerm.svelte';
 	import ModeDoor from '../components/ModeDoor.svelte';
+	import ModeDoorRow from '../components/ModeDoorRow.svelte';
 	import PawRing from '../components/PawRing.svelte';
 	import PawTrail from '../components/PawTrail.svelte';
 	import ReadinessMeter from '../components/ReadinessMeter.svelte';
@@ -32,11 +33,21 @@
 			<ModeDoor mode="play" hint="Coming soon" hasWork onclick={noop} />
 		</div>
 	</GuideRow>
-	<GuideRow label="Stamps (solid, dashed)">
+	<GuideRow label="Mode door row (course page: three doors in one row)">
+		<div class="wide">
+			<ModeDoorRow>
+				<ModeDoor mode="learn" hint="3 parts to learn" hasWork onclick={noop} />
+				<ModeDoor mode="practice" hint="12 cards due" hasWork onclick={noop} />
+				<ModeDoor mode="exam" hint="In 4 days" href="#cozy-components" />
+			</ModeDoorRow>
+		</div>
+	</GuideRow>
+	<GuideRow label="Stamps (solid, dashed, link)">
 		<Stamp text="Exam trap" />
 		<Stamp text="Next" />
 		<Stamp text="Added" dashed />
 		<Stamp text="Coming soon · Phase 11" dashed />
+		<Stamp text="Cheat sheet" dashed href="#cozy-components" />
 	</GuideRow>
 	<GuideRow label="Trap aside and key term">
 		<div class="wide">
@@ -48,10 +59,11 @@
 			</TrapAside>
 		</div>
 	</GuideRow>
-	<GuideRow label="Hero (with and without snow) and section heading">
+	<GuideRow label="Hero (with and without snow, with eyebrow) and section heading">
 		<div class="wide stack">
 			<Hero title="Welcome back." subline="Snow's still falling. Your place is kept." snow />
 			<Hero title="Welcome." />
+			<Hero eyebrow="Course · 42 cards" title="Data Communication & Networks" />
 			<SectionHeading title="Your shelf">
 				{#snippet action()}<a href="#cozy-components">+ Add</a>{/snippet}
 			</SectionHeading>

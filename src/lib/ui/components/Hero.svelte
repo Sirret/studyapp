@@ -1,6 +1,7 @@
 <!--
 	Hero greeting (DESIGN §5 display, §1 ornament budget): the IM Fell italic screen title plus a
-	Literata subline, for Home, Welcome and summaries only. `snow` lays the §8 SnowFall behind it
+	Literata subline (and an optional Courier eyebrow), for Home, Welcome, the course page and
+	summaries only. `snow` lays the §8 SnowFall behind it
 	(callers pass `effectOn('snowFall', level)`; it is off under reduced motion by itself).
 -->
 <script lang="ts">
@@ -9,12 +10,20 @@
 	let {
 		title,
 		subline,
+		eyebrow,
 		snow = false
-	}: { title: string; subline?: string; snow?: boolean } = $props();
+	}: {
+		title: string;
+		subline?: string;
+		/** A Courier uppercase line above the title, e.g. "Course · 42 cards". */
+		eyebrow?: string;
+		snow?: boolean;
+	} = $props();
 </script>
 
 <header class="hero">
 	{#if snow}<SnowFall count={6} />{/if}
+	{#if eyebrow}<p class="eyebrow">{eyebrow}</p>{/if}
 	<h2>{title}</h2>
 	{#if subline}<p>{subline}</p>{/if}
 </header>
@@ -43,6 +52,14 @@
 		font-family: var(--font-body);
 		font-size: var(--type-body-size);
 		line-height: var(--type-body-leading);
+	}
+
+	.eyebrow {
+		font-family: var(--font-label);
+		font-size: var(--type-label-size);
+		font-weight: var(--type-label-weight);
+		letter-spacing: var(--type-label-tracking-wide);
+		text-transform: uppercase;
 	}
 
 	@media (min-width: 1024px) {

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { APP_SHORT_NAME } from '#lib/config/defaults.ts';
 	import type { CardStatus, CourseId, ExamFormat } from '#lib/db/schemas/common.ts';
 	import { logger } from '#lib/services/app.ts';
 	import type { CourseToday } from '#lib/services/course-types.ts';
@@ -10,17 +11,27 @@
 	import UndoImport from '#lib/ui/card-list/UndoImport.svelte';
 	import Banner from '#lib/ui/components/Banner.svelte';
 	import EmptyState from '#lib/ui/components/EmptyState.svelte';
+	import Hero from '#lib/ui/components/Hero.svelte';
+	import ModeDoor from '#lib/ui/components/ModeDoor.svelte';
+	import ModeDoorRow from '#lib/ui/components/ModeDoorRow.svelte';
+	import SectionHeading from '#lib/ui/components/SectionHeading.svelte';
+	import Stamp from '#lib/ui/components/Stamp.svelte';
 	import CourseMapPanel from '#lib/ui/course-map/CourseMapPanel.svelte';
+	import { courseDoors, type DoorAction } from '#lib/ui/course-map/doors.ts';
 	import SpeechBubble from '#lib/ui/components/SpeechBubble.svelte';
 	import StatusBadge from '#lib/ui/components/StatusBadge.svelte';
 	import StickyNote from '#lib/ui/components/StickyNote.svelte';
 	import Yuki from '#lib/ui/components/yuki/Yuki.svelte';
 	import PawLoader from '#lib/ui/delight/PawLoader.svelte';
+	import BottomNav from '#lib/ui/layout/BottomNav.svelte';
+	import { bottomNavHrefs } from '#lib/ui/layout/nav-hrefs.ts';
 	import Row from '#lib/ui/layout/Row.svelte';
 	import Screen from '#lib/ui/layout/Screen.svelte';
 	import Stack from '#lib/ui/layout/Stack.svelte';
 	import TopBar from '#lib/ui/layout/TopBar.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import Icon from '#lib/ui/primitives/Icon.svelte';
+	import { ArrowLeft } from '@lucide/svelte';
 	import ExamForm from './ExamForm.svelte';
 	import PlanCards from './PlanCards.svelte';
 	import type { PageProps } from './$types';
@@ -80,6 +91,7 @@
 
 	/** Starts a session and opens it, coming back here when it ends. */
 	async function start(which: 'review' | 'block2'): Promise<void> {
+		if (starting !== null) return;
 		starting = which;
 		try {
 			const plans = await service();
@@ -96,6 +108,22 @@
 		}
 	}
 
+	/** A door's link: a unit to learn or a section of this page; today's review is a button. */
+	function doorHref(action: DoorAction): string | undefined {
+		switch (action.kind) {
+			case 'unit':
+				return resolve('/learn/[courseId]/[unitKey]', { courseId, unitKey: action.unitKey });
+			case 'scroll':
+				return `#${action.target}`;
+			case 'review':
+				return undefined;
+		}
+	}
+
+	const totalCards = $derived(
+		Object.values(today?.counts ?? {}).reduce((sum, count) => sum + count, 0)
+	);
+
 	const order: CardStatus[] = [
 		'learning',
 		'one-night',
@@ -108,8 +136,19 @@
 
 <svelte:head><title>{today?.course.name ?? 'Course'}</title></svelte:head>
 
-<Screen>
-	{#snippet top()}<TopBar title={today?.course.name ?? 'Course'} />{/snippet}
+<Screen nav>
+	{#snippet top()}
+		<TopBar title={APP_SHORT_NAME} wordmark>
+			{#snippet leading()}
+				<Button variant="ghost" size="icon" href={resolve('/')} aria-label="Back">
+					<Icon icon={ArrowLeft} size="nav" />
+				</Button>
+			{/snippet}
+			{#snippet trailing()}
+				{#if today?.map?.cheat}<Stamp text="Cheat sheet" dashed href="#cheat-sheet" />{/if}
+			{/snippet}
+		</TopBar>
+	{/snippet}
 	{#if failed}
 		<StickyNote title="This course didn't load">
 			Reload the page to try again. Nothing was lost.
@@ -120,6 +159,7 @@
 			{#snippet action()}<PawLoader />{/snippet}
 		</EmptyState>
 	{:else}
+		<Hero eyebrow="Course · {countOf(totalCards, 'card')}" title={today.course.name} />
 		{#if sleepReminder}
 			<StickyNote title="That's what today can hold">
 				You've done today's planned work. Sleep now — it's what makes it stick. You can keep going
@@ -140,6 +180,17 @@
 				/>
 			</Row>
 		{/if}
+		<ModeDoorRow>
+			{#each courseDoors(today) as door (door.mode)}
+				<ModeDoor
+					mode={door.mode}
+					hint={door.hint}
+					hasWork={door.hasWork}
+					href={doorHref(door.action)}
+					onclick={door.action.kind === 'review' ? () => start('review') : undefined}
+				/>
+			{/each}
+		</ModeDoorRow>
 		<Row gap="sm">
 			{#each order.filter((status) => (today?.counts[status] ?? 0) > 0) as status (status)}
 				<span><StatusBadge {status} /> {today.counts[status]}</span>
@@ -151,6 +202,7 @@
 				usually helps.
 			</StickyNote>
 		{/each}
+		<SectionHeading title="Today" id="plan" />
 		<PlanCards
 			{today}
 			{starting}
@@ -170,8 +222,9 @@
 			<UndoImport last={lastImport} busy={undoing} onundo={undoImport} />
 		{/if}
 		{#if today.map}
-			<CourseMapPanel map={today.map} />
+			<CourseMapPanel map={today.map} id="cheat-sheet" />
 		{/if}
+		<SectionHeading title="Exam" id="exam" />
 		<Stack gap="md">
 			{#key `${today.course.examDate}-${today.course.examTime}-${today.course.examFormat}`}
 				<ExamForm
@@ -184,4 +237,5 @@
 			<Button variant="ghost" href={resolve('/')}>Back to Today</Button>
 		</Stack>
 	{/if}
+	<BottomNav active="shelf" hrefs={bottomNavHrefs()} />
 </Screen>
