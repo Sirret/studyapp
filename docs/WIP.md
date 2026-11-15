@@ -12,6 +12,7 @@
 | 2026-11-15 | Design reskin | 3 home/welcome | Opus 5.5 | Hero + SectionHeading components (guide), home: wordmark TopBar (short name), Welcome/Welcome back hero with SnowFall, Your shelf heading, ReadinessMeter on course cards (ReadinessRing deleted), BottomNav Den; unit 1857/1857, e2e layout+pwa+planner+session 21/22 (1 timeout passed alone, logged) | 9 | Step 3 screens: import | 528ae1d |
 | 2026-11-15 | Design reskin | 3 import | Opus 5.5 | ImportStep = SectionHeading + Courier "Step n" (no card), checklist = "Course map" + ChecklistRow (new `meta`/`label` props) per topic, @missing = TrapAside "Couldn't read", "Have you read these yet?" SectionHeading, Add to course meta = card count; legacy tokens gone from import; unit 1857/1857, e2e import+cards+course-map+layout 39/39 | 6 | Step 3 screens: course page + map/cheat sheet | f303df2 |
 | 2026-11-15 | Design reskin | 3 course page | Opus 5.5 | Hero eyebrow + course title, ModeDoorRow (Learn/Practice/Exam prep as shortcuts, doors.ts + test), Today/Exam SectionHeadings, Cheat sheet stamp in TopBar (side slots grow), CourseMapPanel collapsible How it connects + outlined cheat table, BottomNav Shelf; unit 1864/1864, e2e course-map+modes+planner+layout 19/19 (2 load failures on 2 workers logged) | 13 | Step 3 screens: learn + study | f6b41ea |
+| 2026-11-15 | Design reskin | 3 learn + study | Opus 5.5 | Learn: breadcrumb + back arrow, PawTrail with step meta, Hero title, no card, Done reading / Start PawButtons with Courier meta; session TopBar: course breadcrumb + phase (colour chip gone); unit 1864/1864, e2e modes+session+layout+logging 18/20 (2 load failures passed alone, logged) | 4 | Step 3 screens: exam prep, planner, one-night | d5a2557 |
 
 ## Task
 Reskin the app to the cozy design. **Spec: `docs/DESIGN.md` (read in full; authoritative).** Reference art: `docs/design/yuki-cozy.svg`, screenshots in `docs/design/screens/` (DESIGN.md wins over screenshots; numbers in screenshots are placeholders). Do not read old design notes. **No new features.** Base commit (reskin start): `5dfa380`.
@@ -30,7 +31,7 @@ Stop and ask the user if DESIGN.md is ambiguous or a value fails contrast in pra
   - [x] home/welcome (528ae1d)
   - [x] import (f303df2)
   - [x] course page + map/cheat sheet (f6b41ea)
-  - [x] learn + study screens (HASH)
+  - [x] learn + study screens (d5a2557)
   - [ ] exam prep, planner, one-night
   - [ ] card list
   - [ ] desktop Sidebar layout (§10)
