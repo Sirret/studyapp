@@ -5,6 +5,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 2026-11-15 | Design reskin | 0 Docs | Opus 5.5 | Phase row added, temp design notes removed, rule 20/reviewer → yuki-cozy.svg, wolf.svg deleted, screens/ committed | 8 | Step 1 Tokens + fonts + theme setting | 8c7ecb4 |
 | 2026-11-15 | Design reskin | 1 Tokens | Opus 5.5 | DESIGN §3–§6 tokens, light/lamp themes + legacy aliases, 4 self-hosted fonts precached, style guide tokens section; unit 1856/1857 (1 timeout logged), layout+pwa e2e 18/18 | 33 | Step 2a Primitives | 4110b89 |
+| 2026-11-15 | Design reskin | 2a Primitives | Opus 5.5 | PawButton/secondary/link Button, Card, Chip, Input, Toggle, Checkbox, Select, TextArea, FileButton, Segmented on §4 names; Paw (§7 glyph) + Snowflake → primitives; 4 legacy aliases gone; unit 1857/1857, layout+session+import e2e 30/30 | 20 | Step 2b Components (ask ModeDoor label colour) | 6f410db |
 
 ## Task
 Reskin the app to the cozy design. **Spec: `docs/DESIGN.md` (read in full; authoritative).** Reference art: `docs/design/yuki-cozy.svg`, screenshots in `docs/design/screens/` (DESIGN.md wins over screenshots; numbers in screenshots are placeholders). Do not read old design notes. **No new features.** Base commit (reskin start): `5dfa380`.
@@ -14,7 +15,7 @@ Stop and ask the user if DESIGN.md is ambiguous or a value fails contrast in pra
 ## Checklist
 - [x] 0. Docs (8c7ecb4): BUILD_PLAN §10 phase-status row "Design reskin | In progress | DESIGN.md" before 8.6; remove the temporary "DESIGN.md being rewritten / tokens-only with extra weight" notes (CLAUDE.md rule 20, HANDOFF, SESSION_NOTES §G, BUILD_PLAN §10 "Design status"); keep the tokens-only rule; rule 20 → `docs/design/yuki-cozy.svg`; delete `docs/design/wolf.svg`. Checkpoint.
 - [x] 1. Tokens (4110b89): rewrite `src/lib/design/tokens/base.css`, `semantic.css`, `themes/light.css`; add `themes/lamp.css` (rename `dark.css`) with exactly DESIGN §3–§6 values. Theme setting: light / lamp-light / follow system. Self-host the four fonts (§5, Latin subset, listed weights only), precached by the SW; no Google Fonts at runtime; shell under `SHELL_JS_BUDGET_KB`. Checkpoint.
-- [x] 2a. Primitives (§2 layer 5, §7) (HASH2A) in `src/lib/ui/primitives/`, in `/dev/ui` both themes first; visual-regression snapshots updated in the same commit. Checkpoint.
+- [x] 2a. Primitives (§2 layer 5, §7) (6f410db) in `src/lib/ui/primitives/`, in `/dev/ui` both themes first; visual-regression snapshots updated in the same commit. Checkpoint.
 - [ ] 2b. Components (§7) in `src/lib/ui/components/`. Checkpoint.
 - [ ] 2c. Delight (§8) in `src/lib/ui/delight/` + Yuki rebuilt from `yuki-cozy.svg` (§9 states; keep group ids `#tail #body #head #ear-l #ear-r #eyes #bandana #zz`). Checkpoint.
 - [ ] 3. Reskin screens (no styles beyond grid placement; a needed style edit means a missing component). Checkpoint per group:
