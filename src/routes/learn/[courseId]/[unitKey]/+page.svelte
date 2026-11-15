@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ArrowLeft } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { PRETEST_AUTOHIDE_SKIPS } from '#lib/config/defaults.ts';
@@ -7,15 +8,15 @@
 	import type { LearnStepView, LearnUnitView } from '#lib/services/course-types.ts';
 	import Banner from '#lib/ui/components/Banner.svelte';
 	import EmptyState from '#lib/ui/components/EmptyState.svelte';
-	import ProgressStrip from '#lib/ui/components/ProgressStrip.svelte';
+	import Hero from '#lib/ui/components/Hero.svelte';
+	import PawTrail from '#lib/ui/components/PawTrail.svelte';
 	import StickyNote from '#lib/ui/components/StickyNote.svelte';
 	import PawLoader from '#lib/ui/delight/PawLoader.svelte';
-	import Row from '#lib/ui/layout/Row.svelte';
 	import Screen from '#lib/ui/layout/Screen.svelte';
 	import Stack from '#lib/ui/layout/Stack.svelte';
 	import TopBar from '#lib/ui/layout/TopBar.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import Card from '#lib/ui/primitives/Card.svelte';
+	import Icon from '#lib/ui/primitives/Icon.svelte';
 	import { countOf } from '#lib/util/plural.ts';
 	import type { PageProps } from './$types';
 
@@ -95,6 +96,12 @@
 		}
 	}
 
+	/** The Courier meta on the step's button: what the tap leads into. */
+	function stepMeta(step: LearnStepView | undefined): string | undefined {
+		if (!step || step.step === 'read') return undefined;
+		return step.step === 'pretrain' ? countOf(step.cards, 'term') : countOf(step.cards, 'question');
+	}
+
 	const titles: Record<LearnStepView['step'], string> = {
 		pretrain: 'Key terms first',
 		pretest: 'Warm-up, not graded',
@@ -107,11 +114,17 @@
 
 <Screen>
 	{#snippet top()}
-		<TopBar title={unit?.unit.title ?? 'Learn'}>
-			{#snippet below()}{#if unit}<ProgressStrip
-						done={Math.min(data.step, unit.steps.length)}
-						total={unit.steps.length}
-					/>{/if}{/snippet}
+		<TopBar title={unit ? `Learn · ${unit.unit.title}` : 'Learn'}>
+			{#snippet leading()}
+				<Button
+					variant="ghost"
+					size="icon"
+					href={resolve('/course/[courseId]', { courseId: data.courseId })}
+					aria-label="Course page"
+				>
+					<Icon icon={ArrowLeft} size="nav" />
+				</Button>
+			{/snippet}
 		</TopBar>
 	{/snippet}
 	{#if missing && data.step > 0}
@@ -145,37 +158,42 @@
 				>{/snippet}
 		</StickyNote>
 	{:else}
-		<p>Step {data.step + 1} of {unit.steps.length} · ~{unit.unit.minutes} min in all</p>
 		{@const heading =
 			current.step === 'read' ? (unit.unit.section ?? unit.unit.title) : titles[current.step]}
-		<Card label={heading}>
-			<Stack gap="md">
-				<h2 data-step-heading>{heading}</h2>
-				{#if current.step === 'read'}
-					{#if current.generated}
-						<Banner tone="warning">Written by a chatbot. Check it against your syllabus.</Banner>
-					{/if}
-					<p data-chunk-text>{current.text}</p>
-					<Button full onclick={next} data-read-done>I've read it</Button>
-				{:else if pretestHidden}
-					<p>Warm-ups are hidden for now, since you skipped them.</p>
-					<Button full onclick={next}>Continue</Button>
-				{:else}
-					<p>
-						{#if current.step === 'pretrain'}Meet the {current.cards} key terms before the reading.
-						{:else if current.step === 'pretest'}Guess {current.cards} answers before you read. It doesn't
-							count; it just primes you.
-						{:else}{current.cards} questions on what you just read. Practice only — tomorrow's retest
-							is what counts.{/if}
-					</p>
-					<Row gap="sm">
-						<Button full loading={starting} onclick={startStep} data-start-step>Start</Button>
-						{#if current.step === 'pretest'}
-							<Button variant="ghost" onclick={skipPretest} data-skip-pretest>Skip</Button>
-						{/if}
-					</Row>
+		<Stack gap="md">
+			<PawTrail
+				total={unit.steps.length}
+				current={data.step}
+				label={`Step ${data.step + 1} of ${unit.steps.length}`}
+				meta={`Step ${data.step + 1} of ${unit.steps.length} · ~${unit.unit.minutes} min`}
+			/>
+			<div data-step-heading><Hero title={heading} /></div>
+			{#if current.step === 'read'}
+				{#if current.generated}
+					<Banner tone="warning">Written by a chatbot. Check it against your syllabus.</Banner>
 				{/if}
-			</Stack>
-		</Card>
+				<p data-chunk-text>{current.text}</p>
+				<Button full onclick={next} meta={stepMeta(unit.steps[data.step + 1])} data-read-done
+					>Done reading</Button
+				>
+			{:else if pretestHidden}
+				<p>Warm-ups are hidden for now, since you skipped them.</p>
+				<Button full onclick={next}>Continue</Button>
+			{:else}
+				<p>
+					{#if current.step === 'pretrain'}Meet the {current.cards} key terms before the reading.
+					{:else if current.step === 'pretest'}Guess {current.cards} answers before you read. It doesn't
+						count; it just primes you.
+					{:else}{current.cards} questions on what you just read. Practice only — tomorrow's retest is
+						what counts.{/if}
+				</p>
+				<Button full loading={starting} onclick={startStep} meta={stepMeta(current)} data-start-step
+					>Start</Button
+				>
+				{#if current.step === 'pretest'}
+					<Button variant="ghost" onclick={skipPretest} data-skip-pretest>Skip the warm-up</Button>
+				{/if}
+			{/if}
+		</Stack>
 	{/if}
 </Screen>

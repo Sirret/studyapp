@@ -1,6 +1,7 @@
 <!--
-	The study session's top bar (DESIGN §4, §6): close, course chip, phase label, Yuki reacting in
-	the header (still between reactions), and the progress strip with Yuki trotting along it.
+	The study session's top bar (DESIGN §7 TopBar): close, the course as a Courier breadcrumb with
+	the phase beside it, Yuki small in the header (still between reactions; never in the answer
+	area, §9), and the paw-trail progress strip.
 -->
 <script lang="ts">
 	import { X } from '@lucide/svelte';
@@ -13,7 +14,6 @@
 	import Yuki from '#lib/ui/components/yuki/Yuki.svelte';
 	import type { YukiState } from '#lib/ui/components/yuki/yuki.ts';
 	import TopBar from '#lib/ui/layout/TopBar.svelte';
-	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import Icon from '#lib/ui/primitives/Icon.svelte';
 
 	let {
@@ -23,7 +23,7 @@
 	}: { view: StudyView; yuki: { state: YukiState; key: number }; companion: boolean } = $props();
 </script>
 
-<TopBar>
+<TopBar title={view.course.name}>
 	{#snippet leading()}
 		<Button
 			variant="ghost"
@@ -35,7 +35,6 @@
 		</Button>
 	{/snippet}
 	{#snippet middle()}
-		<Chip color={view.course.color}>{view.course.name}</Chip>
 		<PhaseLabel phase={view.phase} />
 	{/snippet}
 	{#snippet trailing()}
