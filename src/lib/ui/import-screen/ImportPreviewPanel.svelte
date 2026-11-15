@@ -11,6 +11,7 @@
 	import { copyText } from '#lib/util/clipboard.ts';
 	import { countOf } from '#lib/util/plural.ts';
 	import Disclosure from '../components/Disclosure.svelte';
+	import SectionHeading from '../components/SectionHeading.svelte';
 	import StickyNote from '../components/StickyNote.svelte';
 	import Row from '../layout/Row.svelte';
 	import Stack from '../layout/Stack.svelte';
@@ -197,7 +198,7 @@
 
 		{#if preview.topics.length > 0}
 			<Stack gap="sm">
-				<h3>Have you read these yet?</h3>
+				<SectionHeading title="Have you read these yet?" />
 				<p class="muted">
 					Haven't read: Yuki teaches it step by step first. Read it: straight to quizzes.
 				</p>
@@ -251,7 +252,6 @@
 
 <style>
 	h2,
-	h3,
 	p {
 		margin: 0;
 	}
@@ -262,13 +262,8 @@
 		font-weight: var(--type-heading-weight);
 	}
 
-	h3 {
-		font-size: var(--type-body-size);
-		font-weight: var(--type-strong-weight);
-	}
-
 	.muted {
-		color: var(--text-muted);
+		color: var(--text-soft);
 		font-size: var(--type-small-size);
 	}
 </style>

@@ -109,6 +109,8 @@
 			/>
 			<ChecklistRow title="Network layer" state="done" />
 			<ChecklistRow title="Application layer" state="todo" />
+			<ChecklistRow title="Web security" state="done" meta="imported" label="Imported" />
+			<ChecklistRow title="Digital forensics" state="todo" meta="to come" label="To come" />
 		</div>
 	</GuideRow>
 </GuideSection>

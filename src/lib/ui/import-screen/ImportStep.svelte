@@ -1,40 +1,33 @@
 <!--
-	One numbered step of the import screen (BUILD_PLAN §10 row 8.5, "numbered steps"): a card with
-	a step number and a short title, so the screen reads top to bottom as 1, 2, 3, 4.
+	One numbered step of the import screen (BUILD_PLAN §10 row 8.5, "numbered steps"), on the cozy
+	look (DESIGN §7, mockup "Import · questions"): an IM Fell SC section heading with a Courier
+	"Step 1" label, straight on the paper, so the screen reads top to bottom as 1, 2, 3.
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import SectionHeading from '../components/SectionHeading.svelte';
 	import Stack from '../layout/Stack.svelte';
-	import Card from '../primitives/Card.svelte';
 
 	let { step, title, children }: { step: number; title: string; children: Snippet } = $props();
 </script>
 
-<Card tag="section" label={title}>
+<section aria-label={title}>
 	<Stack gap="md">
-		<h2><span aria-hidden="true">{step}</span>{title}</h2>
+		<SectionHeading {title}>
+			{#snippet action()}<span class="step">Step {step}</span>{/snippet}
+		</SectionHeading>
 		{@render children()}
 	</Stack>
-</Card>
+</section>
 
 <style>
-	h2 {
-		display: flex;
-		align-items: center;
-		gap: var(--gap-sm);
-		margin: 0;
-		font-size: var(--type-body-size);
-		font-weight: var(--type-strong-weight);
-	}
-
-	span {
-		display: inline-grid;
-		place-items: center;
-		width: var(--chip-height);
-		height: var(--chip-height);
-		border-radius: var(--r-pill);
-		background: var(--primary-soft);
-		color: var(--primary);
-		font-size: var(--type-small-size);
+	.step {
+		color: var(--text-soft);
+		font-family: var(--font-label);
+		font-size: var(--type-label-size-lg);
+		font-weight: var(--type-label-weight);
+		letter-spacing: var(--type-label-tracking);
+		text-transform: uppercase;
+		white-space: nowrap;
 	}
 </style>

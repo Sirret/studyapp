@@ -266,6 +266,7 @@
 		<Button
 			full
 			size="session"
+			meta={countOf(preview.cardCount, 'card')}
 			disabled={preview.topics.length === 0 || isBusy}
 			onclick={commitImport}
 		>
