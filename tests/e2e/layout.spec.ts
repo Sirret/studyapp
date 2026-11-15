@@ -50,6 +50,24 @@ test.describe('layout', { tag: '@both' }, () => {
 		await expectNoSidewaysScroll(page);
 	});
 
+	test('one main nav: the Sidebar from 1024 px, else the BottomNav (DESIGN §10)', async ({
+		page
+	}) => {
+		await page.goto('/');
+		const desktop = (page.viewportSize()?.width ?? 0) >= 1024;
+		const nav = page.getByRole('navigation', { name: 'Main' });
+		await expect(nav).toHaveCount(1);
+		await expect(nav.getByRole('link', { name: 'Den' })).toHaveAttribute('aria-current', 'page');
+		const box = await nav.boundingBox();
+		const main = await page.getByRole('main').boundingBox();
+		expect(box).not.toBeNull();
+		expect(main).not.toBeNull();
+		// Desktop: a column left of the content. Mobile: a bar along the window's bottom edge.
+		if (desktop) expect(box!.x + box!.width).toBeLessThanOrEqual(main!.x);
+		else expect(box!.y + box!.height).toBeCloseTo(page.viewportSize()?.height ?? 0, 0);
+		await expectNoSidewaysScroll(page);
+	});
+
 	test('Import fits, with its preview', async ({ page }) => {
 		await page.goto('/import');
 		await page.getByLabel('New course').fill('Networks');

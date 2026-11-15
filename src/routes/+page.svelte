@@ -20,6 +20,7 @@
 	import { bottomNavHrefs } from '#lib/ui/layout/nav-hrefs.ts';
 	import Row from '#lib/ui/layout/Row.svelte';
 	import Screen from '#lib/ui/layout/Screen.svelte';
+	import Sidebar from '#lib/ui/layout/Sidebar.svelte';
 	import Stack from '#lib/ui/layout/Stack.svelte';
 	import TopBar from '#lib/ui/layout/TopBar.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -118,6 +119,7 @@
 </script>
 
 <Screen nav>
+	{#snippet side()}<Sidebar active="den" hrefs={navHrefs} />{/snippet}
 	{#snippet top()}<TopBar title={APP_SHORT_NAME} wordmark />{/snippet}
 	{#if failed}
 		<StickyNote title="Today's plan didn't load">

@@ -6,6 +6,7 @@
 	import BottomNav from '../layout/BottomNav.svelte';
 	import Grid from '../layout/Grid.svelte';
 	import Row from '../layout/Row.svelte';
+	import Sidebar from '../layout/Sidebar.svelte';
 	import Stack from '../layout/Stack.svelte';
 	import TopBar from '../layout/TopBar.svelte';
 	import Card from '../primitives/Card.svelte';
@@ -62,10 +63,19 @@
 		<div class="wide"><BottomNav active="den" {hrefs} fixed={false} /></div>
 		<div class="wide"><BottomNav active="shelf" hrefs={withPlay} fixed={false} /></div>
 	</GuideRow>
+	<GuideRow label="Sidebar (desktop from 1024 px; the same tabs, Yuki small at the bottom)">
+		<div class="sidebar"><Sidebar active="shelf" {hrefs} /></div>
+	</GuideRow>
 </GuideSection>
 
 <style>
 	.wide {
 		width: 100%;
+	}
+
+	.sidebar {
+		width: 100%;
+		max-width: var(--sidebar-width);
+		height: var(--size-px-560);
 	}
 </style>

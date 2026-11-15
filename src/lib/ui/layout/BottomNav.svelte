@@ -2,33 +2,25 @@
 	Bottom navigation, mobile (DESIGN §7 BottomNav): a sunk-paper bar with a 1.5 px top outline and
 	the tabs Den (home), Shelf (courses) and Import notes, plus Play once Phase 11 passes its href.
 	The active tab is weight 600 with a 10 px accent paw under its label (never colour alone).
-	60 px plus the safe-area inset. Hidden during a study session.
+	60 px plus the safe-area inset. Hidden during a study session. From 1024 px the fixed bar hides
+	and the Sidebar (same tabs) takes over, so a screen with a BottomNav also passes Screen a Sidebar.
 -->
 <script lang="ts">
-	import { FileUp, Gamepad2, House, Library } from '@lucide/svelte';
 	import Icon from '../primitives/Icon.svelte';
 	import Paw from '../primitives/Paw.svelte';
-
-	type Tab = 'den' | 'shelf' | 'import' | 'play';
+	import { shownTabs, type NavHrefs, type NavTab } from './nav-tabs.ts';
 
 	let {
 		active,
 		hrefs,
 		fixed = true
 	}: {
-		active: Tab;
-		/** resolve()d hrefs; Play shows only when its href is given (Phase 11). */
-		hrefs: Record<Exclude<Tab, 'play'>, string> & { play?: string };
+		active: NavTab;
+		hrefs: NavHrefs;
 		fixed?: boolean;
 	} = $props();
 
-	const TABS = [
-		{ id: 'den', label: 'Den', icon: House },
-		{ id: 'shelf', label: 'Shelf', icon: Library },
-		{ id: 'import', label: 'Import notes', icon: FileUp },
-		{ id: 'play', label: 'Play', icon: Gamepad2 }
-	] as const;
-	const shown = $derived(TABS.filter((tab) => hrefs[tab.id] !== undefined));
+	const shown = $derived(shownTabs(hrefs));
 </script>
 
 <nav class="nav" class:fixed aria-label="Main" style:--tabs={shown.length}>
@@ -64,6 +56,12 @@
 		position: fixed;
 		inset: auto 0 0;
 		z-index: var(--z-sticky);
+	}
+
+	@media (min-width: 1024px) {
+		.fixed {
+			display: none;
+		}
 	}
 
 	.tab {

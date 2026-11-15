@@ -27,6 +27,7 @@
 	import { bottomNavHrefs } from '#lib/ui/layout/nav-hrefs.ts';
 	import Row from '#lib/ui/layout/Row.svelte';
 	import Screen from '#lib/ui/layout/Screen.svelte';
+	import Sidebar from '#lib/ui/layout/Sidebar.svelte';
 	import Stack from '#lib/ui/layout/Stack.svelte';
 	import TopBar from '#lib/ui/layout/TopBar.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -37,6 +38,7 @@
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
+	const navHrefs = bottomNavHrefs();
 	const courseId = $derived(data.courseId as CourseId);
 
 	let today = $state<CourseToday | null>(null);
@@ -137,6 +139,7 @@
 <svelte:head><title>{today?.course.name ?? 'Course'}</title></svelte:head>
 
 <Screen nav>
+	{#snippet side()}<Sidebar active="shelf" hrefs={navHrefs} />{/snippet}
 	{#snippet top()}
 		<TopBar title={APP_SHORT_NAME} wordmark>
 			{#snippet leading()}
@@ -239,5 +242,5 @@
 			<Button variant="ghost" href={resolve('/')}>Back to Today</Button>
 		</Stack>
 	{/if}
-	<BottomNav active="shelf" hrefs={bottomNavHrefs()} />
+	<BottomNav active="shelf" hrefs={navHrefs} />
 </Screen>
