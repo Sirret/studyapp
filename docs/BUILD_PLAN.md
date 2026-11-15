@@ -109,7 +109,7 @@ scripts/
 test-results/                 # gitignored; written by every test run
 docs/
   CONCEPT.md  BUILD_PLAN.md  DATA_MODEL.md  DESIGN.md  erd.png  PROGRESS.md
-  design/wolf.svg  design/wolf-preview.html   # Yuki reference art and animation states
+  design/yuki-cozy.svg  design/screens/        # Yuki reference art; reference screenshots
 .claude/agents/
   spec-test-writer.md         # writes tests from the spec before implementation
   reviewer.md                 # read-only review at the end of each phase
@@ -777,13 +777,14 @@ Rows are in build order. Order and status are maintained here. The table below i
 | — | Fix pass (tech-check + live bugs) | Done | SESSION_NOTES §A (A1–A10), §B |
 | — | Import v2 | Done | PROMPTS.md |
 | 8.5 | Cards & import fixes | Done | BUILD_PLAN §10 row 8.5 + SESSION_NOTES |
+| — | Design reskin | In progress | DESIGN.md |
 | 8.6 | Learn & Practice | Next | SESSION_NOTES §C, §D, §J, §K |
 | 6 | Diagrams | Outstanding | BUILD_PLAN §7 |
 | 9 | Transfer & offline | Not started | BUILD_PLAN §8 |
 | 10 | Polish & ship | Not started | BUILD_PLAN §10 + §11 |
 | 11 | Play | Not started | GAMES.md |
 
-**Design status:** `DESIGN.md` describes a previous direction. The cozy direction (SESSION_NOTES §G) is being prepared but DESIGN.md has not been rewritten, and its current prose is not authoritative. Until the rewrite, every new screen uses design tokens only (`src/lib/design/tokens/*`, `themes/*`) and adds new components to `/dev/ui` before using them on a screen. See section 15 and CLAUDE.md rule 20.
+**Design status:** `DESIGN.md` (cozy, SESSION_NOTES §G) is the design spec. Every screen uses design tokens only (`src/lib/design/tokens/*`, `themes/*`) and new components go into `/dev/ui` before a screen uses them. See section 15 and CLAUDE.md rule 20.
 
 | #   | Phase                            | Deliverables                                                                                                                                                                                                                                                                                   | Done when                                                                                                                                                                                           |
 | --- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
