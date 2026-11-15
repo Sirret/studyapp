@@ -1,6 +1,7 @@
 <!--
 	Paw trail (DESIGN §7, progress): a row of small paws — done = solid ink, current = accent with a
-	gentle opacity pulse (`pawin`, §8), upcoming = a dashed decorative outline — plus a Courier meta
+	gentle opacity pulse (`pawin`, §8) that drops in when it advances (`pawstep`), upcoming = a
+	dashed decorative outline — plus a Courier meta
 	line such as "§2 of 3 · 3 min". It replaces progress bars. One role="img" carries the label
 	(§11), e.g. "Section 2 of 3". `current` is 0-based; `current >= total` means all done.
 -->
@@ -46,13 +47,19 @@
 		gap: var(--gap-xs);
 	}
 
+	.paw {
+		display: inline-flex;
+	}
+
 	.done {
 		color: var(--text);
 	}
 
 	.current {
 		color: var(--accent);
-		animation: pawin var(--dur-pawin) var(--ease-linear) infinite alternate;
+		animation:
+			pawstep var(--dur-pawstep) var(--ease-out),
+			pawin var(--dur-pawin) var(--ease-linear) var(--dur-pawstep) infinite alternate;
 	}
 
 	.upcoming {
@@ -68,6 +75,16 @@
 		text-transform: uppercase;
 	}
 
+	@keyframes pawstep {
+		from {
+			transform: translateY(calc(var(--pawstep-drop) * -1)) scale(var(--pawstep-scale));
+		}
+
+		to {
+			transform: translateY(0) scale(1);
+		}
+	}
+
 	@keyframes pawin {
 		from {
 			opacity: 0.35;
@@ -80,7 +97,7 @@
 
 	@media (prefers-reduced-motion: reduce) {
 		.current {
-			animation: none;
+			animation: none !important;
 		}
 	}
 </style>

@@ -1,5 +1,5 @@
 <!--
-	Paw walk (DESIGN §11.2): once per session summary, a line of paw prints walks across the bottom
+	Paw walk (DESIGN §8): once per session summary, a line of paw prints walks across the bottom
 	of the card towards Yuki. Decorative; nothing under reduced motion.
 -->
 <script lang="ts">
@@ -33,7 +33,7 @@
 	.print {
 		position: absolute;
 		bottom: 0;
-		color: var(--primary);
+		color: var(--accent);
 		opacity: 0;
 		animation: step var(--dur-walk) var(--ease-out) forwards;
 		transform: rotate(90deg);

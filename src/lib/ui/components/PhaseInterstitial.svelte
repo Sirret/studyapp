@@ -17,7 +17,7 @@
 		discrimination: 'Now compare the look-alikes',
 		cleanup: 'Last pass over the tricky ones'
 	};
-	const state = $derived(phase === 'new' ? 'read' : 'think');
+	const state = $derived(phase === 'new' ? 'idle' : 'thinking');
 
 	$effect(() => {
 		const timer = setTimeout(ondone, PHASE_INTERSTITIAL_MS);

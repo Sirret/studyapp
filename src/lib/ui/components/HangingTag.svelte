@@ -1,6 +1,7 @@
 <!--
 	Hanging tag (DESIGN §7): a kraft label with a punched hole, tilted about 4°, with the printed
-	raised-paper shadow. Hero greetings only. The sway motion is delight (§8).
+	raised-paper shadow. Hero greetings only. It sways gently (§8 `sway`: 4° ↔ 1.5°, 5 s); still
+	under reduced motion.
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
@@ -29,6 +30,7 @@
 		letter-spacing: var(--type-heading-tracking);
 		transform: rotate(var(--tag-tilt));
 		transform-origin: left center;
+		animation: sway var(--dur-sway) ease-in-out infinite alternate;
 	}
 
 	.hole {
@@ -38,5 +40,21 @@
 		border: var(--border-dashed) solid var(--outline);
 		border-radius: var(--r-full);
 		background: var(--bg);
+	}
+
+	@keyframes sway {
+		from {
+			transform: rotate(var(--tag-tilt));
+		}
+
+		to {
+			transform: rotate(var(--sway-rest));
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.tag {
+			animation: none !important;
+		}
 	}
 </style>

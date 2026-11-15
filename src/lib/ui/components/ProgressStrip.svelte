@@ -36,7 +36,7 @@
 	{#if runner}
 		<div class="lane" aria-hidden="true">
 			<span class="runner" onanimationend={() => (trotting = false)} class:trotting>
-				<Yuki state={trotting ? 'trot' : 'idle'} size={28} still={!trotting} />
+				<Yuki state={trotting ? 'happy' : 'idle'} size={28} still={!trotting} />
 			</span>
 		</div>
 	{/if}

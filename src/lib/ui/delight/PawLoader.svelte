@@ -1,5 +1,5 @@
 <!--
-	Paw loader (DESIGN §11.2): for any wait over 300 ms, three paw prints appear in turn and loop,
+	Paw loader (DESIGN §8): for any wait over 300 ms, three paw prints appear in turn and loop,
 	in place of a spinner. Screen readers hear the label.
 -->
 <script lang="ts">
@@ -18,7 +18,7 @@
 	.loader {
 		display: inline-flex;
 		gap: var(--gap-sm);
-		color: var(--primary);
+		color: var(--accent);
 	}
 
 	.print {
@@ -36,6 +36,13 @@
 		30% {
 			opacity: 1;
 			transform: translateY(calc(var(--size-px-2) * -1));
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.print {
+			animation: none !important;
+			opacity: 1;
 		}
 	}
 </style>

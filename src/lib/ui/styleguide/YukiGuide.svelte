@@ -1,4 +1,4 @@
-<!-- Yuki in the style guide: every state side by side, plus an interstitial. Dev builds only. -->
+<!-- Yuki in the style guide (DESIGN §9): every state side by side, sizes, and an interstitial. Dev builds only. -->
 <script lang="ts">
 	import PhaseInterstitial from '../components/PhaseInterstitial.svelte';
 	import Yuki from '../components/yuki/Yuki.svelte';
@@ -10,16 +10,19 @@
 </script>
 
 <GuideSection id="yuki" title="Yuki" layer="Layer 6 — companion">
-	<GuideRow label="States (DESIGN §7.3)">
+	<GuideRow label="States (DESIGN §9)">
 		{#each YUKI_STATES as state (state)}
 			<figure class="state" data-guide-yuki={state}>
-				<Yuki {state} size={96} />
+				<Yuki {state} size={120} />
 				<figcaption>{state}</figcaption>
 			</figure>
 		{/each}
 	</GuideRow>
-	<GuideRow label="Sizes: progress 28, header 32, empty 96, interstitial 120, summary 140">
-		{#each [28, 32, 96, 120, 140] as size (size)}<Yuki state="idle" {size} still />{/each}
+	<GuideRow label="Quiet (still): small and static">
+		{#each YUKI_STATES as state (state)}<Yuki {state} size={48} still />{/each}
+	</GuideRow>
+	<GuideRow label="Sizes: small 32 / 48 / 64 (footer, sidebar, header); big 100 / 140 / 180">
+		{#each [32, 48, 64, 100, 140, 180] as size (size)}<Yuki state="idle" {size} still />{/each}
 	</GuideRow>
 	<GuideRow label="Phase interstitial (tap to dismiss; returns on reload)">
 		{#if showInterstitial}
@@ -37,7 +40,10 @@
 	}
 
 	figcaption {
-		color: var(--text-muted);
-		font-size: var(--type-caption-size);
+		color: var(--text-soft);
+		font-family: var(--font-label);
+		font-size: var(--type-label-size);
+		letter-spacing: var(--type-label-tracking);
+		text-transform: uppercase;
 	}
 </style>

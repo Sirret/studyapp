@@ -117,7 +117,7 @@
 	--lip-pressed: var(--size-px-1);
 	--press-travel: var(--size-px-2);
 
-	/* Motion (DESIGN §8; the delight and Yuki values are rebuilt in step 2c) */
+	/* Motion (DESIGN §8 delight, §9 Yuki) */
 	--dur-fast: var(--ms-120);
 	--dur-base: var(--ms-200);
 	--dur-slow: var(--ms-320);
@@ -127,45 +127,56 @@
 	--dur-paw-press: var(--ms-300);
 	--dur-check-draw: var(--ms-220);
 	--dur-burst: var(--ms-450);
+	--dur-stamp: var(--ms-450);
+	--dur-pawstep: var(--ms-400);
 	--dur-trot: var(--ms-500);
 	--dur-count-up: var(--ms-600);
 	--dur-card-flip: var(--ms-450);
+	--dur-card-fly: var(--ms-350);
 	--dur-pawin: var(--ms-2500);
+	--dur-fall: var(--ms-9000);
+	--dur-sway: var(--ms-5000);
 	--dur-flurry: var(--ms-800);
 	--dur-walk: var(--ms-1200);
+	--dur-yuki-breathe: var(--ms-4500);
+	--dur-yuki-wag: var(--ms-2400);
 	--dur-yuki-hop: var(--ms-400);
-	--dur-yuki-oops: var(--ms-600);
-	--dur-yuki-sparkle: var(--ms-700);
-	--dur-yuki-wag: var(--ms-900);
-	--dur-yuki-celebrate: var(--ms-1000);
-	--dur-yuki-twinkle: var(--ms-1100);
-	--dur-yuki-think: var(--ms-2600);
-	--dur-yuki-sway: var(--ms-2800);
-	--dur-yuki-float: var(--ms-3000);
-	--dur-yuki-breathe: var(--ms-3200);
-	--dur-yuki-sleepy: var(--ms-4800);
+	--dur-yuki-ear: var(--ms-2600);
 	--dur-yuki-blink: var(--ms-5000);
+	--dur-yuki-sleepy: var(--ms-4800);
+	--dur-yuki-zz: var(--ms-3000);
 	--ease-out: var(--curve-out);
 	--ease-bounce: var(--curve-bounce);
 	--ease-linear: var(--curve-linear);
 
-	/* Yuki's previous colours, until step 2c rebuilds Yuki */
-	--yuki-fur: var(--palette-yuki-fur);
-	--yuki-shade: var(--palette-yuki-shade);
-	--yuki-ice: var(--palette-yuki-ice);
-	--yuki-mask: var(--palette-yuki-mask);
-	--yuki-pink: var(--palette-yuki-pink);
-	--yuki-outline: var(--palette-yuki-outline);
-	--yuki-eye: var(--palette-yuki-eye);
-	--yuki-iris: var(--palette-yuki-iris);
-	--yuki-smile: var(--palette-yuki-smile);
-	--yuki-nose: var(--palette-yuki-nose);
-	--yuki-zzz: var(--palette-yuki-zzz);
-	--yuki-book: var(--palette-yuki-book);
-	--yuki-sparkle: var(--palette-gold);
-	--yuki-sparkle-alt: var(--palette-lilac);
-	--yuki-note: var(--palette-amber-soft);
-	--yuki-white: var(--palette-white);
+	/* Motion distances and angles (DESIGN §8, §9) */
+	--stamp-from: -20deg;
+	--stamp-overshoot: 0.9;
+	--stamp-scale-from: 1.7;
+	--pawstep-drop: var(--space-6);
+	--pawstep-scale: 1.25;
+	--fly-distance: 120%;
+	--fly-tilt: 12deg;
+	--fall-from: calc(var(--size-px-20) * -1);
+	--fall-to: var(--size-px-110);
+	--sway-rest: 1.5deg;
+	--yuki-breath: 1.018;
+	--yuki-wag: -11deg;
+	--yuki-wagup-low: -14deg;
+	--yuki-wagup-high: -30deg;
+	--yuki-hop: calc(var(--space-6) * -1);
+	--yuki-ear-tilt: -12deg;
+	--yuki-zz-rise: calc(var(--space-12) * -1);
+
+	/* Yuki's colours, from docs/design/yuki-cozy.svg; the same in both themes (DESIGN §9) */
+	--yuki-ink: var(--c-ink);
+	--yuki-snow: var(--c-snow);
+	--yuki-frost: var(--c-frost);
+	--yuki-frost-deep: var(--c-frost-deep);
+	--yuki-paw: var(--c-paw);
+	--yuki-blush: var(--c-blush);
+	--yuki-bandana: var(--c-oxblood);
+	--yuki-stitch: var(--c-wool);
 
 	/* Stacking */
 	--z-raised: var(--layer-1);
@@ -186,6 +197,9 @@
 		--dur-paw-press: 0ms;
 		--dur-check-draw: 0ms;
 		--dur-burst: 0ms;
+		--dur-stamp: 0ms;
+		--dur-pawstep: 0ms;
+		--dur-card-fly: 0ms;
 		--dur-trot: 0ms;
 		--dur-count-up: 0ms;
 		--dur-card-flip: 0ms;

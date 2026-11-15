@@ -1,5 +1,5 @@
 <!--
-	Snow burst (DESIGN §11.2): after a first-attempt correct, a few small snowflakes burst out from
+	Snow burst (DESIGN §8): after a first-attempt correct, a few small snowflakes burst out from
 	the check and fade. Place it over the element it bursts from; raise `key` (from 0) to play it.
 	Never blocks input (pointer-events: none); nothing under reduced motion.
 -->
@@ -38,7 +38,7 @@
 
 	.flake {
 		position: absolute;
-		color: var(--primary);
+		color: var(--decor);
 		opacity: 0;
 		animation: burst var(--dur-burst) var(--ease-out) var(--dur-check-draw) forwards;
 	}

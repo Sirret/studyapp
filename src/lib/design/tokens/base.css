@@ -26,6 +26,10 @@
 	--c-blush: #e7b3a6;
 	--c-frost: #e4e8f0;
 
+	/* Yuki's fur shading and paw pads, from docs/design/yuki-cozy.svg (DESIGN §9) */
+	--c-frost-deep: #dce3ee;
+	--c-paw: #e8e3d8;
+
 	/* Palette: lamp-light, the dark theme (DESIGN §3.2) */
 	--l-bg: #231c16;
 	--l-bg-deep: #14100c;
@@ -68,24 +72,6 @@
 	--palette-course-rose-night: #d8849a;
 	--palette-course-butter: #f3dc92;
 	--palette-course-butter-night: #cdb050;
-
-	/* Yuki's previous colours: removed when step 2c rebuilds Yuki from yuki-cozy.svg */
-	--palette-yuki-fur: #fcfbff;
-	--palette-yuki-shade: #e3e8f6;
-	--palette-yuki-ice: #d3e3f7;
-	--palette-yuki-mask: #dce5f4;
-	--palette-yuki-pink: #f6b9c4;
-	--palette-yuki-outline: #3b3663;
-	--palette-yuki-eye: #2e3c78;
-	--palette-yuki-iris: #4a68b8;
-	--palette-yuki-smile: #c3cce4;
-	--palette-yuki-nose: #2b2540;
-	--palette-yuki-zzz: #7c6cd8;
-	--palette-yuki-book: #b9a9f5;
-	--palette-gold: #f2c14e;
-	--palette-lilac: #a99bff;
-	--palette-amber-soft: #fdf3d6;
-	--palette-white: #ffffff;
 
 	/* Type families (DESIGN §5): self-hosted, Latin subset */
 	--font-im-fell: 'IM Fell English', georgia, serif;
@@ -161,6 +147,7 @@
 	--size-px-56: 56px;
 	--size-px-60: 60px;
 	--size-px-64: 64px;
+	--size-px-110: 110px;
 	--size-px-260: 260px;
 	--size-px-560: 560px;
 	--size-px-1280: 1280px;
@@ -175,7 +162,7 @@
 	--radius-arch: 56px 56px 6px 6px;
 	--radius-tab: 26px 26px 20px 20px;
 
-	/* Durations and easings (DESIGN §8; the rest are rebuilt with the delight layer in step 2c) */
+	/* Durations and easings (DESIGN §8, §9) */
 	--ms-120: 120ms;
 	--ms-160: 160ms;
 	--ms-200: 200ms;
@@ -194,13 +181,16 @@
 	--ms-1000: 1000ms;
 	--ms-1100: 1100ms;
 	--ms-1200: 1200ms;
+	--ms-2400: 2400ms;
 	--ms-2500: 2500ms;
 	--ms-2600: 2600ms;
 	--ms-2800: 2800ms;
 	--ms-3000: 3000ms;
 	--ms-3200: 3200ms;
+	--ms-4500: 4500ms;
 	--ms-4800: 4800ms;
 	--ms-5000: 5000ms;
+	--ms-9000: 9000ms;
 	--curve-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 	--curve-bounce: cubic-bezier(0.3, 1.6, 0.5, 1);
 	--curve-linear: linear;

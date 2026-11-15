@@ -1,5 +1,5 @@
 <!--
-	Count-up (DESIGN §11.2): a summary number counts up from 0 over --dur-count-up. Shows the final value
+	Count-up (DESIGN §8 `count-up`): a summary number counts up from 0 over --dur-count-up. Shows the final value
 	at once under reduced motion or when `play` is false. Screen readers get the final value.
 -->
 <script lang="ts">

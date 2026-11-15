@@ -155,7 +155,7 @@
 		background: var(--surface);
 		color: var(--accent);
 		transform: rotate(var(--stamp-land));
-		animation: stamp var(--dur-burst) var(--ease-out);
+		animation: stamp var(--dur-stamp) var(--ease-out);
 	}
 
 	.mark {
@@ -203,12 +203,12 @@
 	@keyframes stamp {
 		from {
 			opacity: 0;
-			transform: scale(1.7) rotate(-20deg);
+			transform: scale(var(--stamp-scale-from)) rotate(var(--stamp-from));
 		}
 
 		60% {
 			opacity: 1;
-			transform: scale(0.9) rotate(var(--stamp-land));
+			transform: scale(var(--stamp-overshoot)) rotate(var(--stamp-land));
 		}
 	}
 

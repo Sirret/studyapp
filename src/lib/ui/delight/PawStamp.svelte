@@ -1,6 +1,7 @@
 <!--
-	Paw stamp (DESIGN §11.2): wraps a status badge the moment a card reaches Exam-ready or Long-term
-	secure, so it lands like a stamp (scale 1.3 → 1, rotate −8° → 0°). Static when `play` is false.
+	Stamp landing (DESIGN §8 `stamp`): wraps whatever lands like a stamp — a card reaching
+	exam-ready, "Know it", Yuki's celebrate paw. Scale 1.7 → .9 → 1 with rotate −20° → −8°,
+	opacity 0 → 1, about 450 ms; it rests at −8°. Static (no tilt) when `play` is false.
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
@@ -16,18 +17,30 @@
 	}
 
 	.play {
-		animation: stamp var(--dur-paw-press) var(--ease-bounce);
+		transform: rotate(var(--stamp-land));
+		animation: stamp var(--dur-stamp) var(--ease-out) both;
 	}
 
 	@keyframes stamp {
 		from {
-			opacity: 0.4;
-			transform: scale(1.3) rotate(-8deg);
+			opacity: 0;
+			transform: scale(var(--stamp-scale-from)) rotate(var(--stamp-from));
+		}
+
+		60% {
+			opacity: 1;
+			transform: scale(var(--stamp-overshoot)) rotate(var(--stamp-land));
 		}
 
 		to {
 			opacity: 1;
-			transform: scale(1) rotate(0);
+			transform: scale(1) rotate(var(--stamp-land));
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.play {
+			animation: none !important;
 		}
 	}
 </style>

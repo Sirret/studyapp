@@ -109,13 +109,13 @@
 		if (correct) {
 			streak += 1;
 			const onStreak = streak % STREAK_FOR_FLURRY === 0;
-			yuki = { state: onStreak ? 'sparkle' : 'hop', key: yuki.key + 1 };
+			yuki = { state: 'happy', key: yuki.key + 1 };
 			if (effectOn('snowBurst', level)) burst += 1;
 			if (onStreak && effectOn('snowFlurry', level)) flurry += 1;
 			hapticTick(prefs.haptics && effectOn('haptic', level));
 		} else {
 			streak = 0;
-			yuki = { state: 'oops', key: yuki.key + 1 };
+			yuki = { state: 'thinking', key: yuki.key + 1 };
 		}
 	}
 

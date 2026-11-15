@@ -12,7 +12,8 @@ const ALL: DelightEffect[] = [
 	'pawStamp',
 	'countUp',
 	'pawWalk',
-	'pawLoader'
+	'pawLoader',
+	'snowFall'
 ];
 
 describe('effectOn (DESIGN §11.2 settings mapping)', () => {

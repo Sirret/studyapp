@@ -15,8 +15,4 @@
 	--error: var(--wrong);
 	--warning-soft: var(--surface-tag);
 	--moon: var(--rim);
-
-	--paw-press: color-mix(in srgb, var(--accent) 35%, transparent);
-
-	--yuki-glow: none;
 }

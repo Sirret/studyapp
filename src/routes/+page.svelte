@@ -143,7 +143,7 @@
 		{/if}
 		{#if plan.shortfall}
 			<Row gap="md">
-				{#if prefs.companion !== 'off'}<Yuki state="worried-kind" size={72} />{/if}
+				{#if prefs.companion !== 'off'}<Yuki state="thinking" size={72} />{/if}
 				<StickyNote title="Not everything fits before {plan.shortfall.courseName}'s exam">
 					It's about {Math.ceil(plan.shortfall.shortfallMinutes / 60)} h short ({plan.shortfall
 						.shortfallMinutes} min). The plan shows what I'd cut: {plan.shortfall.cutCount}

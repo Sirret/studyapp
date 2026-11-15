@@ -116,7 +116,7 @@
 						</Card>
 					{:else}
 						<Row gap="md">
-							{#if prefs.companion !== 'off'}<Yuki state="worried-kind" size={72} />{/if}
+							{#if prefs.companion !== 'off'}<Yuki state="thinking" size={72} />{/if}
 							<StickyNote
 								title="{exam.name} ({exam.examDate}) is {hours(exam.shortfallMinutes)} short"
 							>

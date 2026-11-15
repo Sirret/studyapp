@@ -13,7 +13,7 @@
 </script>
 
 <div class="empty">
-	{#if companion}<Yuki state="sniff" size={96} />{/if}
+	{#if companion}<Yuki state="idle" size={96} />{/if}
 	<p>{message}</p>
 	{#if action}{@render action()}{/if}
 </div>

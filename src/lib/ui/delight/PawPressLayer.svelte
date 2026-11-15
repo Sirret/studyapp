@@ -1,5 +1,5 @@
 <!--
-	Paw press (DESIGN §11.2): a tap on anything marked `data-paw` leaves a small paw print at the
+	Paw press (DESIGN §8 `paw-press`): a tap on anything marked `data-paw` leaves a small paw print at the
 	touch point that grows and fades in 300 ms. Runs beside the tap, never blocks it, and does
 	nothing under reduced motion. One listener for the whole app, so controls stay plain.
 -->
@@ -52,7 +52,7 @@
 		position: absolute;
 		top: calc(var(--size-px-20) / -2);
 		left: calc(var(--size-px-20) / -2);
-		color: var(--paw-press);
+		color: var(--decor);
 		animation: press var(--dur-paw-press) var(--ease-out) forwards;
 	}
 
@@ -65,6 +65,12 @@
 		to {
 			opacity: 0;
 			transform: scale(1);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.layer :global(*) {
+			animation: none !important;
 		}
 	}
 </style>

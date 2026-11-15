@@ -1,5 +1,5 @@
 <!--
-	Snow flurry (DESIGN §11.2): after 3 first-attempt corrects in a row, about ten flakes drift down
+	Snow flurry (DESIGN §8): after 3 first-attempt corrects in a row, about ten flakes drift down
 	across the top of the card. Change `key` to play it again. Never blocks input; nothing under
 	reduced motion.
 -->
@@ -31,7 +31,7 @@
 	.flurry {
 		position: absolute;
 		inset: 0 0 auto;
-		height: var(--space-56);
+		height: var(--size-px-56);
 		overflow: hidden;
 		pointer-events: none;
 	}
@@ -39,7 +39,7 @@
 	.flake {
 		position: absolute;
 		top: 0;
-		color: var(--primary);
+		color: var(--decor);
 		opacity: 0;
 		animation: drift var(--dur-flurry) var(--ease-out) forwards;
 	}
@@ -56,7 +56,7 @@
 
 		100% {
 			opacity: 0;
-			transform: translateY(var(--space-40)) rotate(90deg);
+			transform: translateY(var(--size-px-40)) rotate(90deg);
 		}
 	}
 
