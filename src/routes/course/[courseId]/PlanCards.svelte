@@ -80,8 +80,12 @@
 			</Disclosure>
 		{/if}
 		{#if today.review.cards > 0}
-			<Button full loading={starting === 'review'} onclick={onreview} data-start-review
-				>Start review</Button
+			<Button
+				full
+				loading={starting === 'review'}
+				onclick={onreview}
+				meta={countOf(today.review.cards, 'card')}
+				data-start-review>Start review</Button
 			>
 		{/if}
 	</Stack>
@@ -147,8 +151,12 @@
 				</Row>
 			{/each}
 			{#if night.block2Cards > 0}
-				<Button full loading={starting === 'block2'} onclick={onblocktwo} data-block-two
-					>Re-quiz everything from tonight ({countOf(night.block2Cards, 'card')})</Button
+				<Button
+					full
+					loading={starting === 'block2'}
+					onclick={onblocktwo}
+					meta={countOf(night.block2Cards, 'card')}
+					data-block-two>Re-quiz everything from tonight</Button
 				>
 			{:else}
 				<p data-block-two-waiting>

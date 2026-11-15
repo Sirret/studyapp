@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ArrowLeft } from '@lucide/svelte';
 	import { resolve } from '$app/paths';
 	import type { Availability } from '#lib/db/schemas/kv.ts';
 	import { logger } from '#lib/services/app.ts';
@@ -6,6 +7,9 @@
 	import { prefs } from '#lib/services/preferences.svelte.ts';
 	import DayBar from '#lib/ui/components/DayBar.svelte';
 	import EmptyState from '#lib/ui/components/EmptyState.svelte';
+	import Hero from '#lib/ui/components/Hero.svelte';
+	import SectionHeading from '#lib/ui/components/SectionHeading.svelte';
+	import Stamp from '#lib/ui/components/Stamp.svelte';
 	import StickyNote from '#lib/ui/components/StickyNote.svelte';
 	import Yuki from '#lib/ui/components/yuki/Yuki.svelte';
 	import PawLoader from '#lib/ui/delight/PawLoader.svelte';
@@ -17,9 +21,13 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Card from '#lib/ui/primitives/Card.svelte';
 	import Chip from '#lib/ui/primitives/Chip.svelte';
+	import Icon from '#lib/ui/primitives/Icon.svelte';
 	import AvailabilityForm from './AvailabilityForm.svelte';
 
-	/** Plan (DESIGN §6, BUILD_PLAN §9): day bars, feasibility per exam, the availability calendar. */
+	/**
+	 * Plan (DESIGN §12 "Planner", BUILD_PLAN §9): day bars, feasibility per exam, the availability
+	 * calendar. Courier breadcrumb + back arrow, Hero title, SectionHeadings instead of card labels.
+	 */
 	let plan = $state<PlanView | null>(null);
 	let availability = $state<Availability | null>(null);
 	let failed = $state(false);
@@ -71,7 +79,15 @@
 <svelte:head><title>Plan</title></svelte:head>
 
 <Screen>
-	{#snippet top()}<TopBar title="Plan" />{/snippet}
+	{#snippet top()}
+		<TopBar title="Plan">
+			{#snippet leading()}
+				<Button variant="ghost" size="icon" href={resolve('/')} aria-label="Home">
+					<Icon icon={ArrowLeft} size="nav" />
+				</Button>
+			{/snippet}
+		</TopBar>
+	{/snippet}
 	{#if failed}
 		<StickyNote title="The plan didn't load">
 			Reload the page to try again. Nothing was lost.
@@ -82,21 +98,22 @@
 			{#snippet action()}<PawLoader />{/snippet}
 		</EmptyState>
 	{:else}
+		<Hero title="The plan" subline="Your time, shared across every exam." />
 		<Grid columns={2}>
 			<Stack gap="lg">
-				<Card label="The next days">
-					<Stack gap="sm">
-						{#each plan.days as day (day.date)}
-							<DayBar
-								label={dayLabel(day.date, day.today)}
-								today={day.today}
-								capMinutes={day.capMinutes}
-								segments={day.segments}
-								exams={day.exams}
-							/>
-						{/each}
-					</Stack>
-				</Card>
+				<SectionHeading title="The next days" />
+				<Stack gap="sm">
+					{#each plan.days as day (day.date)}
+						<DayBar
+							label={dayLabel(day.date, day.today)}
+							today={day.today}
+							capMinutes={day.capMinutes}
+							segments={day.segments}
+							exams={day.exams}
+						/>
+					{/each}
+				</Stack>
+				<SectionHeading title="Exams" />
 				{#if plan.exams.length === 0}
 					<EmptyState
 						message="No exam dates yet. Set one on a course page and the plan shares your time."
@@ -111,7 +128,7 @@
 						<Card stripe={exam.color} tag="article" label="{exam.name} exam">
 							<Row justify="between">
 								<Chip color={exam.color}>{exam.name} · {exam.examDate}</Chip>
-								<span data-fits={exam.name}>✓ fits</span>
+								<span data-fits={exam.name}><Stamp text="✓ Fits" /></span>
 							</Row>
 						</Card>
 					{:else}
@@ -138,9 +155,12 @@
 					{/if}
 				{/each}
 			</Stack>
-			{#key saved}
-				<AvailabilityForm {availability} onsave={save} />
-			{/key}
+			<Stack gap="lg">
+				<SectionHeading title="Your study time" />
+				{#key saved}
+					<AvailabilityForm {availability} onsave={save} />
+				{/key}
+			</Stack>
 		</Grid>
 		<Button variant="ghost" href={resolve('/')}>Back to Today</Button>
 	{/if}

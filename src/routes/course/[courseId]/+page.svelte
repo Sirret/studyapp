@@ -170,7 +170,9 @@
 			</StickyNote>
 		{:else}
 			<Row gap="md">
-				{#if prefs.companion !== 'off'}<Yuki state="idle" size={72} />{/if}
+				{#if prefs.companion !== 'off'}
+					<Yuki state={today.learn?.mode === 'onenight' ? 'sleepy' : 'idle'} size={72} />
+				{/if}
 				<SpeechBubble
 					text={today.daysToExam === null
 						? "No exam date yet, so we'll keep it all fresh over time."
@@ -224,7 +226,7 @@
 		{#if today.map}
 			<CourseMapPanel map={today.map} id="cheat-sheet" />
 		{/if}
-		<SectionHeading title="Exam" id="exam" />
+		<SectionHeading title="Exam prep" id="exam" />
 		<Stack gap="md">
 			{#key `${today.course.examDate}-${today.course.examTime}-${today.course.examFormat}`}
 				<ExamForm

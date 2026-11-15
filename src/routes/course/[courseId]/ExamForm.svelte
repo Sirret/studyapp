@@ -2,11 +2,14 @@
 	import type { ExamFormat } from '#lib/db/schemas/common.ts';
 	import Stack from '#lib/ui/layout/Stack.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import Card from '#lib/ui/primitives/Card.svelte';
 	import Input from '#lib/ui/primitives/Input.svelte';
 	import Segmented from '#lib/ui/primitives/Segmented.svelte';
 
-	/** The exam date, time and format of a course; saving re-plans the course. @see BUILD_PLAN §6.6 */
+	/**
+	 * Exam prep (DESIGN §12): the exam date, time and format of a course, under the page's
+	 * "Exam prep" SectionHeading (no card of its own); saving re-plans the course.
+	 * @see BUILD_PLAN §6.6
+	 */
 	let {
 		examDate,
 		examTime,
@@ -48,16 +51,14 @@
 	}
 </script>
 
-<Card label="Exam">
-	<Stack gap="md">
-		<Input label="Exam date" type="date" bind:value={date} data-exam-date />
-		<Input label="Start time (optional)" type="time" bind:value={time} />
-		<Segmented
-			label="Exam format"
-			options={formats}
-			value={format}
-			onchange={(value) => (format = value)}
-		/>
-		<Button variant="secondary" loading={saving} onclick={save} data-save-exam>Save exam</Button>
-	</Stack>
-</Card>
+<Stack gap="md">
+	<Input label="Exam date" type="date" bind:value={date} data-exam-date />
+	<Input label="Start time (optional)" type="time" bind:value={time} />
+	<Segmented
+		label="Exam format"
+		options={formats}
+		value={format}
+		onchange={(value) => (format = value)}
+	/>
+	<Button variant="secondary" loading={saving} onclick={save} data-save-exam>Save exam</Button>
+</Stack>
