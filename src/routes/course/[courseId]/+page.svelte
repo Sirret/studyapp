@@ -139,7 +139,7 @@
 <svelte:head><title>{today?.course.name ?? 'Course'}</title></svelte:head>
 
 <Screen nav>
-	{#snippet side()}<Sidebar active="shelf" hrefs={navHrefs} />{/snippet}
+	{#snippet side()}<Sidebar active="shelf" hrefs={navHrefs} yuki={false} />{/snippet}
 	{#snippet top()}
 		<TopBar title={APP_SHORT_NAME} wordmark>
 			{#snippet leading()}

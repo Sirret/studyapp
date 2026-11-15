@@ -1,6 +1,7 @@
 <!--
 	Sidebar, desktop ≥ 1024 px (DESIGN §7 Sidebar, §10): 260 px of sunk paper with the same tabs as
-	the BottomNav, stacked as 44 px rows, and Yuki small at the bottom (unless the companion is off).
+	the BottomNav, stacked as 44 px rows, and Yuki small at the bottom (unless the companion is off,
+	or the screen passes `yuki={false}` because it already shows a larger Yuki).
 	The active tab is weight 600 with a 10 px accent paw beside its label (never colour alone).
 	Screen shows it in its `side` slot from 1024 px only; below that the BottomNav is the nav.
 -->
@@ -11,7 +12,15 @@
 	import Paw from '../primitives/Paw.svelte';
 	import { shownTabs, type NavHrefs, type NavTab } from './nav-tabs.ts';
 
-	let { active, hrefs }: { active: NavTab; hrefs: NavHrefs } = $props();
+	/**
+	 * `yuki={false}` on a screen that already shows a larger Yuki in its content (Home, the
+	 * course page), so only one wolf is on screen (user decision, 2026-11-15).
+	 */
+	let {
+		active,
+		hrefs,
+		yuki = true
+	}: { active: NavTab; hrefs: NavHrefs; yuki?: boolean } = $props();
 
 	/** DESIGN §9: small (32-64 px) in the sidebar. */
 	const YUKI_SIZE = 56;
@@ -41,7 +50,7 @@
 			{/each}
 		</ul>
 	</nav>
-	{#if prefs.companion !== 'off'}
+	{#if yuki && prefs.companion !== 'off'}
 		<div class="yuki"><Yuki state="idle" size={YUKI_SIZE} /></div>
 	{/if}
 </div>

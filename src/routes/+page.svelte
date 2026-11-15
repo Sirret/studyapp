@@ -119,7 +119,7 @@
 </script>
 
 <Screen nav>
-	{#snippet side()}<Sidebar active="den" hrefs={navHrefs} />{/snippet}
+	{#snippet side()}<Sidebar active="den" hrefs={navHrefs} yuki={false} />{/snippet}
 	{#snippet top()}<TopBar title={APP_SHORT_NAME} wordmark />{/snippet}
 	{#if failed}
 		<StickyNote title="Today's plan didn't load">

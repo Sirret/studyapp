@@ -88,7 +88,12 @@ test.describe('import screen', () => {
 		{ tag: '@both' },
 		async ({ page }) => {
 			await page.goto('/');
-			await page.getByRole('link', { name: /import/i }).click();
+			// The main nav's tab (BottomNav on mobile, Sidebar from 1024 px); an empty Home also
+			// shows "Import your first lecture", so a bare /import/i would match two links.
+			await page
+				.getByRole('navigation', { name: 'Main' })
+				.getByRole('link', { name: 'Import notes' })
+				.click();
 			await expect(page.getByRole('heading', { name: 'Import', exact: true })).toBeVisible();
 			await page.getByLabel('New course').fill('Networks');
 			await page.getByRole('button', { name: 'Create course' }).click();
