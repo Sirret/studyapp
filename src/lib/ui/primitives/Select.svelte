@@ -1,4 +1,4 @@
-<!-- Select (DESIGN §12 Input): a native select styled like the inputs; the label names it. -->
+<!-- Select (DESIGN §7 Input): a native select styled like the inputs; the label names it. -->
 <script lang="ts" generics="T extends string">
 	let {
 		label,
@@ -30,7 +30,7 @@
 	}
 
 	label {
-		color: var(--text-muted);
+		color: var(--text-soft);
 		font-size: var(--type-small-size);
 		font-weight: var(--type-small-weight);
 	}
@@ -39,14 +39,16 @@
 		width: 100%;
 		min-height: var(--input-height);
 		padding: 0 var(--gap-md);
-		border: var(--stroke) solid transparent;
-		border-radius: var(--r-sm);
-		background: var(--surface-alt);
+		border: var(--border-width) solid var(--outline);
+		border-radius: var(--r-input);
+		background: var(--surface);
 		color: var(--text);
+		font-family: var(--font-body);
+		font-size: var(--type-body-size);
 	}
 
-	select:focus {
-		border-color: var(--primary);
-		outline: none;
+	select:focus-visible {
+		outline: var(--focus-width) solid var(--accent);
+		outline-offset: var(--focus-offset);
 	}
 </style>

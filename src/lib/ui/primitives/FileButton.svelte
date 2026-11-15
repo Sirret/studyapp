@@ -1,5 +1,6 @@
 <!--
-	File button: a native file input dressed as a secondary button. The visible label is the input's
+	File button (DESIGN §7 secondary button): a native file input dressed as a paper pill with a
+	2 px outline. The visible label is the input's
 	label, so it stays accessible and keyboard-operable.
 -->
 <script lang="ts">
@@ -22,13 +23,14 @@
 		align-items: center;
 		justify-content: center;
 		min-height: var(--touch-min);
-		padding: 0 var(--gap-lg);
-		border-radius: var(--r-md);
-		background: var(--primary-soft);
-		color: var(--primary);
-		font-size: var(--type-small-size);
-		font-weight: var(--type-strong-weight);
-		box-shadow: inset 0 calc(var(--lip-height) * -1) 0 var(--lip-secondary);
+		padding: 0 var(--gap-xl);
+		border: var(--border-width) solid var(--outline);
+		border-radius: var(--r-pill);
+		background: var(--surface);
+		color: var(--text);
+		font-family: var(--font-body);
+		font-size: var(--type-body-size);
+		font-weight: var(--type-button-weight);
 		cursor: pointer;
 	}
 
@@ -40,7 +42,7 @@
 	}
 
 	.file:focus-within {
-		outline: var(--focus-width) solid var(--focus);
+		outline: var(--focus-width) solid var(--accent);
 		outline-offset: var(--focus-offset);
 	}
 </style>

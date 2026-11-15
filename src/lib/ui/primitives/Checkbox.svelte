@@ -1,10 +1,10 @@
 <!--
-	Paw checkbox (DESIGN §11.2): a real checkbox whose box fills `--primary` and shows a white paw
-	when ticked (a plain check when Yuki is off). Used by explain-it and blurt checklists.
+	Paw checkbox (DESIGN §7, like a done PawRing): a real checkbox with a 2 px outlined box that
+	fills ink and shows a paw when ticked (a plain check when Yuki is off). Used by explain-it and blurt checklists.
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import Paw from '../motifs/Paw.svelte';
+	import Paw from './Paw.svelte';
 
 	let {
 		checked = $bindable(false),
@@ -27,12 +27,13 @@
 <style>
 	.checkbox {
 		--checkbox-size: var(--size-px-24);
-		--checkbox-on: var(--primary);
+		--checkbox-on: var(--btn-primary-bg);
 
 		display: flex;
 		align-items: center;
 		gap: var(--gap-md);
 		min-height: var(--touch-min);
+		color: var(--text);
 		cursor: pointer;
 	}
 
@@ -54,9 +55,10 @@
 		place-items: center;
 		width: var(--checkbox-size);
 		height: var(--checkbox-size);
-		border: var(--stroke) solid var(--text-muted);
-		border-radius: var(--size-px-6);
-		color: var(--on-primary);
+		border: var(--border-width) solid var(--outline);
+		border-radius: var(--r-xs);
+		background: var(--surface);
+		color: var(--btn-primary-fg);
 		transition: background-color var(--dur-toggle) var(--ease-out);
 	}
 
@@ -96,7 +98,7 @@
 	}
 
 	input:focus-visible + .box {
-		outline: var(--focus-width) solid var(--focus);
+		outline: var(--focus-width) solid var(--accent);
 		outline-offset: var(--focus-offset);
 	}
 

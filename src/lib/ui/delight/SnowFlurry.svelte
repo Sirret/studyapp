@@ -4,7 +4,7 @@
 	reduced motion.
 -->
 <script lang="ts">
-	import Snowflake from '../motifs/Snowflake.svelte';
+	import Snowflake from '../primitives/Snowflake.svelte';
 
 	let { key }: { key: number } = $props();
 

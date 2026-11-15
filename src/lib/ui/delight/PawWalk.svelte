@@ -3,7 +3,7 @@
 	of the card towards Yuki. Decorative; nothing under reduced motion.
 -->
 <script lang="ts">
-	import Paw from '../motifs/Paw.svelte';
+	import Paw from '../primitives/Paw.svelte';
 
 	const STEPS = 7;
 	const STEP_DELAY_MS = 150;

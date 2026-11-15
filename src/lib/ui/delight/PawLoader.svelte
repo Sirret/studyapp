@@ -3,7 +3,7 @@
 	in place of a spinner. Screen readers hear the label.
 -->
 <script lang="ts">
-	import Paw from '../motifs/Paw.svelte';
+	import Paw from '../primitives/Paw.svelte';
 
 	let { label = 'Loading' }: { label?: string } = $props();
 </script>

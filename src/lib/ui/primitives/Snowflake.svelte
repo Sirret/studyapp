@@ -1,4 +1,4 @@
-<!-- Snowflake motif, stroked with the current colour (DESIGN §11.1). Decorative. -->
+<!-- Snowflake motif, stroked with the current colour (DESIGN §2 layer 5, §8 `fall`). Decorative. -->
 <script lang="ts">
 	let { size = 24 }: { size?: number } = $props();
 </script>

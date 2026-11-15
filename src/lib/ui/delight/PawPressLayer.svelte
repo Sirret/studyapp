@@ -4,7 +4,7 @@
 	nothing under reduced motion. One listener for the whole app, so controls stay plain.
 -->
 <script lang="ts">
-	import Paw from '../motifs/Paw.svelte';
+	import Paw from '../primitives/Paw.svelte';
 
 	type Press = { id: number; x: number; y: number };
 

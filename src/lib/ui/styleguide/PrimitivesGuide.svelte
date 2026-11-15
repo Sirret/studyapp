@@ -14,8 +14,8 @@
 	import TextArea from '../primitives/TextArea.svelte';
 	import Toggle from '../primitives/Toggle.svelte';
 	import Moon from '../motifs/Moon.svelte';
-	import Paw from '../motifs/Paw.svelte';
-	import Snowflake from '../motifs/Snowflake.svelte';
+	import Paw from '../primitives/Paw.svelte';
+	import Snowflake from '../primitives/Snowflake.svelte';
 	import GuideRow from './GuideRow.svelte';
 	import GuideSection from './GuideSection.svelte';
 
@@ -26,12 +26,17 @@
 </script>
 
 <GuideSection id="primitives" title="Primitives and motifs" layer="Layer 5">
-	<GuideRow label="Button variants">
+	<GuideRow label="Buttons: PawButton (primary), secondary, link (ghost), danger link">
 		{#each variants as variant (variant)}
 			<Button {variant}>{variant}</Button>
 		{/each}
 	</GuideRow>
-	<GuideRow label="Button states: session size, icon, disabled, loading">
+	<GuideRow label="PawButton: hero 60 px with meta, full width with meta, no paw">
+		<Button size="hero" full meta="2 questions">Continue</Button>
+		<Button full meta="6 min">Start reading</Button>
+		<Button paw={false}>Save</Button>
+	</GuideRow>
+	<GuideRow label="Button states: session size, icon in the bean, disabled, loading">
 		<Button size="session" full>Check</Button>
 		<Button variant="secondary">
 			{#snippet icon()}<Icon icon={BookOpen} />{/snippet}
@@ -40,8 +45,9 @@
 		<Button disabled>Disabled</Button>
 		<Button loading>Saving</Button>
 	</GuideRow>
-	<GuideRow label="Card, plain and with a course stripe">
+	<GuideRow label="Card: plain, raised, with a course stripe">
 		<Card>A plain card holds one group of content.</Card>
+		<Card raised>A raised card has the printed paper shadow.</Card>
 		<Card stripe="sage">Networking — 25 min planned</Card>
 	</GuideRow>
 	<GuideRow label="Chips and course tabs">
@@ -92,10 +98,11 @@
 			onchange={(value) => (read = value)}
 		/>
 	</GuideRow>
-	<GuideRow label="Icons (Lucide) and motifs">
+	<GuideRow label="Icons (Lucide), paw solid and outline, snowflake, moon">
 		<Icon icon={Check} />
 		<Icon icon={X} size="nav" label="Close" />
 		<span class="motif"><Paw /></span>
+		<span class="motif"><Paw outline /></span>
 		<span class="motif"><Snowflake /></span>
 		<Moon />
 	</GuideRow>
@@ -103,6 +110,6 @@
 
 <style>
 	.motif {
-		color: var(--primary);
+		color: var(--accent);
 	}
 </style>

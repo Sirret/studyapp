@@ -7,8 +7,8 @@
 	import { Circle, Contrast, RefreshCw, Sparkles } from '@lucide/svelte';
 	import type { CardStatus } from '#lib/db/schemas/common.ts';
 	import Moon from '../motifs/Moon.svelte';
-	import Paw from '../motifs/Paw.svelte';
-	import Snowflake from '../motifs/Snowflake.svelte';
+	import Paw from '../primitives/Paw.svelte';
+	import Snowflake from '../primitives/Snowflake.svelte';
 	import Icon from '../primitives/Icon.svelte';
 
 	let { status }: { status: CardStatus } = $props();

@@ -1,6 +1,7 @@
 <!--
-	Text input (DESIGN §5, §12): inset surface, 48 px, a primary border on focus. A first-letter
-	hint shows as a faded letter before the text. The label is required for screen readers; set
+	Text input (DESIGN §7): paper with a 2 px outline, radius 12, 52 px, Literata 18; focus draws a
+	3 px accent ring. A first-letter hint shows the revealed letters faded and underlined before
+	the text. The label is required for screen readers; set
 	`hideLabel` when the prompt already says what to type.
 -->
 <script lang="ts">
@@ -45,8 +46,7 @@
 
 <style>
 	.field {
-		--input-bg: var(--surface-alt);
-		--input-radius: var(--r-sm);
+		--input-bg: var(--surface);
 
 		/* Shrink inside grids and rows instead of pushing them wider (SESSION_NOTES B, 1024 px). */
 		min-width: 0;
@@ -57,7 +57,7 @@
 	}
 
 	label {
-		color: var(--text-muted);
+		color: var(--text-soft);
 		font-size: var(--type-small-size);
 		font-weight: var(--type-small-weight);
 	}
@@ -65,29 +65,33 @@
 	.box {
 		display: flex;
 		align-items: center;
-		gap: var(--gap-xs);
+		gap: var(--gap-2xs);
 		min-height: var(--input-height);
 		padding: 0 var(--gap-md);
-		border: var(--stroke) solid transparent;
-		border-radius: var(--input-radius);
+		border: var(--border-width) solid var(--outline);
+		border-radius: var(--r-input);
 		background: var(--input-bg);
-		transition: border-color var(--dur-fast) var(--ease-out);
+		color: var(--text);
+		font-family: var(--font-body);
+		font-size: var(--type-answer-size);
 	}
 
 	.box:focus-within {
-		border-color: var(--primary);
+		outline: var(--focus-width) solid var(--accent);
+		outline-offset: var(--focus-offset);
 	}
 
 	.lg .box {
 		min-height: var(--option-min-height);
-		font-size: var(--type-answer-size);
 		font-weight: var(--type-answer-weight);
 	}
 
 	.hint {
-		color: var(--text-muted);
-		font-weight: var(--type-strong-weight);
-		opacity: 0.6;
+		color: var(--text-soft);
+		text-decoration: underline;
+		text-decoration-color: var(--keyterm);
+		text-decoration-thickness: var(--stroke);
+		text-underline-offset: var(--size-px-4);
 	}
 
 	input {
@@ -95,6 +99,8 @@
 		min-width: 0;
 		border: 0;
 		background: transparent;
+		color: inherit;
+		font: inherit;
 		outline: none;
 	}
 </style>

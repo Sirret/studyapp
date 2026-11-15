@@ -1,5 +1,5 @@
 <!--
-	Lucide icon at a standard size (DESIGN §3.3): 20 px in lists, 24 px in navigation, 2 px
+	Lucide icon at a standard size (DESIGN §7, §11): 20 px in lists, 24 px in navigation, 2 px
 	rounded stroke. Decorative unless `label` is given.
 -->
 <script lang="ts">

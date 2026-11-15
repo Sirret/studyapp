@@ -1,9 +1,9 @@
 <!--
-	Toggle (DESIGN §5, §12): a 52 × 32 switch, `--primary` when on, whose knob shows a tiny paw
-	when on (§11.2; hidden when Yuki is off). A real checkbox with role="switch" underneath.
+	Toggle (DESIGN §7): a 52 × 32 outlined track; on fills ink (`--btn-primary-bg`) and the knob
+	shows a small accent paw (hidden when Yuki is off). A real checkbox with role="switch" underneath.
 -->
 <script lang="ts">
-	import Paw from '../motifs/Paw.svelte';
+	import Paw from './Paw.svelte';
 
 	let {
 		label,
@@ -16,23 +16,25 @@
 	<span class="text">{label}</span>
 	<input type="checkbox" role="switch" bind:checked {disabled} />
 	<span class="track" aria-hidden="true">
-		<span class="knob"><span class="paw"><Paw size={12} /></span></span>
+		<span class="knob"><span class="paw"><Paw size={14} /></span></span>
 	</span>
 </label>
 
 <style>
 	.toggle {
-		--toggle-on: var(--primary);
-		--toggle-off: var(--border);
+		--toggle-on: var(--btn-primary-bg);
 		--toggle-width: var(--size-px-52);
 		--toggle-height: var(--size-px-32);
-		--toggle-knob: var(--size-px-24);
+		--toggle-knob: var(--size-px-22);
+		--toggle-inset: var(--size-px-3);
 
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--gap-md);
 		min-height: var(--touch-min);
+		color: var(--text);
+		font-size: var(--type-body-size);
 		cursor: pointer;
 	}
 
@@ -50,24 +52,26 @@
 	.track {
 		position: relative;
 		flex: none;
+		box-sizing: border-box;
 		width: var(--toggle-width);
 		height: var(--toggle-height);
+		border: var(--border-width) solid var(--outline);
 		border-radius: var(--r-pill);
-		background: var(--toggle-off);
+		background: var(--surface);
 		transition: background-color var(--dur-toggle) var(--ease-out);
 	}
 
 	.knob {
 		position: absolute;
-		top: var(--size-px-4);
-		left: var(--size-px-4);
+		top: var(--toggle-inset);
+		left: var(--toggle-inset);
 		display: grid;
 		place-items: center;
 		width: var(--toggle-knob);
 		height: var(--toggle-knob);
-		border-radius: var(--r-pill);
-		background: var(--surface);
-		color: var(--toggle-on);
+		border-radius: var(--r-full);
+		background: var(--text-soft);
+		color: var(--accent);
 		transition: transform var(--dur-toggle) var(--ease-out);
 	}
 
@@ -81,7 +85,12 @@
 	}
 
 	input:checked + .track .knob {
-		transform: translateX(calc(var(--toggle-width) - var(--toggle-knob) - var(--size-px-8)));
+		background: var(--surface);
+		transform: translateX(
+			calc(
+				var(--toggle-width) - var(--toggle-knob) - var(--toggle-inset) * 2 - var(--border-width) * 2
+			)
+		);
 	}
 
 	input:checked + .track .paw {
@@ -93,7 +102,7 @@
 	}
 
 	input:focus-visible + .track {
-		outline: var(--focus-width) solid var(--focus);
+		outline: var(--focus-width) solid var(--accent);
 		outline-offset: var(--focus-offset);
 	}
 </style>

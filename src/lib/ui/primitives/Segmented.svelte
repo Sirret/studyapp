@@ -1,6 +1,7 @@
 <!--
-	Segmented control (DESIGN §5): two or more choices side by side; the chosen one fills with
-	`--primary` so the state is obvious at a glance. Buttons with aria-pressed, 44 px tall.
+	Segmented control (DESIGN §7, built like the Chip): two or more choices side by side in an
+	outlined pill; the chosen one fills ink with a paper label (`--btn-primary-*`), and it is
+	also bold, so the state never relies on colour alone. Buttons with aria-pressed, 44 px tall.
 -->
 <script lang="ts" generics="T extends string">
 	let {
@@ -35,8 +36,9 @@
 		display: flex;
 		width: 100%;
 		padding: var(--size-px-4);
+		border: var(--border-dashed) solid var(--outline);
 		border-radius: var(--r-pill);
-		background: var(--surface-alt);
+		background: var(--surface);
 	}
 
 	button {
@@ -46,16 +48,18 @@
 		border: 0;
 		border-radius: var(--r-pill);
 		background: transparent;
-		color: var(--text-muted);
-		font-size: var(--type-small-size);
-		font-weight: var(--type-strong-weight);
+		color: var(--text-soft);
+		font-family: var(--font-body);
+		font-size: var(--type-chip-size);
+		font-weight: var(--type-body-weight);
 		cursor: pointer;
 		touch-action: manipulation;
 		transition: background-color var(--dur-fast) var(--ease-out);
 	}
 
 	.selected {
-		background: var(--primary);
-		color: var(--on-primary);
+		background: var(--btn-primary-bg);
+		color: var(--btn-primary-fg);
+		font-weight: var(--type-strong-weight);
 	}
 </style>

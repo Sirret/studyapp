@@ -1,6 +1,7 @@
 <!--
-	Chip / course tab (DESIGN §5, §12): a pill in a course colour, always with its text. As a tab
-	(`onselect` given) it is a toggle button, and the selected tab gets an underline bar.
+	Chip (DESIGN §7): a paper pill with a 1.5 px outline in Literata 15, always with its text. A
+	course colour tints the fill. As a tab (`onselect` given) it is a toggle button; selected fills
+	ink with a paper label (`--btn-primary-*`, so lamp-light inverts it the same way).
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
@@ -33,21 +34,21 @@
 
 <style>
 	.chip {
-		--chip-bg: var(--surface-alt);
+		--chip-bg: var(--surface);
 		--chip-fg: var(--text);
 
-		position: relative;
 		display: inline-flex;
 		align-items: center;
 		gap: var(--gap-xs);
 		min-height: var(--chip-height);
 		padding: 0 var(--gap-md);
-		border: 0;
+		border: var(--border-dashed) solid var(--outline);
 		border-radius: var(--r-pill);
 		background: var(--chip-bg);
 		color: var(--chip-fg);
+		font-family: var(--font-body);
 		font-size: var(--type-chip-size);
-		font-weight: var(--type-strong-weight);
+		font-weight: var(--type-body-weight);
 		line-height: var(--type-caption-leading);
 		white-space: nowrap;
 	}
@@ -91,12 +92,10 @@
 		touch-action: manipulation;
 	}
 
-	.tab.selected::after {
-		content: '';
-		position: absolute;
-		inset: auto var(--gap-md) var(--size-px-4);
-		height: var(--stroke);
-		border-radius: var(--r-pill);
-		background: var(--text);
+	.tab.selected {
+		--chip-bg: var(--btn-primary-bg);
+		--chip-fg: var(--btn-primary-fg);
+
+		font-weight: var(--type-strong-weight);
 	}
 </style>

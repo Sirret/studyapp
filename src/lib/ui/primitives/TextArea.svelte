@@ -1,6 +1,6 @@
 <!--
-	Text area (DESIGN §6 Import): a large paste area styled as notebook paper, with faint ruled lines
-	that follow the text. The label names it for screen readers and tests.
+	Text area (DESIGN §7 Input, for the import paste): raised paper with a 2 px outline and faint
+	ruled lines that follow the text; focus draws the 3 px accent ring. The label names it for screen readers and tests.
 -->
 <script lang="ts">
 	import type { HTMLTextareaAttributes } from 'svelte/elements';
@@ -27,7 +27,7 @@
 	}
 
 	label {
-		color: var(--text-muted);
+		color: var(--text-soft);
 		font-size: var(--type-small-size);
 		font-weight: var(--type-small-weight);
 	}
@@ -38,25 +38,25 @@
 		width: 100%;
 		min-height: calc(var(--rule) * 10);
 		padding: var(--gap-sm) var(--gap-md);
-		border: var(--stroke) solid transparent;
-		border-radius: var(--r-md);
+		border: var(--border-width) solid var(--outline);
+		border-radius: var(--r-input);
 		background-color: var(--surface);
 		background-image: linear-gradient(
 			transparent calc(var(--rule) - var(--hairline)),
-			var(--border) 0
+			var(--line) 0
 		);
 		background-size: 100% var(--rule);
 		background-attachment: local;
 		background-position-y: var(--gap-sm);
 		color: var(--text);
+		font-family: var(--font-body);
 		font-size: var(--type-small-size);
 		line-height: var(--rule);
 		resize: vertical;
-		box-shadow: var(--shadow-1);
 	}
 
-	textarea:focus {
-		border-color: var(--primary);
-		outline: none;
+	textarea:focus-visible {
+		outline: var(--focus-width) solid var(--accent);
+		outline-offset: var(--focus-offset);
 	}
 </style>

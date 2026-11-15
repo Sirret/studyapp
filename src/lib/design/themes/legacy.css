@@ -17,15 +17,11 @@
 	--success-soft: var(--surface-tag);
 	--error: var(--wrong);
 	--error-soft: var(--surface-tag);
-	--warning: var(--accent);
 	--warning-soft: var(--surface-tag);
-	--focus: var(--accent);
 	--moon: var(--rim);
 
 	--paw-press: color-mix(in srgb, var(--accent) 35%, transparent);
 	--paw-trail: color-mix(in srgb, var(--on-accent) 18%, transparent);
-	--lip: var(--btn-primary-lip);
-	--lip-secondary: var(--line-strong);
 	--tape: color-mix(in srgb, var(--surface-tag) 70%, transparent);
 
 	--shadow-1: var(--shadow-raised);
