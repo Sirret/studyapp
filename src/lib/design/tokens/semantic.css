@@ -1,41 +1,62 @@
 /*
- * Layer 2 — semantic tokens that don't change with the theme: type roles, spacing roles, radii,
- * motion and stacking, mapped to base tokens. Colour meanings live in the theme files.
- * @see DESIGN §3.2–§3.4 and §13.2
+ * Layer 2 — semantic tokens that don't change with the theme: type roles, spacing roles, shape,
+ * depth, motion and stacking, mapped to base tokens. Colour meanings live in the theme files.
+ * @see DESIGN §2, §5, §6 and §11
  */
 :root {
-	--font-body: var(--font-nunito);
-	--font-hand: var(--font-caveat);
+	/* Families (DESIGN §5) */
+	--font-display: var(--font-im-fell);
+	--font-wordmark: var(--font-im-fell-sc);
+	--font-body: var(--font-literata);
+	--font-label: var(--font-courier-prime);
+	/* Accent face of the previous design; read by components until steps 2a–2c rebuild them */
+	--font-hand: var(--font-im-fell);
 
-	/* Type styles (DESIGN §3.2): size / line height / weight */
-	--type-display-size: var(--size-28);
-	--type-display-leading: var(--leading-34);
-	--type-display-weight: var(--weight-800);
-	--type-title-size: var(--size-22);
-	--type-title-leading: var(--leading-28);
-	--type-title-weight: var(--weight-800);
+	/* Type roles (DESIGN §5): size / line height / weight */
+	--type-display-size: var(--size-34);
+	--type-display-size-desktop: var(--size-44);
+	--type-display-leading: var(--leading-110);
+	--type-display-weight: var(--weight-400);
+	--type-title-size: var(--size-30);
+	--type-title-leading: var(--leading-115);
+	--type-title-weight: var(--weight-400);
 	--type-heading-size: var(--size-18);
-	--type-heading-leading: var(--leading-24);
-	--type-heading-weight: var(--weight-700);
-	--type-body-size: var(--size-16);
-	--type-body-leading: var(--leading-24);
+	--type-heading-leading: var(--leading-130);
+	--type-heading-weight: var(--weight-400);
+	--type-heading-tracking: var(--tracking-08);
+	--type-wordmark-size: var(--size-18);
+	--type-wordmark-tracking: var(--tracking-10);
+	--type-body-size: var(--size-17);
+	--type-body-leading: var(--leading-150);
 	--type-body-weight: var(--weight-400);
-	--type-strong-weight: var(--weight-700);
+	--type-strong-weight: var(--weight-600);
 	--type-answer-size: var(--size-18);
-	--type-answer-leading: var(--leading-26);
-	--type-answer-weight: var(--weight-600);
-	--type-small-size: var(--size-14);
-	--type-small-leading: var(--leading-20);
-	--type-small-weight: var(--weight-500);
-	--type-caption-size: var(--size-12);
-	--type-caption-leading: var(--leading-16);
-	--type-caption-weight: var(--weight-600);
-	--type-button-size: var(--size-17);
-	--type-chip-size: var(--size-13);
+	--type-answer-leading: var(--leading-150);
+	--type-answer-weight: var(--weight-500);
+	--type-small-size: var(--size-15);
+	--type-small-leading: var(--leading-150);
+	--type-small-weight: var(--weight-400);
+	--type-caption-size: var(--size-13);
+	--type-caption-leading: var(--leading-130);
+	--type-caption-weight: var(--weight-400);
+	--type-label-size: var(--size-12);
+	--type-label-size-lg: var(--size-13);
+	--type-label-weight: var(--weight-700);
+	--type-label-tracking: var(--tracking-08);
+	--type-label-tracking-wide: var(--tracking-14);
+	--type-button-size: var(--size-18);
+	--type-button-weight: var(--weight-500);
+	--type-chip-size: var(--size-15);
 	--type-reading-size: var(--size-17);
-	--type-hand-size: var(--size-22);
+	--type-reading-leading: var(--leading-155);
+	--type-term-size: var(--size-26);
+	--type-hand-size: var(--size-26);
+	--measure-min: var(--measure-45);
+	--measure-max: var(--measure-65);
+	--measure-desktop: var(--measure-70);
 
-	/* Spacing roles (DESIGN §3.3) */
+	/* Spacing roles (DESIGN §6) */
+	--gap-2xs: var(--space-2);
 	--gap-xs: var(--space-4);
 	--gap-sm: var(--space-8);
 	--gap-md: var(--space-12);
@@ -44,25 +65,41 @@
 	--gap-2xl: var(--space-32);
 	--gap-3xl: var(--space-40);
 	--screen-gutter: var(--space-16);
+	--reader-gutter: var(--space-20);
 	--card-gap: var(--space-12);
 	--content-max: var(--size-px-560);
+	--page-max: var(--size-px-1280);
+	--sidebar-width: var(--size-px-260);
 
-	/* Radii (DESIGN §3.3) */
-	--r-sm: var(--radius-10);
+	/* Radii (DESIGN §6). --r-lg and --r-xl are the previous design's, until step 2a */
+	--r-xs: var(--radius-3);
+	--r-sm: var(--radius-8);
 	--r-md: var(--radius-14);
-	--r-lg: var(--radius-20);
-	--r-xl: var(--radius-28);
-	--r-pill: var(--radius-999);
+	--r-input: var(--radius-12);
+	--r-lg: var(--radius-14);
+	--r-xl: var(--radius-14);
+	--r-pill: var(--radius-30);
+	--r-full: var(--radius-circle);
+	--r-arch: var(--radius-arch);
+	--r-tab: var(--radius-tab);
 
-	/* Control sizes (DESIGN §5, §9, §12) */
+	/* Borders and depth: flat and printed (DESIGN §6) */
+	--border-width: var(--size-px-2);
+	--border-dashed: var(--size-px-1-5);
+	--shadow-raised: var(--size-px-2) var(--size-px-3) 0 var(--c-ink-20);
+
+	/* Control sizes (DESIGN §7, §10, §11) */
 	--touch-min: var(--size-px-44);
-	--control-height: var(--size-px-52);
+	--control-height: var(--size-px-56);
+	--control-height-hero: var(--size-px-60);
 	--control-height-session: var(--size-px-56);
-	--input-height: var(--size-px-48);
+	--input-height: var(--size-px-52);
 	--option-min-height: var(--size-px-56);
 	--chip-height: var(--size-px-32);
 	--icon-list: var(--size-px-20);
 	--icon-nav: var(--size-px-24);
+	--nav-height: var(--size-px-60);
+	--knit-height: var(--size-px-12);
 	--hairline: var(--size-px-1);
 	--stroke: var(--size-px-2);
 	--focus-width: var(--size-px-3);
@@ -70,9 +107,8 @@
 	--lip-height: var(--size-px-3);
 	--lip-pressed: var(--size-px-1);
 	--press-travel: var(--size-px-2);
-	--nav-height: var(--size-px-64);
 
-	/* Motion (DESIGN §3.4, §11.2) */
+	/* Motion (DESIGN §8; the delight and Yuki values are rebuilt in step 2c) */
 	--dur-fast: var(--ms-120);
 	--dur-base: var(--ms-200);
 	--dur-slow: var(--ms-320);
@@ -86,7 +122,6 @@
 	--dur-count-up: var(--ms-600);
 	--dur-flurry: var(--ms-800);
 	--dur-walk: var(--ms-1200);
-	/* Yuki (DESIGN §7.3) */
 	--dur-yuki-hop: var(--ms-400);
 	--dur-yuki-oops: var(--ms-600);
 	--dur-yuki-sparkle: var(--ms-700);
@@ -103,7 +138,7 @@
 	--ease-bounce: var(--curve-bounce);
 	--ease-linear: var(--curve-linear);
 
-	/* Yuki (DESIGN §7.1) */
+	/* Yuki's previous colours, until step 2c rebuilds Yuki */
 	--yuki-fur: var(--palette-yuki-fur);
 	--yuki-shade: var(--palette-yuki-shade);
 	--yuki-ice: var(--palette-yuki-ice);
@@ -128,7 +163,7 @@
 	--z-effect: var(--layer-30);
 }
 
-/* Reduced motion: every duration collapses, so motion becomes an instant change (DESIGN §3.4). */
+/* Reduced motion: every duration collapses, so motion becomes an instant change (DESIGN §11). */
 @media (prefers-reduced-motion: reduce) {
 	:root {
 		--dur-fast: 0ms;

@@ -21,7 +21,7 @@
 	<div class="themes">
 		{#each ['light', 'dark'] as theme (theme)}
 			<div class="pane" data-theme={theme} data-guide-theme={theme}>
-				<span class="theme-name">{theme}</span>
+				<span class="theme-name">{theme === 'dark' ? 'lamp-light' : 'light'}</span>
 				{@render children()}
 			</div>
 		{/each}

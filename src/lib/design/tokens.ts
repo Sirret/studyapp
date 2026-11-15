@@ -1,81 +1,103 @@
 /**
- * The theme colours as data, mirroring `themes/light.css` and `themes/dark.css` (a unit test
+ * The theme colours as data, mirroring `themes/light.css` and `themes/lamp.css` (a unit test
  * checks they agree). Used by the contrast test and by code that needs a colour outside CSS,
- * such as the browser's theme colour.
+ * such as the browser's theme colour. The lamp-light theme's key is `dark`, the stored value of
+ * the theme setting (Decisions log "Design reskin: theme setting").
  *
- * @see DESIGN §3.1 and §9
+ * @see DESIGN §3, §4 and §11
  */
 
-/** Semantic colour tokens that carry text, icons or focus rings. */
+/** Semantic colour tokens (DESIGN §4), plus the course-name colour. */
 export type ColorToken =
 	| 'bg'
+	| 'bg-deep'
 	| 'surface'
-	| 'surface-alt'
-	| 'border'
+	| 'surface-sunk'
+	| 'surface-tag'
 	| 'text'
-	| 'text-muted'
-	| 'primary'
-	| 'primary-soft'
-	| 'on-primary'
+	| 'text-strong'
+	| 'text-soft'
+	| 'decor'
+	| 'line'
+	| 'line-strong'
+	| 'outline'
+	| 'btn-primary-bg'
+	| 'btn-primary-fg'
+	| 'btn-primary-lip'
 	| 'accent'
 	| 'on-accent'
-	| 'success'
-	| 'success-soft'
-	| 'error'
-	| 'error-soft'
-	| 'warning'
-	| 'warning-soft'
-	| 'focus'
-	| 'moon'
+	| 'mode-learn'
+	| 'mode-practice'
+	| 'mode-exam'
+	| 'mode-play'
+	| 'rim'
+	| 'correct'
+	| 'wrong'
+	| 'keyterm'
+	| 'glow'
 	| 'on-course';
 
 export type ThemeName = 'light' | 'dark';
 
-/** @see DESIGN §3.1 (light values darkened where the contrast test required it; hue kept) */
+/** @see DESIGN §3.1 (light "cabin") and §3.2 (lamp-light) */
 export const THEME_COLORS: Readonly<Record<ThemeName, Readonly<Record<ColorToken, string>>>> = {
 	light: {
-		bg: '#fbf7f0',
-		surface: '#fffdf9',
-		'surface-alt': '#f4eefa',
-		border: '#e8e1d5',
-		text: '#2b2540',
-		'text-muted': '#69627f',
-		primary: '#6453c6',
-		'primary-soft': '#e9e4fb',
-		'on-primary': '#ffffff',
-		accent: '#f29e6d',
-		'on-accent': '#2b2540',
-		success: '#337653',
-		'success-soft': '#e3f1e8',
-		error: '#ab465c',
-		'error-soft': '#fbe6ea',
-		warning: '#8a6100',
-		'warning-soft': '#fdf3d6',
-		focus: '#6453c6',
-		moon: '#f2c14e',
-		'on-course': '#2b2540'
+		bg: '#efe4d0',
+		'bg-deep': '#efe4d0',
+		surface: '#f3eadb',
+		'surface-sunk': '#e6d8be',
+		'surface-tag': '#ead7b5',
+		text: '#1d2230',
+		'text-strong': '#1d2230',
+		'text-soft': '#4a4238',
+		decor: '#9c8b72',
+		line: '#d8c6a6',
+		'line-strong': '#c9ae86',
+		outline: '#1d2230',
+		'btn-primary-bg': '#1d2230',
+		'btn-primary-fg': '#f3eadb',
+		'btn-primary-lip': '#7a2621',
+		accent: '#7a2621',
+		'on-accent': '#f3eadb',
+		'mode-learn': '#2e4a3b',
+		'mode-practice': '#1c2740',
+		'mode-exam': '#7a2621',
+		'mode-play': '#d4b26a',
+		rim: '#d4b26a',
+		correct: '#2e4a3b',
+		wrong: '#7a2621',
+		keyterm: '#c79e6e',
+		glow: '#e0913a',
+		'on-course': '#1d2230'
 	},
 	dark: {
-		bg: '#1b1830',
-		surface: '#26223f',
-		'surface-alt': '#312b52',
-		border: '#3a3460',
-		text: '#f3efff',
-		'text-muted': '#b7afd6',
-		primary: '#a99bff',
-		'primary-soft': '#3b3466',
-		'on-primary': '#1b1830',
-		accent: '#f5a97f',
-		'on-accent': '#1b1830',
-		success: '#7bcb9c',
-		'success-soft': '#21402f',
-		error: '#f08aa0',
-		'error-soft': '#4a2433',
-		warning: '#f2c14e',
-		'warning-soft': '#4a3d17',
-		focus: '#a99bff',
-		moon: '#f2c14e',
-		'on-course': '#1b1830'
+		bg: '#231c16',
+		'bg-deep': '#14100c',
+		surface: '#2c241c',
+		'surface-sunk': '#14100c',
+		'surface-tag': '#2c241c',
+		text: '#e3d5bc',
+		'text-strong': '#efe3cc',
+		'text-soft': '#b8a68a',
+		decor: '#7d6b55',
+		line: '#4a3d30',
+		'line-strong': '#4a3d30',
+		outline: '#e3d5bc',
+		'btn-primary-bg': '#e3d5bc',
+		'btn-primary-fg': '#231c16',
+		'btn-primary-lip': '#8a3a2e',
+		accent: '#d98c70',
+		'on-accent': '#231c16',
+		'mode-learn': '#2a4034',
+		'mode-practice': '#14100c',
+		'mode-exam': '#8a3a2e',
+		'mode-play': '#b8964f',
+		rim: '#b8964f',
+		correct: '#9cc7a6',
+		wrong: '#d98c70',
+		keyterm: '#8a6a45',
+		glow: '#e3a35c',
+		'on-course': '#231c16'
 	}
 };
 
@@ -103,35 +125,23 @@ export const COURSE_FILLS: Readonly<Record<ThemeName, Readonly<Record<CourseColo
 	}
 };
 
-/** Text on these backgrounds must reach 4.5:1 (WCAG AA). @see DESIGN §9 */
+/** Text on these backgrounds must reach 4.5:1 (WCAG AA). `decor` is never text. @see DESIGN §11 */
 export const TEXT_PAIRS: readonly (readonly [ColorToken, ColorToken])[] = [
-	...(['bg', 'surface', 'surface-alt'] as const).flatMap((background) =>
-		(['text', 'text-muted', 'primary'] as const).map((fg) => [fg, background] as const)
+	...(['bg', 'bg-deep', 'surface', 'surface-sunk', 'surface-tag'] as const).flatMap((background) =>
+		(['text', 'text-strong', 'text-soft', 'accent', 'correct', 'wrong'] as const).map(
+			(fg) => [fg, background] as const
+		)
 	),
-	['text', 'primary-soft'],
-	['text-muted', 'primary-soft'],
-	['primary', 'primary-soft'],
-	['on-primary', 'primary'],
-	['on-accent', 'accent'],
-	['text', 'success-soft'],
-	['success', 'success-soft'],
-	['success', 'surface'],
-	['text', 'error-soft'],
-	['error', 'error-soft'],
-	['error', 'surface'],
-	['text', 'warning-soft'],
-	['warning', 'warning-soft'],
-	['warning', 'surface']
+	['btn-primary-fg', 'btn-primary-bg'],
+	['on-accent', 'accent']
 ];
 
-/** Icons and focus rings on these backgrounds must reach 3:1. @see DESIGN §9 */
+/** Outlines of pressables, focus rings and the button lip must reach 3:1. @see DESIGN §6, §11 */
 export const NON_TEXT_PAIRS: readonly (readonly [ColorToken, ColorToken])[] = [
-	['focus', 'bg'],
-	['focus', 'surface'],
-	['focus', 'surface-alt'],
-	['primary', 'bg'],
-	['success', 'success-soft'],
-	['error', 'error-soft']
+	...(['bg', 'surface', 'surface-sunk', 'surface-tag'] as const).flatMap((background) =>
+		(['outline', 'accent'] as const).map((fg) => [fg, background] as const)
+	),
+	['btn-primary-bg', 'bg']
 ];
 
 /** WCAG relative luminance of a `#rrggbb` colour. */

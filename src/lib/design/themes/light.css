@@ -1,44 +1,47 @@
 /*
- * Layer 3 — the day theme: semantic colour values. Applies to the root by default and to any
- * subtree marked data-theme="light" (the style guide shows both themes side by side).
- * @see DESIGN §3.1 and §13.2
+ * Layer 3 — the light "cabin" theme: semantic colour values. Applies to the root by default and
+ * to any subtree marked data-theme="light" (the style guide shows both themes side by side).
+ * @see DESIGN §3.1 and §4
  */
 :root,
 [data-theme='light'] {
 	color-scheme: light;
-	--bg: var(--palette-cream);
-	--surface: var(--palette-paper);
-	--surface-alt: var(--palette-lavender-tint);
-	--border: var(--palette-sand);
-	--text: var(--palette-ink);
-	--text-muted: var(--palette-ink-muted);
-	--primary: var(--palette-lavender);
-	--primary-soft: var(--palette-lavender-soft);
-	--on-primary: var(--palette-white);
-	--accent: var(--palette-peach);
-	--on-accent: var(--palette-ink);
-	--success: var(--palette-sage);
-	--success-soft: var(--palette-sage-soft);
-	--error: var(--palette-rose);
-	--error-soft: var(--palette-rose-soft);
-	--warning: var(--palette-amber);
-	--warning-soft: var(--palette-amber-soft);
-	--focus: var(--palette-lavender);
-	--moon: var(--palette-gold);
-	--on-course: var(--palette-ink);
+	--bg: var(--c-paper);
+	--bg-deep: var(--c-paper);
+	--surface: var(--c-paper-raised);
+	--surface-sunk: var(--c-paper-sunk);
+	--surface-tag: var(--c-kraft);
+	--text: var(--c-ink);
+	--text-strong: var(--c-ink);
+	--text-soft: var(--c-ink-soft);
+	--decor: var(--c-ink-faint);
+	--line: var(--c-line);
+	--line-strong: var(--c-line-strong);
+	--outline: var(--c-ink);
+	--btn-primary-bg: var(--c-ink);
+	--btn-primary-fg: var(--c-paper-raised);
+	--btn-primary-lip: var(--c-oxblood);
+	--accent: var(--c-oxblood);
+	--on-accent: var(--c-paper-raised);
+	--mode-learn: var(--c-pine);
+	--mode-practice: var(--c-night);
+	--mode-exam: var(--c-oxblood);
+	--mode-play: var(--c-brass);
+	--rim: var(--c-brass);
+	--correct: var(--c-pine);
+	--wrong: var(--c-oxblood);
+	--keyterm: var(--c-keyterm);
+	--glow: var(--c-lamp);
 
-	--paw-press: color-mix(in srgb, var(--primary) 35%, transparent);
-	--paw-trail: color-mix(in srgb, var(--on-primary) 18%, transparent);
-	--lip: var(--palette-ink-14);
-	--lip-secondary: color-mix(in srgb, var(--primary) 20%, transparent);
-	--tape: color-mix(in srgb, var(--surface-alt) 70%, transparent);
+	/* Illustration and texture colours (DESIGN §3.1, §6): wool band, snow, Yuki's blush and mask */
+	--wool: var(--c-wool);
+	--snow: var(--c-snow);
+	--blush: var(--c-blush);
+	--frost: var(--c-frost);
+	--grain-opacity: var(--grain-light);
 
-	--shadow-1: 0 1px 2px var(--palette-ink-06), 0 6px 18px var(--palette-ink-08);
-	--shadow-2: 0 2px 4px var(--palette-ink-08), 0 12px 32px var(--palette-ink-12);
-	--card-edge: transparent;
 	--scrim: var(--palette-black-30);
-	--yuki-glow: none;
-
+	--on-course: var(--c-ink);
 	--course-lavender: var(--palette-course-lavender);
 	--course-peach: var(--palette-course-peach);
 	--course-sage: var(--palette-course-sage);

@@ -1,45 +1,61 @@
 /*
- * Layer 1 — base tokens: raw values only. Nothing outside the token layer reads these directly;
- * semantic tokens and themes map them to meanings.
- * @see DESIGN §3 and §13.2
+ * Layer 1 — base tokens: raw values only. Nothing outside the token layer reads these directly
+ * (stylelint bans var(--c-…), var(--l-…) and var(--palette-…) elsewhere); semantic tokens and
+ * themes map them to meanings.
+ * @see DESIGN §2, §3, §5 and §6
  */
 :root {
-	/* Palette: day */
-	--palette-cream: #fbf7f0;
-	--palette-paper: #fffdf9;
-	--palette-lavender-tint: #f4eefa;
-	--palette-sand: #e8e1d5;
-	--palette-ink: #2b2540;
-	--palette-ink-muted: #69627f;
-	--palette-lavender: #6453c6;
-	--palette-lavender-soft: #e9e4fb;
-	--palette-white: #ffffff;
-	--palette-peach: #f29e6d;
-	--palette-sage: #337653;
-	--palette-sage-soft: #e3f1e8;
-	--palette-rose: #ab465c;
-	--palette-rose-soft: #fbe6ea;
-	--palette-amber: #8a6100;
-	--palette-amber-soft: #fdf3d6;
+	/* Palette: light "cabin" (DESIGN §3.1) */
+	--c-paper: #efe4d0;
+	--c-paper-raised: #f3eadb;
+	--c-paper-sunk: #e6d8be;
+	--c-kraft: #ead7b5;
+	--c-wool: #efe3cc;
+	--c-snow: #fbf8f0;
+	--c-ink: #1d2230;
+	--c-ink-soft: #4a4238;
+	--c-ink-faint: #9c8b72;
+	--c-line: #d8c6a6;
+	--c-line-strong: #c9ae86;
+	--c-oxblood: #7a2621;
+	--c-pine: #2e4a3b;
+	--c-night: #1c2740;
+	--c-brass: #d4b26a;
+	--c-lamp: #e0913a;
+	--c-keyterm: #c79e6e;
+	--c-blush: #e7b3a6;
+	--c-frost: #e4e8f0;
 
-	/* Palette: night */
-	--palette-indigo: #1b1830;
-	--palette-indigo-surface: #26223f;
-	--palette-indigo-alt: #312b52;
-	--palette-indigo-border: #3a3460;
-	--palette-moonlight: #f3efff;
-	--palette-moonlight-muted: #b7afd6;
-	--palette-lilac: #a99bff;
-	--palette-lilac-soft: #3b3466;
-	--palette-peach-night: #f5a97f;
-	--palette-mint: #7bcb9c;
-	--palette-mint-soft: #21402f;
-	--palette-pink: #f08aa0;
-	--palette-pink-soft: #4a2433;
-	--palette-gold: #f2c14e;
-	--palette-gold-soft: #4a3d17;
+	/* Palette: lamp-light, the dark theme (DESIGN §3.2) */
+	--l-bg: #231c16;
+	--l-bg-deep: #14100c;
+	--l-surface: #2c241c;
+	--l-line: #4a3d30;
+	--l-text: #e3d5bc;
+	--l-text-strong: #efe3cc;
+	--l-text-soft: #b8a68a;
+	--l-text-faint: #7d6b55;
+	--l-accent: #d98c70;
+	--l-lip: #8a3a2e;
+	--l-amber: #e3a35c;
+	--l-brass: #b8964f;
+	--l-keyterm: #8a6a45;
+	--l-correct: #9cc7a6;
+	--l-pine: #2a4034;
 
-	/* Course colours: light fill, dark fill */
+	/* Raised-paper shadow colour: ink at 20% (DESIGN §6) */
+	--c-ink-20: rgb(29 34 48 / 20%);
+
+	/* Grain texture: SVG fractal noise and its strength per theme (DESIGN §6) */
+	--grain-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+	--grain-light: 0.13;
+	--grain-lamp: 0.08;
+
+	/* Scrims behind sheets (kept from the previous design; DESIGN §7 doesn't set one) */
+	--palette-black-30: rgb(0 0 0 / 30%);
+	--palette-black-50: rgb(0 0 0 / 50%);
+
+	/* Course colours: light fill, lamp fill (kept until the course components are rebuilt) */
 	--palette-course-lavender: #b9a9f5;
 	--palette-course-lavender-night: #8f7fe0;
 	--palette-course-peach: #f7be9b;
@@ -53,7 +69,7 @@
 	--palette-course-butter: #f3dc92;
 	--palette-course-butter-night: #cdb050;
 
-	/* Yuki (DESIGN §7.1): the companion keeps its colours in both themes */
+	/* Yuki's previous colours: removed when step 2c rebuilds Yuki from yuki-cozy.svg */
 	--palette-yuki-fur: #fcfbff;
 	--palette-yuki-shade: #e3e8f6;
 	--palette-yuki-ice: #d3e3f7;
@@ -66,79 +82,100 @@
 	--palette-yuki-nose: #2b2540;
 	--palette-yuki-zzz: #7c6cd8;
 	--palette-yuki-book: #b9a9f5;
+	--palette-gold: #f2c14e;
+	--palette-lilac: #a99bff;
+	--palette-amber-soft: #fdf3d6;
+	--palette-white: #ffffff;
 
-	/* Shadow colour (ink) at the strengths DESIGN §3.3 and §12 use */
-	--palette-ink-06: rgb(43 37 64 / 6%);
-	--palette-ink-08: rgb(43 37 64 / 8%);
-	--palette-ink-12: rgb(43 37 64 / 12%);
-	--palette-ink-14: rgb(43 37 64 / 14%);
-	--palette-black-28: rgb(0 0 0 / 28%);
-	--palette-black-30: rgb(0 0 0 / 30%);
-	--palette-black-50: rgb(0 0 0 / 50%);
-	--palette-glow: rgb(169 155 255 / 35%);
+	/* Type families (DESIGN §5): self-hosted, Latin subset */
+	--font-im-fell: 'IM Fell English', georgia, serif;
+	--font-im-fell-sc: 'IM Fell English SC', georgia, serif;
+	--font-literata: 'Literata', georgia, serif;
+	--font-courier-prime: 'Courier Prime', 'Courier New', monospace;
 
-	/* Type */
-	--font-nunito: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
-	--font-caveat: 'Caveat', 'Comic Sans MS', cursive;
+	/* Type scale (DESIGN §5): 12, 13, 15, 16, 17, 18, 20, 26, 30, 34, 44 */
 	--size-12: 0.75rem;
 	--size-13: 0.8125rem;
-	--size-14: 0.875rem;
+	--size-15: 0.9375rem;
 	--size-16: 1rem;
 	--size-17: 1.0625rem;
 	--size-18: 1.125rem;
-	--size-22: 1.375rem;
-	--size-28: 1.75rem;
-	--leading-16: 1rem;
-	--leading-20: 1.25rem;
-	--leading-24: 1.5rem;
-	--leading-26: 1.625rem;
-	--leading-28: 1.75rem;
-	--leading-34: 2.125rem;
+	--size-20: 1.25rem;
+	--size-26: 1.625rem;
+	--size-30: 1.875rem;
+	--size-34: 2.125rem;
+	--size-44: 2.75rem;
+	--leading-110: 1.1;
+	--leading-115: 1.15;
+	--leading-130: 1.3;
+	--leading-150: 1.5;
+	--leading-155: 1.55;
+	--tracking-06: 0.06em;
+	--tracking-08: 0.08em;
+	--tracking-10: 0.1em;
+	--tracking-14: 0.14em;
+	--measure-45: 45ch;
+	--measure-65: 65ch;
+	--measure-70: 70ch;
 	--weight-400: 400;
 	--weight-500: 500;
 	--weight-600: 600;
 	--weight-700: 700;
-	--weight-800: 800;
 
-	/* Spacing scale (DESIGN §3.3) */
+	/* Spacing scale (DESIGN §6): 2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 32 */
+	--space-2: 2px;
 	--space-4: 4px;
+	--space-6: 6px;
 	--space-8: 8px;
+	--space-10: 10px;
 	--space-12: 12px;
+	--space-14: 14px;
 	--space-16: 16px;
 	--space-20: 20px;
 	--space-24: 24px;
 	--space-32: 32px;
+	/* Off-scale, still read by components that steps 2a–2c rebuild */
 	--space-40: 40px;
 	--space-56: 56px;
 
-	/* Sizes used by controls (DESIGN §5, §12) */
+	/* Sizes used by controls (DESIGN §6, §7, §10) */
 	--size-px-1: 1px;
+	--size-px-1-5: 1.5px;
 	--size-px-2: 2px;
 	--size-px-3: 3px;
 	--size-px-4: 4px;
 	--size-px-6: 6px;
 	--size-px-8: 8px;
 	--size-px-10: 10px;
+	--size-px-12: 12px;
 	--size-px-16: 16px;
 	--size-px-20: 20px;
+	--size-px-22: 22px;
 	--size-px-24: 24px;
 	--size-px-28: 28px;
 	--size-px-32: 32px;
+	--size-px-40: 40px;
 	--size-px-44: 44px;
 	--size-px-48: 48px;
 	--size-px-52: 52px;
 	--size-px-56: 56px;
+	--size-px-60: 60px;
 	--size-px-64: 64px;
+	--size-px-260: 260px;
 	--size-px-560: 560px;
+	--size-px-1280: 1280px;
 
-	/* Radii */
-	--radius-10: 10px;
+	/* Radii (DESIGN §6) */
+	--radius-3: 3px;
+	--radius-8: 8px;
+	--radius-12: 12px;
 	--radius-14: 14px;
-	--radius-20: 20px;
-	--radius-28: 28px;
-	--radius-999: 999px;
+	--radius-30: 30px;
+	--radius-circle: 50%;
+	--radius-arch: 56px 56px 6px 6px;
+	--radius-tab: 26px 26px 20px 20px;
 
-	/* Durations and easings (DESIGN §3.4, §11.2) */
+	/* Durations and easings (DESIGN §8; the rest are rebuilt with the delight layer in step 2c) */
 	--ms-120: 120ms;
 	--ms-160: 160ms;
 	--ms-200: 200ms;
@@ -146,9 +183,10 @@
 	--ms-240: 240ms;
 	--ms-300: 300ms;
 	--ms-320: 320ms;
+	--ms-350: 350ms;
+	--ms-400: 400ms;
 	--ms-450: 450ms;
 	--ms-500: 500ms;
-	--ms-400: 400ms;
 	--ms-600: 600ms;
 	--ms-700: 700ms;
 	--ms-800: 800ms;

@@ -49,7 +49,7 @@ export default {
 			}
 		],
 		'declaration-property-value-disallowed-list': {
-			'/^--/': ['/var[(]--palette-/']
+			'/^--/': ['/var[(]--palette-/', '/var[(]--c-/', '/var[(]--l-/']
 		}
 	},
 	overrides: [

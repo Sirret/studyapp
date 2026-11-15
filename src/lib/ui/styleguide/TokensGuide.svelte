@@ -1,13 +1,13 @@
-<!-- Layers 1–3 in the style guide: colours, type, spacing and radii. Dev builds only. -->
+<!-- Layers 1–3 in the style guide: colours, the four faces, spacing, radii and textures. Dev builds only. -->
 <script lang="ts">
 	import { COURSE_COLORS, THEME_COLORS } from '#lib/design/tokens.ts';
 	import GuideRow from './GuideRow.svelte';
 	import GuideSection from './GuideSection.svelte';
 
 	const colors = Object.keys(THEME_COLORS.light);
-	const types = ['display', 'title', 'heading', 'body', 'answer', 'small', 'caption'];
-	const spaces = [4, 8, 12, 16, 20, 24, 32, 40, 56];
-	const radii = ['sm', 'md', 'lg', 'xl', 'pill'];
+	const types = ['body', 'answer', 'small'];
+	const spaces = [2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 32];
+	const radii = ['xs', 'sm', 'md', 'pill', 'arch', 'tab'];
 </script>
 
 <GuideSection id="tokens" title="Tokens and themes" layer="Layers 1–3">
@@ -29,6 +29,8 @@
 	</GuideRow>
 	<GuideRow label="Type scale">
 		<div class="types">
+			<span class="display">Display — The den</span>
+			<span class="wordmark">Snowpack · How it works</span>
 			{#each types as type (type)}
 				<span
 					style:font-size="var(--type-{type}-size)"
@@ -36,8 +38,12 @@
 					style:font-weight="var(--type-{type}-weight)">{type} — Snowpack</span
 				>
 			{/each}
-			<span class="hand">Caveat — a note from Yuki</span>
+			<span class="label">LEARN · §2 OF 3</span>
 		</div>
+	</GuideRow>
+	<GuideRow label="Textures">
+		<span class="texture grain">grain</span>
+		<span class="knit texture-knit"></span>
 	</GuideRow>
 	<GuideRow label="Spacing">
 		{#each spaces as space (space)}
@@ -62,12 +68,12 @@
 	.chip {
 		width: var(--size-px-44);
 		height: var(--size-px-44);
-		border: var(--hairline) solid var(--border);
+		border: var(--hairline) solid var(--line);
 		border-radius: var(--r-sm);
 	}
 
 	.name {
-		color: var(--text-muted);
+		color: var(--text-soft);
 		font-size: var(--type-caption-size);
 		line-height: var(--type-caption-leading);
 		text-align: center;
@@ -79,15 +85,47 @@
 		gap: var(--gap-sm);
 	}
 
-	.hand {
-		font-family: var(--font-hand);
-		font-size: var(--type-hand-size);
+	.display {
+		font-family: var(--font-display);
+		font-style: italic;
+		font-size: var(--type-display-size);
+		line-height: var(--type-display-leading);
+		color: var(--text-strong);
+	}
+
+	.wordmark {
+		font-family: var(--font-wordmark);
+		font-size: var(--type-wordmark-size);
+		letter-spacing: var(--type-wordmark-tracking);
+	}
+
+	.label {
+		font-family: var(--font-label);
+		font-size: var(--type-label-size-lg);
+		font-weight: var(--type-label-weight);
+		letter-spacing: var(--type-label-tracking);
+		color: var(--text-soft);
+	}
+
+	.texture {
+		display: grid;
+		place-items: center;
+		width: var(--size-px-64);
+		height: var(--size-px-48);
+		border: var(--border-width) solid var(--outline);
+		border-radius: var(--r-sm);
+		color: var(--text-soft);
+		font-size: var(--type-caption-size);
+	}
+
+	.texture-knit {
+		width: var(--size-px-260);
 	}
 
 	.space {
 		height: var(--space-16);
 		border-radius: var(--size-px-2);
-		background: var(--primary);
+		background: var(--accent);
 	}
 
 	.radius {
@@ -96,9 +134,9 @@
 		width: var(--size-px-64);
 		height: var(--size-px-48);
 		background: var(--surface);
-		box-shadow: var(--shadow-1);
-		border: var(--hairline) solid var(--card-edge);
-		color: var(--text-muted);
+		box-shadow: var(--shadow-raised);
+		border: var(--border-width) solid var(--outline);
+		color: var(--text-soft);
 		font-size: var(--type-caption-size);
 	}
 </style>

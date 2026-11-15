@@ -14,7 +14,7 @@ export const APP_SHORT_NAME = 'Snowpack';
 /** One-line description used by the PWA manifest. */
 export const APP_DESCRIPTION = 'Offline-first study and cram app for CS and IS students.';
 /** Manifest background/theme colour: matches the light `--bg` token (DESIGN §3.1). */
-export const PWA_BACKGROUND_COLOR = '#FBF7F0';
+export const PWA_BACKGROUND_COLOR = '#EFE4D0';
 /** IndexedDB database name. */
 export const DB_NAME = 'snowpack';
 

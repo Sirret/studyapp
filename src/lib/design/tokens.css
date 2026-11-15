@@ -1,30 +1,82 @@
 /*
  * The token layer's entry point, imported once by the root layout: fonts, base tokens, semantic
- * tokens and both themes, then the few element defaults every screen relies on. Components read
- * only the semantic and theme tokens.
- * @see DESIGN §3 and §13
+ * tokens, both themes and the legacy aliases, then the element defaults and the two textures
+ * every screen relies on. Components read only the semantic and theme tokens.
+ * @see DESIGN §2, §5 and §6
  */
 @import './tokens/base.css';
 @import './tokens/semantic.css';
 @import './themes/light.css';
-@import './themes/dark.css';
+@import './themes/lamp.css';
+@import './themes/legacy.css';
 
-/* Nunito: variable 400–800, Latin subset, self-hosted and preloaded (DESIGN §3.2, §10). */
+/*
+ * Self-hosted fonts, Latin subset, only the weights DESIGN §5 lists; the service worker precaches
+ * them, so they work offline. Literata 400 is preloaded from app.html.
+ */
 @font-face {
-	font-family: Nunito;
+	font-family: Literata;
 	font-style: normal;
-	font-weight: 400 800;
+	font-weight: 400;
 	font-display: swap;
-	src: url('/fonts/nunito-latin-wght-normal.woff2') format('woff2');
+	src: url('/fonts/literata-latin-400-normal.woff2') format('woff2');
 }
 
-/* Caveat: accent only; the browser fetches it the first time text uses it. */
 @font-face {
-	font-family: Caveat;
+	font-family: Literata;
+	font-style: normal;
+	font-weight: 500;
+	font-display: swap;
+	src: url('/fonts/literata-latin-500-normal.woff2') format('woff2');
+}
+
+@font-face {
+	font-family: Literata;
 	font-style: normal;
 	font-weight: 600;
 	font-display: swap;
-	src: url('/fonts/caveat-latin-600-normal.woff2') format('woff2');
+	src: url('/fonts/literata-latin-600-normal.woff2') format('woff2');
+}
+
+@font-face {
+	font-family: Literata;
+	font-style: italic;
+	font-weight: 400;
+	font-display: swap;
+	src: url('/fonts/literata-latin-400-italic.woff2') format('woff2');
+}
+
+/* Display is always italic (DESIGN §5), so only the italic file is shipped. */
+@font-face {
+	font-family: 'IM Fell English';
+	font-style: italic;
+	font-weight: 400;
+	font-display: swap;
+	src: url('/fonts/im-fell-english-latin-400-italic.woff2') format('woff2');
+}
+
+@font-face {
+	font-family: 'IM Fell English SC';
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url('/fonts/im-fell-english-sc-latin-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+	font-family: 'Courier Prime';
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url('/fonts/courier-prime-latin-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+	font-family: 'Courier Prime';
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+	src: url('/fonts/courier-prime-latin-700-normal.woff2') format('woff2');
 }
 
 *,
@@ -49,9 +101,9 @@ body {
 	-webkit-font-smoothing: antialiased;
 }
 
-/* One visible focus ring for every interactive element (DESIGN §3.1, §9). */
+/* One visible focus ring for every interactive element: 3 px accent, offset 2 (DESIGN §11). */
 :focus-visible {
-	outline: var(--focus-width) solid var(--focus);
+	outline: var(--focus-width) solid var(--accent);
 	outline-offset: var(--focus-offset);
 }
 
@@ -81,4 +133,35 @@ select {
 		animation-iteration-count: 1 !important;
 		transition-duration: 0ms !important;
 	}
+}
+
+/*
+ * Textures (DESIGN §6), applied by Screen and Card, never by screens. .grain lays fractal noise
+ * over --bg; .knit is the 12 px band of oxblood V stitches on wool, used once under the top bar.
+ */
+.grain {
+	position: relative;
+	isolation: isolate;
+	background-color: var(--bg);
+}
+
+.grain::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	pointer-events: none;
+	background-image: var(--grain-noise);
+	opacity: var(--grain-opacity);
+}
+
+.knit {
+	height: var(--knit-height);
+	border-block: var(--hairline) solid var(--line-strong);
+	background-color: var(--wool);
+	background-image:
+		linear-gradient(135deg, var(--accent) 25%, transparent 25%),
+		linear-gradient(225deg, var(--accent) 25%, transparent 25%);
+	background-size: var(--knit-height) var(--knit-height);
+	background-position: center;
 }

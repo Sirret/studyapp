@@ -28,17 +28,17 @@ function declarations(path: string): Map<string, string> {
 const base = declarations('src/lib/design/tokens/base.css');
 const themeFiles: Record<ThemeName, Map<string, string>> = {
 	light: declarations('src/lib/design/themes/light.css'),
-	dark: declarations('src/lib/design/themes/dark.css')
+	dark: declarations('src/lib/design/themes/lamp.css')
 };
 
-/** A theme token's value, resolving `var(--palette-…)` through the base tokens. */
+/** A theme token's value, resolving `var(--c-…)` / `var(--l-…)` through the base tokens. */
 function resolve(theme: ThemeName, token: string): string | undefined {
 	const value = themeFiles[theme].get(token);
 	const ref = value?.match(/^var\(--([\w-]+)\)$/)?.[1];
 	return ref ? base.get(ref) : value;
 }
 
-describe('tokens.ts mirrors the theme files (DESIGN §3.1)', () => {
+describe('tokens.ts mirrors the theme files (DESIGN §3, §4)', () => {
 	it.each(THEMES)('%s: every mirrored colour matches its CSS value', (theme) => {
 		for (const [token, hex] of Object.entries(THEME_COLORS[theme])) {
 			expect(resolve(theme, token), `--${token}`).toBe(hex);
@@ -55,7 +55,7 @@ describe('tokens.ts mirrors the theme files (DESIGN §3.1)', () => {
 	});
 });
 
-describe('contrast (DESIGN §9)', () => {
+describe('contrast (DESIGN §11)', () => {
 	it.each(THEMES)('%s: text pairs reach 4.5:1', (theme) => {
 		const colors = THEME_COLORS[theme];
 		const failures = TEXT_PAIRS.filter(

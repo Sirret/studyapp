@@ -1,0 +1,51 @@
+/*
+ * Layer 3 — the lamp-light theme (the dark theme): semantic colour values. The setting's stored
+ * value stays 'dark' (and auto-night and "follow system" resolve to it), so the attribute is
+ * data-theme="dark".
+ * @see DESIGN §3.2 and §4; Decisions log "Design reskin: theme setting"
+ */
+[data-theme='dark'] {
+	color-scheme: dark;
+	--bg: var(--l-bg);
+	--bg-deep: var(--l-bg-deep);
+	--surface: var(--l-surface);
+	--surface-sunk: var(--l-bg-deep);
+	--surface-tag: var(--l-surface);
+	--text: var(--l-text);
+	--text-strong: var(--l-text-strong);
+	--text-soft: var(--l-text-soft);
+	--decor: var(--l-text-faint);
+	--line: var(--l-line);
+	--line-strong: var(--l-line);
+	--outline: var(--l-text);
+	--btn-primary-bg: var(--l-text);
+	--btn-primary-fg: var(--l-bg);
+	--btn-primary-lip: var(--l-lip);
+	--accent: var(--l-accent);
+	--on-accent: var(--l-bg);
+	--mode-learn: var(--l-pine);
+	--mode-practice: var(--l-bg-deep);
+	--mode-exam: var(--l-lip);
+	--mode-play: var(--l-brass);
+	--rim: var(--l-brass);
+	--correct: var(--l-correct);
+	--wrong: var(--l-accent);
+	--keyterm: var(--l-keyterm);
+	--glow: var(--l-amber);
+
+	/* Illustration and texture colours: Yuki keeps her fur in both themes (DESIGN §9) */
+	--wool: var(--l-text-strong);
+	--snow: var(--c-snow);
+	--blush: var(--c-blush);
+	--frost: var(--c-frost);
+	--grain-opacity: var(--grain-lamp);
+
+	--scrim: var(--palette-black-50);
+	--on-course: var(--l-bg);
+	--course-lavender: var(--palette-course-lavender-night);
+	--course-peach: var(--palette-course-peach-night);
+	--course-sage: var(--palette-course-sage-night);
+	--course-sky: var(--palette-course-sky-night);
+	--course-rose: var(--palette-course-rose-night);
+	--course-butter: var(--palette-course-butter-night);
+}

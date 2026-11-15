@@ -1,0 +1,35 @@
+/*
+ * The previous design's colour names, pointed at the cozy meanings so components keep working
+ * until reskin steps 2a–3 rebuild them on the DESIGN §4 names. Declared on every themed element
+ * so each alias resolves against the theme it sits in. Delete each alias once nothing reads it;
+ * the file goes in step 4.
+ * @see DESIGN §4; docs/WIP.md (Design reskin, step 1)
+ */
+:root,
+[data-theme] {
+	--surface-alt: var(--surface-tag);
+	--border: var(--line);
+	--text-muted: var(--text-soft);
+	--primary: var(--accent);
+	--primary-soft: var(--surface-tag);
+	--on-primary: var(--on-accent);
+	--success: var(--correct);
+	--success-soft: var(--surface-tag);
+	--error: var(--wrong);
+	--error-soft: var(--surface-tag);
+	--warning: var(--accent);
+	--warning-soft: var(--surface-tag);
+	--focus: var(--accent);
+	--moon: var(--rim);
+
+	--paw-press: color-mix(in srgb, var(--accent) 35%, transparent);
+	--paw-trail: color-mix(in srgb, var(--on-accent) 18%, transparent);
+	--lip: var(--btn-primary-lip);
+	--lip-secondary: var(--line-strong);
+	--tape: color-mix(in srgb, var(--surface-tag) 70%, transparent);
+
+	--shadow-1: var(--shadow-raised);
+	--shadow-2: var(--shadow-raised);
+	--card-edge: var(--outline);
+	--yuki-glow: none;
+}
