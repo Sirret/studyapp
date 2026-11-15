@@ -10,6 +10,7 @@
 	import { countOf } from '#lib/util/plural.ts';
 	import { ArrowLeft } from '@lucide/svelte';
 	import Banner from '#lib/ui/components/Banner.svelte';
+	import ImportDone from '#lib/ui/import-screen/ImportDone.svelte';
 	import ImportStep from '#lib/ui/import-screen/ImportStep.svelte';
 	import ImportPreviewPanel from '#lib/ui/import-screen/ImportPreviewPanel.svelte';
 	import PromptIntake from '#lib/ui/import-screen/PromptIntake.svelte';
@@ -278,25 +279,6 @@
 		<Banner tone="success">{notice}</Banner>
 	{/if}
 	{#if added}
-		<Row gap="sm">
-			<Button href={resolve('/course/[courseId]', { courseId: added })} data-start-studying>
-				Start studying
-			</Button>
-			<Button variant="secondary" onclick={importMore} data-import-more>Import more</Button>
-		</Row>
-		<Row gap="sm">
-			<Button
-				variant="ghost"
-				href={resolve('/course/[courseId]/cards', { courseId: added })}
-				data-see-all-cards>See all cards</Button
-			>
-			{#if addedFlagged}
-				<Button
-					variant="ghost"
-					href={`${resolve('/course/[courseId]/cards', { courseId: added })}?filter=flagged`}
-					data-check-flagged>Check the unsure cards</Button
-				>
-			{/if}
-		</Row>
+		<ImportDone courseId={added} flagged={addedFlagged} onImportMore={importMore} />
 	{/if}
 </Screen>

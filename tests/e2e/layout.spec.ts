@@ -46,7 +46,10 @@ async function courseWithCards(page: Page): Promise<void> {
 test.describe('layout', { tag: '@both' }, () => {
 	test('Today fits', async ({ page }) => {
 		await page.goto('/');
-		await expectWithinWidth(page, page.getByRole('link', { name: /import/i }).first());
+		await expectWithinWidth(
+			page,
+			page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Import notes' })
+		);
 		await expectNoSidewaysScroll(page);
 	});
 
