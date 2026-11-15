@@ -18,6 +18,6 @@
 	.moon {
 		display: block;
 		flex: none;
-		fill: var(--moon);
+		fill: var(--rim);
 	}
 </style>

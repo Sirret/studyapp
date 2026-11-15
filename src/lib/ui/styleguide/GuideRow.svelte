@@ -17,7 +17,7 @@
 	}
 
 	.label {
-		color: var(--text-muted);
+		color: var(--text-soft);
 		font-size: var(--type-small-size);
 		font-weight: var(--type-small-weight);
 	}

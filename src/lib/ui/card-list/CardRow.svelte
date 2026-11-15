@@ -1,10 +1,12 @@
 <!--
 	One note in the "See all cards" list (BUILD_PLAN §10 row 8.5): the question and answer in plain
-	words, its cards' statuses, flags, and the fix actions. Editing happens in NoteEditor.
+	words, its cards' statuses, flags (DESIGN §7 Stamps), and the fix actions. Editing happens in
+	NoteEditor.
 -->
 <script lang="ts">
 	import type { CardStatus } from '#lib/db/schemas/common.ts';
 	import type { CardListRow } from '#lib/services/card-list-types.ts';
+	import Stamp from '../components/Stamp.svelte';
 	import StatusBadge from '../components/StatusBadge.svelte';
 	import Row from '../layout/Row.svelte';
 	import Stack from '../layout/Stack.svelte';
@@ -37,9 +39,9 @@
 			</Stack>
 			<Row gap="sm">
 				{#each statuses as status (status)}<StatusBadge {status} />{/each}
-				{#if row.flagged}<span class="flag">Check this</span>{/if}
-				{#if paused}<span class="flag">Paused</span>{/if}
-				{#if row.generated}<span class="note">Added by the chatbot</span>{/if}
+				{#if row.flagged}<Stamp text="Check this" />{/if}
+				{#if paused}<Stamp text="Paused" dashed />{/if}
+				{#if row.generated}<Stamp text="Added by the chatbot" dashed />{/if}
 			</Row>
 			<Row gap="sm">
 				{#if editable}
@@ -61,35 +63,25 @@
 
 <style>
 	.row {
-		border-radius: var(--r-lg);
+		border-radius: var(--r-md);
 	}
 
 	.highlighted {
-		outline: var(--stroke) solid var(--primary);
+		outline: var(--stroke) solid var(--accent);
 		outline-offset: var(--focus-offset);
 	}
 
 	.prompt {
+		color: var(--text-strong);
+		font-family: var(--font-body);
 		font-size: var(--type-body-size);
 		overflow-wrap: anywhere;
 	}
 
 	.answer,
 	.note {
-		color: var(--text-muted);
+		color: var(--text-soft);
 		font-size: var(--type-small-size);
 		overflow-wrap: anywhere;
-	}
-
-	.flag {
-		display: inline-flex;
-		align-items: center;
-		min-height: var(--chip-height);
-		padding: 0 var(--gap-sm);
-		border-radius: var(--r-pill);
-		background: var(--warning-soft);
-		color: var(--text);
-		font-size: var(--type-caption-size);
-		font-weight: var(--type-strong-weight);
 	}
 </style>

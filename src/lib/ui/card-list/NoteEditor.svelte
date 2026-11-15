@@ -61,13 +61,13 @@
 
 <style>
 	.hint {
-		color: var(--text-muted);
+		color: var(--text-soft);
 		font-size: var(--type-small-size);
 	}
 
 	.error {
 		margin: 0;
-		color: var(--error);
+		color: var(--wrong);
 		font-size: var(--type-small-size);
 	}
 </style>

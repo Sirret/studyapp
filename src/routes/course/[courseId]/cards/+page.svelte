@@ -1,4 +1,8 @@
-<!-- "See all cards" (BUILD_PLAN §10 row 8.5): every note of a course by topic, searchable, fixable in place. -->
+<!--
+	"See all cards" (BUILD_PLAN §10 row 8.5): every note of a course by topic, searchable, fixable
+	in place. Reskin (DESIGN §12 "Browse & edit"): Courier breadcrumb + back arrow, Hero title,
+	SectionHeading per topic, Stamps for flags.
+-->
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { resolve } from '$app/paths';
@@ -13,6 +17,7 @@
 	import TopicGroup from '#lib/ui/card-list/TopicGroup.svelte';
 	import ConfirmDialog from '#lib/ui/components/ConfirmDialog.svelte';
 	import EmptyState from '#lib/ui/components/EmptyState.svelte';
+	import Hero from '#lib/ui/components/Hero.svelte';
 	import StickyNote from '#lib/ui/components/StickyNote.svelte';
 	import PawLoader from '#lib/ui/delight/PawLoader.svelte';
 	import Screen from '#lib/ui/layout/Screen.svelte';
@@ -95,7 +100,7 @@
 
 <Screen>
 	{#snippet top()}
-		<TopBar title={view ? `All cards · ${view.courseName}` : 'All cards'}>
+		<TopBar title={view ? `${view.courseName} · Cards` : 'Cards'}>
 			{#snippet leading()}
 				<Button
 					variant="ghost"
@@ -123,6 +128,7 @@
 			{#snippet action()}<Button href={resolve('/import')}>Import your notes</Button>{/snippet}
 		</EmptyState>
 	{:else}
+		<Hero title="All cards" subline="Fix a card in place; its history stays." />
 		<Stack gap="sm">
 			<Input label="Search cards" type="search" bind:value={query} />
 			<Segmented

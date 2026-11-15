@@ -1,6 +1,6 @@
 /*
  * The token layer's entry point, imported once by the root layout: fonts, base tokens, semantic
- * tokens, both themes and the legacy aliases, then the element defaults and the two textures
+ * tokens and both themes, then the element defaults and the two textures
  * every screen relies on. Components read only the semantic and theme tokens.
  * @see DESIGN §2, §5 and §6
  */
@@ -8,7 +8,6 @@
 @import './tokens/semantic.css';
 @import './themes/light.css';
 @import './themes/lamp.css';
-@import './themes/legacy.css';
 
 /*
  * Self-hosted fonts, Latin subset, only the weights DESIGN §5 lists; the service worker precaches

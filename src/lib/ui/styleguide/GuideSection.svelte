@@ -42,7 +42,7 @@
 	}
 
 	.layer {
-		color: var(--text-muted);
+		color: var(--text-soft);
 		font-size: var(--type-caption-size);
 		font-weight: var(--type-caption-weight);
 		text-transform: uppercase;
@@ -76,7 +76,7 @@
 	}
 
 	.theme-name {
-		color: var(--text-muted);
+		color: var(--text-soft);
 		font-size: var(--type-caption-size);
 		font-weight: var(--type-caption-weight);
 	}
