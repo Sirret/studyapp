@@ -14,6 +14,7 @@
 | 2026-11-15 | Design reskin | 3 course page | Opus 5.5 | Hero eyebrow + course title, ModeDoorRow (Learn/Practice/Exam prep as shortcuts, doors.ts + test), Today/Exam SectionHeadings, Cheat sheet stamp in TopBar (side slots grow), CourseMapPanel collapsible How it connects + outlined cheat table, BottomNav Shelf; unit 1864/1864, e2e course-map+modes+planner+layout 19/19 (2 load failures on 2 workers logged) | 13 | Step 3 screens: learn + study | f6b41ea |
 | 2026-11-15 | Design reskin | 3 learn + study | Opus 5.5 | Learn: breadcrumb + back arrow, PawTrail with step meta, Hero title, no card, Done reading / Start PawButtons with Courier meta; session TopBar: course breadcrumb + phase (colour chip gone); unit 1864/1864, e2e modes+session+layout+logging 18/20 (2 load failures passed alone, logged) | 4 | Step 3 screens: exam prep, planner, one-night | d5a2557 |
 | 2026-11-15 | Design reskin | 3 exam prep, planner, one-night | Opus 5.5 | Planner: breadcrumb + back arrow, Hero "The plan", SectionHeadings (The next days / Exams / Your study time), "✓ Fits" Stamp; course page "Exam prep" heading, ExamForm without its card; Start review + one-night re-quiz PawButtons with card-count meta; Yuki sleepy in one-night; unit 1864/1864, e2e planner+modes+layout 17/17 | 4 | Step 3 screens: card list | 69d150e |
+| 2026-11-15 | Design reskin | 3 card list | Opus 5.5 | Card list: breadcrumb "<course> · Cards" + back arrow, Hero "All cards", TopicGroup = SectionHeading + Courier note count, flag Stamps (Check this / Paused / Added by the chatbot); legacy.css deleted (last 3 readers moved); unit 1864/1864 pass, e2e cards+layout+course-map 22/23 (Today fits load failure passed alone, logged) | 10 | Step 3 screens: desktop Sidebar layout (§10) | 96709e8 |
 
 ## Task
 Reskin the app to the cozy design. **Spec: `docs/DESIGN.md` (read in full; authoritative).** Reference art: `docs/design/yuki-cozy.svg`, screenshots in `docs/design/screens/` (DESIGN.md wins over screenshots; numbers in screenshots are placeholders). Do not read old design notes. **No new features.** Base commit (reskin start): `5dfa380`.
@@ -34,7 +35,7 @@ Stop and ask the user if DESIGN.md is ambiguous or a value fails contrast in pra
   - [x] course page + map/cheat sheet (f6b41ea)
   - [x] learn + study screens (d5a2557)
   - [x] exam prep, planner, one-night (69d150e)
-  - [x] card list (HASH)
+  - [x] card list (96709e8)
   - [ ] desktop Sidebar layout (§10)
 - [ ] 4. `npm run verify`; reviewer (Sonnet, fresh session, diff since `5dfa380`, spec = DESIGN.md, summary at `test-results/summary.md`); PROGRESS entry; phase table → Design reskin Done, 8.6 Next; HANDOFF updated; delete WIP. Push only after the user confirms.
 
