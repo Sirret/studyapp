@@ -9,6 +9,7 @@
 | 2026-11-15 | Design reskin | 2b-i Existing components | Opus 5.5 | 22 components on §4/§7 names: OptionBubble toe-bean (§8 stamp + nudge), TapChip/Slot, FeedbackPanel card, StatusBadge stamp style, PawTrail ProgressStrip/Dots, knit Sheet; 13 legacy aliases deleted; DESIGN §7 ModeDoor label rule; unit 1857/1857, layout+session+modes+planner+import e2e 34/35 (1 timeout logged) | 26 | Step 2b-ii New §7 components | a35920a |
 | 2026-11-15 | Design reskin | 2b-ii New §7 components | Opus 5.5 | ModeDoor (--door-label via --on-dark-fill/--on-light-fill), Stamp, TrapAside, KeyTerm, HangingTag, PawTrail, PawRing, ReadinessMeter, Flashcard, ChecklistRow in CozyComponentsGuide; TopBar (breadcrumb/wordmark + knit) and BottomNav (Den/Shelf/Import notes/+Play) reskinned; unit 1857/1857, e2e layout+session+modes+planner+cards+course-map 27/30 (3 load failures passed alone, logged) | 23 | Step 2c Delight + Yuki | 3975487 |
 | 2026-11-15 | Design reskin | 2c Delight + Yuki | Opus 5.5 | Yuki rebuilt from yuki-cozy.svg (8 group ids, 5 §9 states, callers mapped, YukiProps gone, colours from the SVG); delight on §8: stamp keyframes, SnowFall, CardFly + rise, pawstep (PawTrail), sway (HangingTag), reduced-motion off; unit 1857/1857, e2e layout+session+pwa 18/20 (2 load failures passed alone, logged) | 28 | Step 3 screens: home/welcome | 6a78c84 |
+| 2026-11-15 | Design reskin | 3 home/welcome | Opus 5.5 | Hero + SectionHeading components (guide), home: wordmark TopBar (short name), Welcome/Welcome back hero with SnowFall, Your shelf heading, ReadinessMeter on course cards (ReadinessRing deleted), BottomNav Den; unit 1857/1857, e2e layout+pwa+planner+session 21/22 (1 timeout passed alone, logged) | 9 | Step 3 screens: import | 528ae1d |
 
 ## Task
 Reskin the app to the cozy design. **Spec: `docs/DESIGN.md` (read in full; authoritative).** Reference art: `docs/design/yuki-cozy.svg`, screenshots in `docs/design/screens/` (DESIGN.md wins over screenshots; numbers in screenshots are placeholders). Do not read old design notes. **No new features.** Base commit (reskin start): `5dfa380`.
@@ -24,7 +25,7 @@ Stop and ask the user if DESIGN.md is ambiguous or a value fails contrast in pra
   - [x] 2b-ii (3975487). New §7 components (in `/dev/ui` both themes): ModeDoor (`--door-label` per variant), Stamp, TrapAside, KeyTerm, HangingTag, PawTrail, PawRing, ReadinessMeter, Flashcard, ChecklistRow; TopBar + BottomNav (`src/lib/ui/layout/`) reskinned. Not wired into screens yet (step 3). Checkpoint.
 - [x] 2c (6a78c84). Delight (§8) in `src/lib/ui/delight/` + Yuki rebuilt from `yuki-cozy.svg` (§9 states; keep group ids `#tail #body #head #ear-l #ear-r #eyes #bandana #zz`). Checkpoint.
 - [ ] 3. Reskin screens (no styles beyond grid placement; a needed style edit means a missing component). Checkpoint per group:
-  - [ ] home/welcome
+  - [x] home/welcome (528ae1d)
   - [ ] import
   - [ ] course page + map/cheat sheet (cheat-sheet overflow → collapsible)
   - [ ] learn + study screens
