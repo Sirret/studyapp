@@ -7,7 +7,7 @@ Phase 8.6 gives each course its own Learn / Practice / Exam prep flows (spec: SE
 | date | phase | step | model | done | files | next | commit |
 |---|---|---|---|---|---|---|---|
 | 2026-11-16 | 8.6 | 0 plan | Opus | WIP plan; Q1–Q18 answered into the Decisions log; SESSION_NOTES §I point | 3 | Step 1 (interface + data) | 97e8a91 |
-| 2026-11-16 | 8.6 | 1 interface | Opus | Mode `practice`, 5 kinds, Settings sounds/music, kv `studyScope`, DATA_MODEL; stubs: idea-unit, list-grading, hint, scope, learn-flow, practice, exercise-build-list, exercise-check-units; IdeaUnitSpec/ListSpec; verdict `verdictKind`/`weight` | 20 | Step 2: launch spec-test-writer with the brief in "Agents" | _(hash)_ |
+| 2026-11-16 | 8.6 | 1 interface | Opus | Mode `practice`, 5 kinds, Settings sounds/music, kv `studyScope`, DATA_MODEL; stubs: idea-unit, list-grading, hint, scope, learn-flow, practice, exercise-build-list, exercise-check-units; IdeaUnitSpec/ListSpec; verdict `verdictKind`/`weight` | 20 | Step 2: launch spec-test-writer with the brief in "Agents" | f90ccd0 |
 
 ## What already exists (reuse; don't rebuild)
 - **Event fields:** `ReviewEvent.hinted` and `verdictKind: 'exact'|'fuzzy'|'ideaUnit'|'listN'` are in `db/schemas/event.ts:43-46` and DATA_MODEL. Nothing reads them yet. The spec is BUILD_PLAN §5.1 rows `ideaUnit`/`listN` and §6.3 (a hinted answer never counts toward the criterion; a hinted correct is rated Hard).
