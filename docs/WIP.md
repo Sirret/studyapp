@@ -106,6 +106,7 @@ Tests: unit + `layout.spec.ts` + snapshots.
 
 **11. Sounds + Manual mode (screen checkpoint).**
 - `ui/delight/sound.ts`: Web Audio synth for the 4 effects only (Q11; no music), gated by the pure `soundAllowed(context, prefs)` (never on reading screens), with unit tests.
+- **Sound toggle must be easy to find (user, 2026-11-16):** a speaker icon button in the study/practice TopBar (one tap mutes or unmutes, `aria-pressed`, label "Sounds on"/"Sounds off", 48 px target) writes `Settings.sounds` straight away, plus the labelled Sounds row in `/settings`. Both save to kv, so the choice holds on reload and next visit. e2e: mute in a session, reload, still muted; the Settings row shows off.
 - Manual: `/course/new` and `/course/[id]/add` forms for course, topic, section and every non-image card type, reusing `note-edit.ts`, `NoteEditor`, repos and `writeBatch` through a `ManualContentService`. The list-fact form has items and the key-word tick.
 - e2e `manual.spec.ts`.
 
