@@ -1,0 +1,146 @@
+# WIP — Phase 8.6: Learn & Practice
+
+## Context
+Phase 8.6 gives each course its own Learn / Practice / Exam prep flows (spec: SESSION_NOTES §C, §D, §J, §K; PROMPTS §6–§7; DESIGN §7–§10; BUILD_PLAN §10 row 8.6, §5.1 rows ideaUnit/listN, §6.3). Step 0 (this plan) is done and approved; Q1–Q18 are answered (section "Decisions" below, also in the BUILD_PLAN Decisions log as rows "Phase 8.6 Qn").
+
+## Checkpoint log
+| date | phase | step | model | done | files | next | commit |
+|---|---|---|---|---|---|---|---|
+| 2026-11-16 | 8.6 | 0 plan | Opus | WIP plan; Q1–Q18 answered into the Decisions log; SESSION_NOTES §I point | 3 | Step 1 (interface + data) | _(hash)_ |
+
+## What already exists (reuse; don't rebuild)
+- **Event fields:** `ReviewEvent.hinted` and `verdictKind: 'exact'|'fuzzy'|'ideaUnit'|'listN'` are in `db/schemas/event.ts:43-46` and DATA_MODEL. Nothing reads them yet. The spec is BUILD_PLAN §5.1 rows `ideaUnit`/`listN` and §6.3 (a hinted answer never counts toward the criterion; a hinted correct is rated Hard).
+- **Key words and lists:** the parser stores `payload.keyWords` and `payload.list: true` (`import/key-words.ts`, `build-drafts.ts`). `cardgen.factCards` already makes **no reverse card** for a list fact (D4/D5 FIX done). `note-edit.ts` edits keyWords. No exercise builder reads keyWords yet.
+- **Exercises already built:** `matching` (`buildMatching`, `MATCHING_PAIRS = 4`, weight currently `none`), `sequence`/`parsons` (arrange), compare `cell:r:c` typed fill, fact `rev` typed definition → term, `flip` (`SelfRateExercise`), `multiSelect`/`oddOneOut` for compare notes only, `whichOne`, `fadeStep`. Exercise components are in `src/lib/exercises/` and are dispatched by `spec.shape`.
+- **Hints:** only the first letter (`TypeSpec.letter`, `firstLetterType`). `Flashcard.svelte` has a local first-3-words hint (style guide only).
+- **Learn today:** the acquisition engine (`engine/acquisition.ts`: `topicUnits` one unit per section, `unitSteps` pretrain → pretest → read → quiz, `unitCost`), `course-learn.ts`, `CoursePlanService.learnUnit/startLearnStep/finishQuiz`, and the route `/learn/[courseId]/[unitKey]` (step per `?step=N`, runs `/study` sessions, answers logged `credited: false` with mode `acquisition`, which triggers the next-day handoff in replay).
+- **Data for the reader:** `Topic.summary`, `Chunk.title/text/words/tip/source/added/priority` (`db/schemas/course.ts`). `Course.map` holds bigpicture, habit, topics/sections, links, cheat, missing and next, shown by `CourseMapPanel`. No key-term or trap fields on chunks.
+- **Sessions and rounds:** `SessionService`/`StudyService` (`startCourse` accepts `cardIds`, the only narrowing hook), rounds in `engine/round.ts` (`ROUND_WORKING_SET 8`, `ROUND_MAX_ANSWERS 40`, `ROUND_MAX_MINUTES 8`), `PRACTICE_SESSION_CARDS = 20`.
+- **UI already built (reskin):** Hero, SectionHeading, ModeDoor/ModeDoorRow, Stamp, TrapAside, KeyTerm, PawTrail, PawRing, ReadinessMeter, Flashcard, CardFly, ChecklistRow, Toggle, Sheet, EmptyState, Yuki (5 states), Screen/TopBar/BottomNav/Sidebar. Course-page doors are shortcuts (`ui/course-map/doors.ts`).
+- **Home:** a "Welcome." hero with "Import your first lecture". The sample course is seeded silently on the first run (`services/sample-course.ts`, kv `sampleCourseSeeded`).
+- **Settings:** `SettingsSchema` (kv) has theme, companion, companionName, haptics and more, but no sound or music fields. There is no `/settings` or `/courses` route. Shelf = `/#shelf`.
+- **Manual creation:** only the course-name form on `/import`. `NoteEditor.svelte` and `note-edit.ts` edit existing notes of every type except diagram and occlusion.
+- **Missing entirely:** scope selection, a Practice mode (`ModeSchema` is `acquisition|cram|longterm|onenight`), any audio code, look-back, summary or tip display, and ideaUnit/listN builders and grading.
+- **Size watch:** `study-service.ts` (352 lines) and `course-plan-service.ts` (325) must be split before anything is added to them.
+
+## Steps (each ends at a checkpoint: commit, WIP row, CHECKPOINT line, stop)
+Test tiers follow CLAUDE.md rule 13: unit tests on every commit; at component steps, `layout.spec.ts` plus snapshots; at screen steps, the changed screens' e2e specs (after `npm run build:test`); full `verify` only in step 12.
+
+**1. Interface + data (checkpoint a).** All stored-field changes go in one commit (rule 19):
+- `ModeSchema` gains `practice` (per Q4).
+- `ExerciseKindSchema` gains `ideaUnit`, `listAll`, `listN`, `listPick`, `listNot` (per Q9).
+- `SettingsSchema` gains `sounds`, `music` (Q11; `music` defaults off, its toggle stays hidden until Phase 10).
+- New kv `studyScope` (Q12).
+- DATA_MODEL rows for all of the above. No Dexie index change, so no migration.
+
+Engine stubs (`throw new Error('not implemented')`):
+- `engine/scope.ts`: `inScope`, `scopeCards`
+- `engine/idea-unit.ts`: `matchKeyWords`, `gradeIdeaUnit`
+- `engine/list-grading.ts`: `gradeListAll`, `gradeListN`, `listRequired`
+- `engine/hint.ts`: `microHint`
+- `engine/learn-flow.ts`: `topicFlow` (summary → per section [meet terms → read+tip → questions → look-back] → mixed quiz → added section → summary), `pickLookBack`, `sectionQuestions`
+- `engine/practice.ts`: `practiceDeck`, `quickQuizKinds`
+- Exercise spec types for the new kinds.
+
+Config is added to `defaults.ts` (`LEARN_SECTION_QUESTIONS`, `LOOKBACK_MIN_DISTANCE`, `LEARN_ROUND_CARDS`, `MEET_TERMS_MAX`, `LIST_N_SHARE`, `HINT_WORDS`, `HINT_LETTERS`). About 14 files.
+
+**2. Spec tests (checkpoint b).** `spec-test-writer` (Sonnet) writes tests for:
+- the grading modules (idea-unit, list, hint) against BUILD_PLAN §5.1, SESSION_NOTES D3/D4/J
+- `learn-flow` + `pickLookBack` against §C and PROMPTS §6 rows @summary/@section/@tip
+- the replay/criterion hinted + practice rules against §6.3 and §J
+- `scope`
+
+I resolve SPEC-GAPs into the Decisions log. Settings and scope schema tests I write directly.
+
+**3. Engine: replay/criterion/FSRS (checkpoint c).** `hinted` never counts and a hinted correct is rated Hard (`criterion.ts`, `criterion-history.ts`, `replay-card.ts`, `fsrs.ts ratingFor`). Practice events are skipped by replay (Q4). Matching weight changes per Q5. Spec tests turn green. A sim rerun confirms no plan drift.
+
+**4. Engine: idea-unit, list kinds, hint (checkpoint c).**
+- Builders: new `exercise-build-list.ts`, idea-unit in `exercise-build-text.ts`.
+- `checkResponse` sets `verdictKind`.
+- `cardgen`: path for list facts and for facts with key words.
+- One-time path refresh of stored cards through `planCardRegen`, so IDs are kept (rule 7).
+- Distractors for list pick/NOT come from other lists' items in the course.
+- **Required test (user):** import a course, log reviews, run the path refresh, then check that card IDs, every review event and FSRS state are unchanged (`tests/unit/services/path-refresh.test.ts`).
+
+**5. Engine: learn-flow, scope, practice + count rounds (checkpoint c).**
+- `round.ts`/`session.ts` get a `roundBy: 'count'` option (no minutes, `LEARN_ROUND_CARDS ≈ 20`) for Learn and Practice.
+- `spec-test-writer` adds tests for the round option, because the session engine is a risky module.
+
+**6. Services (checkpoint c).**
+- Split `study-service.ts` and `course-plan-service.ts` first.
+- `ScopeService` (kv `studyScope`).
+- `LearnService` (topic flow, section steps, look-back picks, logs per Q3).
+- `PracticeService` (flashcard deck + quick quiz, mode `practice`, flip not logged).
+- `hinted` through `StudyService.submit`.
+- Exam prep: `loadCourseData`/`CoursePlanService` filter by scope (Q12).
+- Unit tests written directly (plumbing).
+
+**7. Components (component checkpoint).** All built with tokens only, each added to `/dev/ui` in both themes:
+- `IdeaUnitExercise` (type, then tick key words, pre-ticked)
+- `ListExercise` (type all / N of M typed / tap-pick with "Check · N picked" meta and "LIST CARD" stamp / select all / which is NOT)
+- a `HintLink` on every exercise
+- `MeetTerms` (3–4 term cards + matching check)
+- `Reader` (KeyTerm underlines from section terms, tip aside, 3-column desktop at ≥1024)
+- `FlashcardDeck` (CardFly, Still learning / Know it, keyboard Space/←/→/H, desktop deck panel)
+- `ScopePicker` (ChecklistRow topics → sections, "Study all" default)
+- ModeDoor disabled variant (Play + "Coming soon · Phase 11" stamp)
+- `/dev/ui` visual-regression snapshots (the item deferred from the reskin).
+
+Tests: unit + `layout.spec.ts` + snapshots.
+
+**8. Screens: pick → Learn, Exam prep wiring (screen checkpoint).**
+- Course page: doors become pick-then-mode (scope picker → Learn / Practice / Exam prep / Play disabled), and the topics list gets PawRings and "N topics · N sections".
+- New route `/course/[id]/learn` (Q2).
+- `/course/[id]/exam` collects the existing exam/plan cards and respects the scope (no logic change).
+- e2e: `learn.spec.ts`, `scope.spec.ts`, `@both` layout rows.
+
+**9. Screen: Practice (screen checkpoint).** `/course/[id]/practice`: flashcards + quick quiz, no timer, round pause at about 20. e2e `practice.spec.ts`, which also checks that FSRS fields are unchanged.
+
+**10. Settings, Shelf, Welcome/Home (screen checkpoint).**
+- `/settings`: theme labelled "Lamp-light", companion, haptics, sounds, spelling mode (music toggle hidden until Phase 10).
+- `/courses` (Shelf): BottomNav and Sidebar point there, plus a settings entry in TopBar.
+- Welcome: Yuki, 3-step how-it-works, primary "Try a sample course", then "Bring my lectures", then "Make cards by hand" (Q17).
+- Home: where-you-left-off, date stamp, gentle suggestion, no streak copy.
+- e2e: `home.spec.ts`, `settings.spec.ts`, layout rows.
+
+**11. Sounds + Manual mode (screen checkpoint).**
+- `ui/delight/sound.ts`: Web Audio synth for the 4 effects only (Q11; no music), gated by the pure `soundAllowed(context, prefs)` (never on reading screens), with unit tests.
+- Manual: `/course/new` and `/course/[id]/add` forms for course, topic, section and every non-image card type, reusing `note-edit.ts`, `NoteEditor`, repos and `writeBatch` through a `ManualContentService`. The list-fact form has items and the key-word tick.
+- e2e `manual.spec.ts`.
+
+**12. Verify (checkpoint d).** `npm run build:test` then `npm run verify`. Timeouts that pass on a rerun go into UNVERIFIED_TESTS.md.
+
+**13. Review (checkpoint e).** `reviewer` (Sonnet), fresh session, diff since the step-0 commit, spec sections as above, `test-results/summary.md`. Fix blockers.
+
+**14. Handoff + PROGRESS (checkpoint f).** HANDOFF current state and patterns, Decisions log rows, PROGRESS entry, BUILD_PLAN phase table, delete WIP.md. Push only after you confirm.
+
+## Agents
+| Step | Agent | Owns (writes only) | Brief |
+|---|---|---|---|
+| 2 | spec-test-writer (Sonnet) | `tests/unit/engine/{idea-unit,list-grading,hint,learn-flow,scope,replay-hinted}.test.ts` | Module paths from step 1; read only BUILD_PLAN §5.1 rows ideaUnit/listN, §6.3; SESSION_NOTES §C, §D2–D5, §J; PROMPTS §6; the Decisions log rows resolving Q1–Q18; report SPEC-GAPs, never read function bodies |
+| 5 | spec-test-writer (Sonnet) | `tests/unit/engine/round-count.test.ts` | `round.ts`/`session.ts` count rounds; SESSION_NOTES §C "rounds pause by count" |
+| 13 | reviewer (Sonnet) | none | Phase 8.6, base = step-0 commit, specs above, summary.md |
+
+## Decisions (user, 2026-11-16; all in the BUILD_PLAN Decisions log as "Phase 8.6 Qn")
+1. Idea-unit: correct only when every key word is ticked. If all ticks are the app's pre-ticks → recall (full); if the student ticked any → recognition (Hard). No key words → MC + typed definition → term only.
+2. Learn door = new topic-level route `/course/[id]/learn`, no pretest. `/learn/[courseId]/[unitKey]` stays as Exam prep's planned learn steps, unchanged.
+3. Learn answers: mode `acquisition`, `credited: false` (next-day handoff); no clock, no planner minutes.
+4. Practice: `review` events with mode `practice`, `credited: false`; replay skips them entirely (no FSRS, criterion, handoff, accuracy, pathStep). Flip is not logged.
+5. Matching weight = recognition when it is a card's own review; `pretest`, `hotspot` stay `none`.
+6. Meet the terms: section `keyterm` notes, else non-list `@fact` notes, at most 4; example from a same-section `@scenario` whose answer is the term, else none; fewer than 2 terms → skip; then one matching check.
+7. Section questions: 2 (1 if the section has ≤ 2 cards), recall formats first; the rest go to the end-of-topic mixed quiz, interleaved.
+8. Look-back: from a section ≥ 2 back in the course's Learn order, **and only from sections the student has already read in Learn**; favour cards last answered wrong, then least recently seen; seeded RNG; none for the first two sections.
+9. List kinds `listAll` (recall), `listN` (recall), `listPick` (recognition; select-all = N = M), `listNot` (recognition). N = ceil(M × 0.5), min 2; lists of ≤ 3 items → `listAll` only. Other J formats out of scope.
+10. Micro hint: typed → first 2 letters of each word; lists and multi-word answers → first 3 words; choice → remove one wrong option. One per attempt; `hinted: true` logged.
+11. Sound effects: Web Audio synth. **Music deferred to Phase 10**: the `music` setting field is added now (default off), its toggle hidden.
+12. Scope stored per course (kv `studyScope`); Exam prep plans, triages and counts readiness on in-scope cards only; doors show "Studying N of M topics · change".
+13. "Added by the chatbot": minimal. Learn shows `added` sections last as "Added by the chatbot, check these", with keep/delete per card via `CardListService`.
+14. Reskin leftovers included as listed in steps 7, 8, 10; EXAM TRAP excluded (SESSION_NOTES §I: prompt v3 trap directive).
+15. Manual mode: keyterm, fact (list + key words), cloze, sequence, compare, scenario, example; diagram/occlusion wait for Phase 6.
+16. Learn and Practice rounds end after `LEARN_ROUND_CARDS` = 20 answered cards, no minutes; Exam prep rounds unchanged.
+17. Sample course seeded only on tap; Welcome whenever there are no courses (supersedes the Decisions row "Default course").
+18. Quick quiz: every in-scope card once, format rotated from its kinds (ignoring `pathStep`), misses back once at round end, summary at the end only.
+19. Step 4 path refresh keeps card IDs and every review event; a test proves IDs, events and FSRS state are unchanged.
+
+## Verification (end of phase)
+`npm run test`, then `npm run build:test`, then `npm run verify` (unit + sim + e2e + coverage + bundle ≤ `SHELL_JS_BUDGET_KB`), then read `test-results/summary.md`. Manual check in `npm run preview`: pick 2 topics, then Learn (summary → meet terms → read → 2 questions → look-back → mixed quiz → summary), then Practice (flip deck, quick quiz, FSRS unchanged in the card list), then Exam prep shows only in-scope work; sounds silent on the reader; manual course created by hand and studied.

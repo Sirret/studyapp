@@ -182,3 +182,4 @@ Provisional decision (2026-11-13): Import v2 recommends PDF upload on the intake
 - **Card editing (8.5)** matters more now: fixing a bad card must take seconds.
 - **The prompt is tested only on Claude.**
 - **Scope versus remaining weekly usage:** decide the order before handing work to Claude Code.
+- **OPEN — Prompt v3:** a trap directive (or a convention on @compare) so the reader's EXAM TRAP aside has data (Phase 8.6 Q14).
