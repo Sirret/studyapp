@@ -26,6 +26,12 @@ import {
 	buildSequence,
 	buildSubgoalMatch
 } from './exercise-build-steps.ts';
+import {
+	buildIdeaUnit,
+	buildListNot,
+	buildListPick,
+	buildListTyped
+} from './exercise-build-list.ts';
 import { fallback, makeContext, type BuildContext, type Built } from './exercise-context.ts';
 import type { ExerciseInput, ExerciseSpec, KindInput } from './exercise-types.ts';
 import type { TraceEntry, Traced } from './trace.ts';
@@ -84,7 +90,12 @@ const BUILDERS: Readonly<Record<ExerciseKind, Builder>> = {
 	layerOrder: () => diagramFallback('flip'),
 	nodeCloze: () => diagramFallback('cloze'),
 	edgeCloze: () => diagramFallback('cloze'),
-	redraw: () => diagramFallback('flip')
+	redraw: () => diagramFallback('flip'),
+	ideaUnit: buildIdeaUnit,
+	listAll: (ctx) => buildListTyped(ctx, 'listAll'),
+	listN: (ctx) => buildListTyped(ctx, 'listN'),
+	listPick: buildListPick,
+	listNot: buildListNot
 };
 
 /** Fallbacks never loop: each chain ends at `flip`, which always builds. */

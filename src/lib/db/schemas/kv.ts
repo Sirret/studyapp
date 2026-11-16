@@ -12,8 +12,23 @@ import {
 	ExerciseKindSchema,
 	LocalDateSchema,
 	LocalTimeSchema,
-	MaterialSchema
+	MaterialSchema,
+	CourseIdSchema,
+	TopicIdSchema,
+	ChunkIdSchema
 } from './common.ts';
+
+/**
+ * A course's study selection (SESSION_NOTES §J). Both lists empty = the whole course; otherwise a
+ * card is in scope when its topic is listed or its section is listed.
+ *
+ * @see DATA_MODEL §5
+ */
+export const StudyScopeSchema = z.object({
+	topicIds: z.array(TopicIdSchema),
+	chunkIds: z.array(ChunkIdSchema)
+});
+export type StudyScope = z.infer<typeof StudyScopeSchema>;
 
 /** @see DATA_MODEL §5 */
 export const SettingsSchema = z.object({
@@ -30,6 +45,10 @@ export const SettingsSchema = z.object({
 	companion: z.enum(['full', 'quiet', 'off']),
 	companionName: z.string().min(1),
 	haptics: z.boolean(),
+	/** Sound effects (SESSION_NOTES D7); a default so settings stored before 8.6 still parse. */
+	sounds: z.boolean().default(true),
+	/** Instrumental music; the toggle stays hidden until Phase 10 (Decisions log, Phase 8.6 Q11). */
+	music: z.boolean().default(false),
 	debugLogging: z.boolean()
 });
 export type Settings = z.infer<typeof SettingsSchema>;
@@ -45,6 +64,8 @@ export const DEFAULT_SETTINGS: Settings = {
 	companion: 'full',
 	companionName: 'Yuki',
 	haptics: true,
+	sounds: true,
+	music: false,
 	debugLogging: false
 };
 
@@ -91,7 +112,9 @@ export const KV_SCHEMAS = {
 	lastExportAt: z.number(),
 	/** The first-run sample course was decided (added, or skipped): never run again. @see sample-course.ts */
 	sampleCourseSeeded: z.literal(true),
-	offline: z.object({ persisted: z.boolean(), checkedAt: z.number() })
+	offline: z.object({ persisted: z.boolean(), checkedAt: z.number() }),
+	/** Per course, the topics and sections every mode studies; no entry = the whole course. @see scope.ts */
+	studyScope: z.record(CourseIdSchema, StudyScopeSchema)
 };
 export type KvKey = keyof typeof KV_SCHEMAS;
 export type KvValue<K extends KvKey> = z.infer<(typeof KV_SCHEMAS)[K]>;

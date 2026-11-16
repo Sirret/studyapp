@@ -1,5 +1,4 @@
-import type { CardId } from '#lib/db/schemas/common.ts';
-import { assertNever } from '#lib/util/result.ts';
+import type { CardId, Weight } from '#lib/db/schemas/common.ts';
 import type {
 	ChooseManySpec,
 	ChooseSpec,
@@ -9,6 +8,7 @@ import type {
 	SortSpec,
 	TypeSpec
 } from './exercise-types.ts';
+import { checkIdeaUnit, checkList } from './exercise-check-units.ts';
 import { gradeTyped } from './grading.ts';
 import { gradeSequence } from './grading-shapes.ts';
 import type { Traced } from './trace.ts';
@@ -22,7 +22,11 @@ export type ExerciseResponse =
 	| { shape: 'pair'; matches: number[] }
 	| { shape: 'sort'; placed: number[] }
 	| { shape: 'selfRate'; rating?: 'again' | 'hard' | 'good'; checked: number[] }
-	| { shape: 'study' };
+	| { shape: 'study' }
+	/** The typed definition and the key word indexes ticked (pre-ticks the student kept included). */
+	| { shape: 'ideaUnit'; typed: string; ticked: number[] }
+	/** Typed items (`entry: 'type'`) or picked option indexes (`entry: 'pick'`); the other is empty. */
+	| { shape: 'list'; typed: string[]; picked: number[] };
 
 /** The verdict and what feedback shows. @see BUILD_PLAN §5.1 (feedback) and §6.4 */
 export interface ExerciseVerdict {
@@ -42,6 +46,13 @@ export interface ExerciseVerdict {
 	contrast?: { chosen: string; answers: string };
 	/** The wrong parts: item, left or option indexes. */
 	marks: number[];
+	/** How the answer was graded, logged on the event (`ideaUnit`, `listN`); absent = exact. */
+	verdictKind?: 'ideaUnit' | 'listN';
+	/**
+	 * The weight this answer carries when it differs from its kind's: an idea-unit answer whose key
+	 * words the student ticked themselves is `recognition` (Decisions log "Phase 8.6 Q1").
+	 */
+	weight?: Weight;
 }
 
 type ResponseOf<S extends ExerciseSpec['shape']> = Extract<ExerciseResponse, { shape: S }>;
@@ -142,28 +153,33 @@ function mismatch(spec: ExerciseSpec, response: ExerciseResponse): never {
 	throw new Error(`A ${response.shape} response can't answer a ${spec.shape} exercise`);
 }
 
+type Checker<S extends ExerciseSpec['shape']> = (
+	spec: Extract<ExerciseSpec, { shape: S }>,
+	response: ResponseOf<S>
+) => ExerciseVerdict;
+
+/** One checker per shape; the mapped type keeps it exhaustive. */
+const CHECKERS: { readonly [S in ExerciseSpec['shape']]: Checker<S> } = {
+	type: checkTyped,
+	choose: checkChoice,
+	chooseMany: checkMany,
+	order: checkOrder,
+	pair: checkPairs,
+	sort: checkSort,
+	selfRate: (spec) => ({ correct: true, reveal: spec.answer.split('\n'), marks: [] }),
+	study: (spec) => ({
+		correct: true,
+		reveal: spec.steps.map((s) => `${s.subgoal}: ${s.step}`),
+		marks: []
+	}),
+	ideaUnit: checkIdeaUnit,
+	list: checkList
+};
+
 function verdictOf(spec: ExerciseSpec, response: ExerciseResponse): ExerciseVerdict {
 	if (spec.shape !== response.shape) mismatch(spec, response);
-	switch (spec.shape) {
-		case 'type':
-			return checkTyped(spec, response as ResponseOf<'type'>);
-		case 'choose':
-			return checkChoice(spec, response as ResponseOf<'choose'>);
-		case 'chooseMany':
-			return checkMany(spec, response as ResponseOf<'chooseMany'>);
-		case 'order':
-			return checkOrder(spec, response as ResponseOf<'order'>);
-		case 'pair':
-			return checkPairs(spec, response as ResponseOf<'pair'>);
-		case 'sort':
-			return checkSort(spec, response as ResponseOf<'sort'>);
-		case 'selfRate':
-			return { correct: true, reveal: spec.answer.split('\n'), marks: [] };
-		case 'study':
-			return { correct: true, reveal: spec.steps.map((s) => `${s.subgoal}: ${s.step}`), marks: [] };
-		default:
-			return assertNever(spec);
-	}
+	const check = CHECKERS[spec.shape] as Checker<typeof spec.shape>;
+	return check(spec as never, response as never);
 }
 
 /**

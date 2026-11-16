@@ -6,7 +6,8 @@ Phase 8.6 gives each course its own Learn / Practice / Exam prep flows (spec: SE
 ## Checkpoint log
 | date | phase | step | model | done | files | next | commit |
 |---|---|---|---|---|---|---|---|
-| 2026-11-16 | 8.6 | 0 plan | Opus | WIP plan; Q1–Q18 answered into the Decisions log; SESSION_NOTES §I point | 3 | Step 1 (interface + data) | _(hash)_ |
+| 2026-11-16 | 8.6 | 0 plan | Opus | WIP plan; Q1–Q18 answered into the Decisions log; SESSION_NOTES §I point | 3 | Step 1 (interface + data) | 97e8a91 |
+| 2026-11-16 | 8.6 | 1 interface | Opus | Mode `practice`, 5 kinds, Settings sounds/music, kv `studyScope`, DATA_MODEL; stubs: idea-unit, list-grading, hint, scope, learn-flow, practice, exercise-build-list, exercise-check-units; IdeaUnitSpec/ListSpec; verdict `verdictKind`/`weight` | 20 | Step 2: launch spec-test-writer with the brief in "Agents" | _(hash)_ |
 
 ## What already exists (reuse; don't rebuild)
 - **Event fields:** `ReviewEvent.hinted` and `verdictKind: 'exact'|'fuzzy'|'ideaUnit'|'listN'` are in `db/schemas/event.ts:43-46` and DATA_MODEL. Nothing reads them yet. The spec is BUILD_PLAN §5.1 rows `ideaUnit`/`listN` and §6.3 (a hinted answer never counts toward the criterion; a hinted correct is rated Hard).
@@ -26,7 +27,7 @@ Phase 8.6 gives each course its own Learn / Practice / Exam prep flows (spec: SE
 ## Steps (each ends at a checkpoint: commit, WIP row, CHECKPOINT line, stop)
 Test tiers follow CLAUDE.md rule 13: unit tests on every commit; at component steps, `layout.spec.ts` plus snapshots; at screen steps, the changed screens' e2e specs (after `npm run build:test`); full `verify` only in step 12.
 
-**1. Interface + data (checkpoint a).** All stored-field changes go in one commit (rule 19):
+**1. Interface + data (checkpoint a). DONE** (stubs and signatures as committed; read the JSDoc of each stub, it is the spec the tests target). All stored-field changes go in one commit (rule 19):
 - `ModeSchema` gains `practice` (per Q4).
 - `ExerciseKindSchema` gains `ideaUnit`, `listAll`, `listN`, `listPick`, `listNot` (per Q9).
 - `SettingsSchema` gains `sounds`, `music` (Q11; `music` defaults off, its toggle stays hidden until Phase 10).
@@ -44,7 +45,7 @@ Engine stubs (`throw new Error('not implemented')`):
 
 Config is added to `defaults.ts` (`LEARN_SECTION_QUESTIONS`, `LOOKBACK_MIN_DISTANCE`, `LEARN_ROUND_CARDS`, `MEET_TERMS_MAX`, `LIST_N_SHARE`, `HINT_WORDS`, `HINT_LETTERS`). About 14 files.
 
-**2. Spec tests (checkpoint b).** `spec-test-writer` (Sonnet) writes tests for:
+**2. Spec tests (checkpoint b). NEXT.** `spec-test-writer` (Sonnet) writes tests for:
 - the grading modules (idea-unit, list, hint) against BUILD_PLAN §5.1, SESSION_NOTES D3/D4/J
 - `learn-flow` + `pickLookBack` against §C and PROMPTS §6 rows @summary/@section/@tip
 - the replay/criterion hinted + practice rules against §6.3 and §J
@@ -114,12 +115,21 @@ Tests: unit + `layout.spec.ts` + snapshots.
 
 **14. Handoff + PROGRESS (checkpoint f).** HANDOFF current state and patterns, Decisions log rows, PROGRESS entry, BUILD_PLAN phase table, delete WIP.md. Push only after you confirm.
 
+## Not yet in the docs (decided while building)
+- Step 1: `Settings.sounds` defaults to **on** (like `haptics`); both new settings fields use zod `.default()` so settings stored before 8.6 still parse. Tell the user at the step-1 checkpoint.
+- Step 1: `exercise-check.ts` `verdictOf` is now a per-shape checker table (lint complexity); `checkIdeaUnit`/`checkList` live in `exercise-check-units.ts`.
+- Step 1: `Exercise.svelte` renders nothing yet for the `ideaUnit` and `list` shapes (no builder produces them until step 4); step 7 adds `IdeaUnitExercise` and `ListExercise` there.
+- Stub names as built (they replace the names in the step-1 bullet above): `scope.ts` `isWholeCourse`, `inScope`, `scopeItems`, `scopeSummary`; `learn-flow.ts` `learnOrder`, `meetTerms`, `sectionQuestions`, `topicFlow`, `pickLookBack`; `practice.ts` `quickQuiz`, `missesToRetry`, `nextDeckPass`; `list-grading.ts` `listRequired`, `listPath`, `gradeListTyped`, `gradeListPicked`; `idea-unit.ts` `matchKeyWords`, `gradeIdeaUnit`; `hint.ts` `microHint`; `exercise-build-list.ts` `buildIdeaUnit`, `buildListTyped`, `buildListPick`, `buildListNot`.
+
 ## Agents
 | Step | Agent | Owns (writes only) | Brief |
 |---|---|---|---|
-| 2 | spec-test-writer (Sonnet) | `tests/unit/engine/{idea-unit,list-grading,hint,learn-flow,scope,replay-hinted}.test.ts` | Module paths from step 1; read only BUILD_PLAN §5.1 rows ideaUnit/listN, §6.3; SESSION_NOTES §C, §D2–D5, §J; PROMPTS §6; the Decisions log rows resolving Q1–Q18; report SPEC-GAPs, never read function bodies |
+| 2 | spec-test-writer (Sonnet) | `tests/unit/engine/{idea-unit,list-grading,hint,learn-flow,scope,practice,exercise-build-list,replay-hinted}.test.ts` | See the full brief below |
 | 5 | spec-test-writer (Sonnet) | `tests/unit/engine/round-count.test.ts` | `round.ts`/`session.ts` count rounds; SESSION_NOTES §C "rounds pause by count" |
 | 13 | reviewer (Sonnet) | none | Phase 8.6, base = step-0 commit, specs above, summary.md |
+
+### Step-2 brief (paste as the agent prompt)
+> Phase 8.6, workflow step 2. Write unit tests (Vitest, `fast-check` where a property helps; fixtures in `tests/unit/engine/fixtures.ts`) for these stubbed modules, from their JSDoc and the spec only. Never read function bodies (they throw). Modules: `src/lib/engine/idea-unit.ts`, `list-grading.ts`, `hint.ts`, `scope.ts`, `learn-flow.ts`, `practice.ts`, `exercise-build-list.ts` + `exercise-check-units.ts` (through `buildExercise`/`checkResponse` in `exercise-spec.ts`/`exercise-check.ts`), and the replay rules not yet implemented: a review with `hinted: true` never counts toward the criterion and, if correct and the session's first attempt, is rated Hard for FSRS (`engine/replay-card.ts`, `criterion-history.ts`, `fsrs.ts ratingFor`); review events with mode `practice` are skipped entirely by replay (no FSRS, criterion, study day, acquisition handoff, accuracy or pathStep); `matching` answers carry weight `recognition` (`exercise-kinds.ts weightOf`), while `pretest` and `hotspot` stay `none`. Read only: BUILD_PLAN §5.1 rows `ideaUnit`, `listN`, `matching`; §6.2 rating map; §6.3; SESSION_NOTES §C, §D (D1–D5), §H, §J; PROMPTS §6; the BUILD_PLAN Decisions log rows starting "Phase 8.6"; `docs/WIP.md` section "Decisions"; config names in `src/lib/config/defaults.ts` (block "Phase 8.6"). Write to `tests/unit/engine/{idea-unit,list-grading,hint,learn-flow,scope,practice,exercise-build-list,replay-hinted}.test.ts` only. Report: test counts per file, and every `SPEC-GAP` (a case the spec doesn't settle) with the reading you chose.
 
 ## Decisions (user, 2026-11-16; all in the BUILD_PLAN Decisions log as "Phase 8.6 Qn")
 1. Idea-unit: correct only when every key word is ticked. If all ticks are the app's pre-ticks → recall (full); if the student ticked any → recognition (Hard). No key words → MC + typed definition → term only.

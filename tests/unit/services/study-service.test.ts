@@ -79,6 +79,12 @@ function rightResponse(spec: ExerciseSpec): ExerciseResponse {
 			return { shape: 'pair', matches: spec.pairs };
 		case 'sort':
 			return { shape: 'sort', placed: spec.bucketOf };
+		case 'ideaUnit':
+			return { shape: 'ideaUnit', typed: spec.answer, ticked: spec.keyWords.map((_word, i) => i) };
+		case 'list':
+			return spec.entry === 'type'
+				? { shape: 'list', typed: spec.items, picked: [] }
+				: { shape: 'list', typed: [], picked: spec.correct };
 		case 'selfRate':
 			return { shape: 'selfRate', checked: spec.checklist.map((_c, i) => i), rating: 'good' };
 		case 'study':

@@ -16,7 +16,7 @@ const WEIGHT_OF_GROUP: Readonly<Record<ExerciseGroup, Weight>> = {
 
 /** Kinds per group, in the §3.3 table order. */
 const KINDS_BY_GROUP: Readonly<Record<ExerciseGroup, readonly ExerciseKind[]>> = {
-	recall: ['cloze', 'firstLetterType', 'fadeStep', 'newInstance'],
+	recall: ['cloze', 'firstLetterType', 'fadeStep', 'newInstance', 'ideaUnit', 'listAll', 'listN'],
 	arrange: [
 		'sequence',
 		'parsons',
@@ -29,7 +29,7 @@ const KINDS_BY_GROUP: Readonly<Record<ExerciseGroup, readonly ExerciseKind[]>> =
 		'edgeCloze'
 	],
 	discriminate: ['categorize', 'oddOneOut', 'whichOne', 'scenario', 'tableRow', 'pickPrinciple'],
-	choose: ['mc', 'multiSelect', 'occlusionBank', 'firstLetterBank'],
+	choose: ['mc', 'multiSelect', 'occlusionBank', 'firstLetterBank', 'listPick', 'listNot'],
 	warmup: ['matching', 'hotspot', 'pretest'],
 	selfRated: ['flip', 'explainIt', 'blurt', 'redraw', 'exampleStudy']
 };

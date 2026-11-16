@@ -191,3 +191,24 @@ export const COVERAGE_DATA_MIN = 80;
 export const LOG_RING_SIZE = 2000;
 /** The goal the import screen starts with, until the student picks another (PROMPTS.md intake). */
 export const DEFAULT_IMPORT_GOAL = 'learn';
+
+// Phase 8.6 — Learn & Practice (SESSION_NOTES §C, §D, §J; Decisions log "Phase 8.6 Qn").
+/** Questions after a section in Learn; 1 when the section has at most this many cards (Q7). */
+export const LEARN_SECTION_QUESTIONS = 2;
+/** A look-back comes from a section at least this many sections back in Learn order (Q8). */
+export const LOOKBACK_MIN_DISTANCE = 2;
+/** Learn and Practice rounds pause after this many answered cards; no clock (Q16). */
+export const LEARN_ROUND_CARDS = 20;
+/** Term cards on the Meet the terms screen (Q6). */
+export const MEET_TERMS_MAX = 4;
+/** Fewer terms than this and Meet the terms is skipped (Q6). */
+export const MEET_TERMS_MIN = 2;
+/** "Name N of M": N = ceil(M × this), at least `LIST_N_MIN` (Q9). */
+export const LIST_N_SHARE = 0.5;
+export const LIST_N_MIN = 2;
+/** Lists of at most this many items are only asked whole (`listAll`) (Q9). */
+export const LIST_ALL_ONLY_MAX = 3;
+/** Micro hint: words shown for lists and multi-word answers (Q10; DESIGN §7 Flashcard). */
+export const HINT_WORDS = 3;
+/** Micro hint: letters shown per word of a typed answer (Q10). */
+export const HINT_LETTERS = 2;

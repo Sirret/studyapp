@@ -46,7 +46,7 @@
 		<SortExercise {spec} {verdict} bind:response {onsubmit} />
 	{:else if spec.shape === 'selfRate'}
 		<SelfRateExercise {spec} {verdict} bind:response {onsubmit} />
-	{:else}
+	{:else if spec.shape === 'study'}
 		<StudyExercise {spec} {verdict} bind:response {onsubmit} />
 	{/if}
 </div>

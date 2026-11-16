@@ -33,7 +33,7 @@ export const MetaSchema = z.object({
 export type Meta = z.infer<typeof MetaSchema>;
 
 /** @see DATA_MODEL §4.4 */
-export const ModeSchema = z.enum(['acquisition', 'cram', 'longterm', 'onenight']);
+export const ModeSchema = z.enum(['acquisition', 'cram', 'longterm', 'onenight', 'practice']);
 export type Mode = z.infer<typeof ModeSchema>;
 
 /** @see DATA_MODEL §4.4 */
@@ -80,7 +80,12 @@ export const ExerciseKindSchema = z.enum([
 	'explainIt',
 	'blurt',
 	'redraw',
-	'exampleStudy'
+	'exampleStudy',
+	'ideaUnit',
+	'listAll',
+	'listN',
+	'listPick',
+	'listNot'
 ]);
 export type ExerciseKind = z.infer<typeof ExerciseKindSchema>;
 

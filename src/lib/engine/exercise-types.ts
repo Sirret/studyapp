@@ -104,6 +104,39 @@ export interface StudySpec extends SpecBase {
 	steps: { subgoal: string; step: string }[];
 }
 
+/**
+ * Type the definition, then tick the key words it holds (`ideaUnit`). The app pre-ticks the key
+ * words the typed text matches (`matchKeyWords`).
+ *
+ * @see BUILD_PLAN §5.1 row ideaUnit and Decisions log "Phase 8.6 Q1"
+ */
+export interface IdeaUnitSpec extends SpecBase {
+	shape: 'ideaUnit';
+	/** The definition, shown once the student has typed. */
+	answer: string;
+	/** The note's key words (idea units), in note order. */
+	keyWords: string[];
+}
+
+/**
+ * A list card: type the items (`listAll`, `listN`) or tap them among other lists' items
+ * (`listPick`). "Which is NOT in the list" (`listNot`) is a `choose` spec.
+ *
+ * @see BUILD_PLAN §5.1 row listN and Decisions log "Phase 8.6 Q9"
+ */
+export interface ListSpec extends SpecBase {
+	shape: 'list';
+	entry: 'type' | 'pick';
+	/** Every item of the list (the note's key words), in note order. */
+	items: string[];
+	/** Valid items needed for a correct answer: N, or `items.length` for the whole list. */
+	required: number;
+	/** `pick` only: this list's items mixed with other lists' items, shuffled; empty for `type`. */
+	options: SpecOption[];
+	/** `pick` only: indexes of the options that are items of this list, ascending. */
+	correct: number[];
+}
+
 /** What an exercise component renders. Discriminated on `shape`. @see BUILD_PLAN §5.1 */
 export type ExerciseSpec =
 	| TypeSpec
@@ -113,7 +146,9 @@ export type ExerciseSpec =
 	| PairSpec
 	| SortSpec
 	| SelfRateSpec
-	| StudySpec;
+	| StudySpec
+	| IdeaUnitSpec
+	| ListSpec;
 
 export type ExerciseShape = ExerciseSpec['shape'];
 

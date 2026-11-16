@@ -234,13 +234,13 @@ Common to all events:
 | `sessionId` | `ID` | ✓ | Session it happened in |
 | `mode` | `Mode` | ✓ | §4.4 |
 | `kind` | `ExerciseKind` | ✓ | Exercise used |
-| `weight` | `'full' \| 'recognition' \| 'none'` | ✓ | From `kind` (plan §3.3) |
+| `weight` | `'full' \| 'recognition' \| 'none'` | ✓ | From `kind` (plan §3.3); an `ideaUnit` answer whose key words the student ticked themselves is `recognition` (Decisions log "Phase 8.6 Q1") |
 | `firstAttempt` | `boolean` | ✓ | First attempt after a (re)insertion; redo-till-right attempts are `false` |
 | `correct` | `boolean` | ✓ | Verdict |
 | `responseMs` | `number` | ✓ | Time to answer |
 | `chosen` | `string` | — | The option picked / text typed (normalised) |
 | `chosenFromCardId` | `ID` | — | If the wrong pick was another card's answer → confusion pair |
-| `credited` | `boolean` | ✓ | `false` for same-day acquisition chunk-quiz answers (no FSRS/criterion credit) |
+| `credited` | `boolean` | ✓ | `false` for same-day acquisition chunk-quiz answers (no FSRS/criterion credit), Learn-door answers (mode `acquisition`) and Practice answers (mode `practice`, which replay skips entirely) |
 | `required` | `number` | — | ≥ 1. The card's criterion count in this session after this answer (plan §6.3); replay derives it when absent |
 | `hinted` | `boolean` | — | A hint was used. A hinted correct is rated Hard for FSRS and never counts toward the criterion (BUILD_PLAN §6.3). Absence = no hint |
 | `verdictKind` | `'exact' \| 'fuzzy' \| 'ideaUnit' \| 'listN'` | — | How a typed answer was graded (BUILD_PLAN §5.1). Absence = exact |
@@ -384,9 +384,9 @@ Variant strings are stable: editing a note keeps existing variants (and their ca
 
 | Enum | Values |
 |---|---|
-| `Mode` | `acquisition`, `cram`, `longterm`, `onenight` |
+| `Mode` | `acquisition`, `cram`, `longterm`, `onenight`, `practice` (Phase 8.6: Practice door; its review events are `credited: false` and replay skips them entirely — Decisions log "Phase 8.6 Q4") |
 | `CardStatus` | `unseen`, `learning` ("New — retest tomorrow"), `needs-work`, `provisional`, `exam-ready`, `secure` ("Long-term secure"), `one-night` ("One-night triage") |
-| `ExerciseKind` | `cloze`, `firstLetterType`, `fadeStep`, `newInstance`, `sequence`, `parsons`, `subgoalMatch`, `occlusionType`, `occlusionDrag`, `structureRebuild`, `layerOrder`, `nodeCloze`, `edgeCloze`, `categorize`, `oddOneOut`, `whichOne`, `scenario`, `tableRow`, `pickPrinciple`, `mc`, `multiSelect`, `occlusionBank`, `firstLetterBank`, `matching`, `hotspot`, `pretest`, `flip`, `explainIt`, `blurt`, `redraw`, `exampleStudy` |
+| `ExerciseKind` | `cloze`, `firstLetterType`, `fadeStep`, `newInstance`, `sequence`, `parsons`, `subgoalMatch`, `occlusionType`, `occlusionDrag`, `structureRebuild`, `layerOrder`, `nodeCloze`, `edgeCloze`, `categorize`, `oddOneOut`, `whichOne`, `scenario`, `tableRow`, `pickPrinciple`, `mc`, `multiSelect`, `occlusionBank`, `firstLetterBank`, `matching`, `hotspot`, `pretest`, `flip`, `explainIt`, `blurt`, `redraw`, `exampleStudy`, `ideaUnit`, `listAll`, `listN` (recall), `listPick`, `listNot` (choose; Phase 8.6, Decisions log "Phase 8.6 Q1", "Q9") |
 | `Weight` | `full`, `recognition`, `none` (mapping in plan §3.3) |
 | `Priority` | `high`, `normal` |
 | `Placement` | `unread`, `read` |
@@ -427,6 +427,7 @@ From an Import v2 reply (docs/PROMPTS.md §3 FORMAT, §6).
 | `calibration` | `{ secPerAttempt: Partial<Record<ExerciseKind, number>>; p0: Partial<Record<Material, number>> }` | cache | Rolling medians / measured accuracy; a missing key uses the default |
 | `lastExportAt` | `number` | local | For the backup reminder |
 | `offline` | `{ persisted: boolean; checkedAt: number }` | local | "Ready offline" status |
+| `studyScope` | `Record<CourseId, { topicIds: ID[]; chunkIds: ID[] }>` | content | Per course, the topics and sections every mode studies (SESSION_NOTES §J). No entry, or both lists empty = the whole course; a card is in scope when its note's topic or section is listed (Decisions log "Phase 8.6 Q12") |
 | `sampleCourseSeeded` | `true` | local | The first-run sample course was decided (added, or skipped because the student had courses). Never set back; a deleted sample is not re-added (BUILD_PLAN Decisions log, "Default course") |
 
 `Settings`:
@@ -442,6 +443,8 @@ From an Import v2 reply (docs/PROMPTS.md §3 FORMAT, §6).
 | `companion` | `'full' \| 'quiet' \| 'off'` | `full` |
 | `companionName` | `string` | `Yuki` |
 | `haptics` | `boolean` | `true`; the short vibration on a first-attempt correct (DESIGN §11.2), where the device supports it |
+| `sounds` | `boolean` | `true`; sound effects (paw tap, snow crunch, low note, stamp), never on reading screens (SESSION_NOTES D7). Zod default, so settings stored before 8.6 still parse |
+| `music` | `boolean` | `false`; instrumental music. The toggle is hidden until Phase 10 (Decisions log "Phase 8.6 Q11"). Zod default |
 | `debugLogging` | `boolean` | `false` |
 
 `Availability`:
