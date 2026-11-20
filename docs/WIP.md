@@ -9,6 +9,7 @@ Resume: read the last Checkpoint log row, the step it points to, and the files t
 | 2026-11-20 | 6 | 1 PDF spike | Opus | pdf.js 4.10.38 on DB II Lecture 3: drawn-diagram labels 88/88, pasted-picture diagrams 0/89 (raster images, not outlines), plain text 27/27; 1,688 KB raw / 491 KB gz; render 1.1–1.3 s/page at 4× (first 2.3 s), WebP encode 1–3.6 s; no network after load. Verdict NO-GO by the agreed bar (50% < 80%, size slightly over); report `docs/spikes/PDF_SPIKE.md` | 6 | WAITING for the user: go or no-go. No-go → uninstall `pdfjs-dist` in the step-2 commit, drop step 10, take up Q13 (OCR) | see git log |
 | 2026-11-20 | 6 | 1 decision | Opus | User: PDF no-go. Plan updated (step 5 worker encode, step 10 = OCR spike, step 11 only on its go); Decisions log row; six picture pages saved as git-ignored PNGs for the OCR spike | 2 | Step 2: interface + data (remove pdfjs-dist + spike scripts in that commit) | see git log |
 | 2026-11-20 | 6 | 2 interface + data | Opus | DATA_MODEL + zod: occlusion `hide`/`title`/`unplaced`, media `sourceHash` + `mime` webp|jpeg, Dexie v3 index; `IMAGE_MAX_PX` 2000 + Phase 6 config; figure spec types + `place`/`connect` shapes; stubs (see "Not yet in the docs"); pdf.js + spike scripts removed; 2 schema tests updated (Decisions row), 2 timeouts → UNVERIFIED_TESTS. check 0 errors, 2196/2197 unit (1 timeout) | ~25 | Step 3: spec tests — launch spec-test-writer (Sonnet) and spec-test-writer-haiku with the briefs in "Agents" (update the briefs' module names to the step-2 names first) | see git log |
+| 2026-11-20 | 6 | 3 spec tests | Opus | Both agents done: 9 files, 301 tests (28 pass, rest fail as expected); 13 SPEC-GAPs → Decisions log; tests kept untracked to commit with step 4 | 11 | Step 4: engine — implement the step-2 stubs until the 9 files + `npm run test` are green; update the 2 older tests; commit tests + implementation together | see git log |
 
 ## Context
 Phase 8.6 is done and pushed (983dc30). Phase 6 makes the two diagram note types studyable. Today, import already parses `@diagram` and `@occlusion` and stores images, but every diagram/occlusion kind falls back to cloze/MC/flip (`engine/exercise-spec.ts:54-93`). Occlusion notes are imported with `boxes: []`, so they have no cards. There is no editor, no figure rendering, and the chatbot prompt never mentions diagrams. The goal is the BUILD_PLAN §10 done-when: "Import an OSI stack, a flow diagram and an occlusion image; study each." The user's scope changes the original §7: text-first diagram editing, manual boxes first, OCR optional and last, and a PDF spike first.
@@ -131,12 +132,12 @@ Bar: ≥ 70% of labels with usable positions, total download ≤ ~6 MB, ≤ 8 s 
 ## Agents
 | Step | Agent | Owns (writes only) |
 |---|---|---|
-| 3 | spec-test-writer (Sonnet) | `tests/unit/engine/{exercise-build-figure,exercise-check-figure,diagram-edit,diagram-layout,occlusion-edit,cardgen-figure}.test.ts` |
-| 3 | spec-test-writer-haiku | `tests/unit/import/zip-filekey.test.ts`, `tests/unit/db/media-source-hash.test.ts` |
+| 3 | spec-test-writer (Sonnet) | `tests/unit/engine/{exercise-build-figure,exercise-check-figure,diagram-edit,diagram-layout,occlusion-edit,cardgen-figure}.test.ts`, `tests/unit/import/diagram-text.test.ts` |
+| 3 | spec-test-writer-haiku | `tests/unit/import/zip-imagekey.test.ts`, `tests/unit/db/media-source-hash.test.ts` |
 | 13 | reviewer (Sonnet) | none |
 
 **Sonnet brief:**
-> Phase 6, workflow step 2. Write Vitest tests (fast-check where a property helps; fixtures in `tests/unit/engine/fixtures.ts`) from JSDoc + spec only; never read function bodies (they throw). Modules: `src/lib/engine/exercise-build-figure.ts`, `exercise-check-figure.ts` (through `buildExercise`/`checkResponse`), `diagram-edit.ts`, `diagram-layout.ts`, `occlusion-edit.ts`, and the occlusion path in `cardgen.ts`.
+> Phase 6, workflow step 2. Write Vitest tests (fast-check where a property helps; fixtures in `tests/unit/engine/fixtures.ts`) from JSDoc + spec only; never read function bodies (they throw). Modules: `src/lib/engine/exercise-build-figure.ts` (7 builders), `exercise-check-figure.ts` (`checkPlace`, `checkConnect`; also through `buildExercise`/`checkResponse`), `diagram-edit.ts` (`mergeDiagram(previous, parsed, name, newId)`, `renameNode`), `diagram-layout.ts` (`layoutDiagram`, size cap → `null`), `occlusion-edit.ts` (`clampBox`, `addBox`, `placeLabel`, `moveBox`, `resizeBox`, `removeBox`), `src/lib/import/diagram-parser.ts` (`parseDiagramText`, `formatDiagram`; round-trip), and the occlusion path `occlusionBank → occlusionDrag → occlusionType` in `cardgen.ts` (no `diagramFallback` for the six kinds; `hotspot`/`redraw` still fall back). Spec types in `exercise-types.ts` (`figure?`, `place`, `connect`).
 > Read only: BUILD_PLAN §5.1 (kinds), §6.2–§6.3 (rating, criterion, recognition never the final correct), §6.10 (hit test, fuzzy, collision), §7; DATA_MODEL §4.2–§4.3; CONCEPT §13; the Decisions log rows starting "Phase 6"; `docs/WIP.md` "Decisions"; config block "Phase 6" in `defaults.ts`.
 > Cover:
 > - Bank options only from the same image, fewer options for small images, fallback below the minimum.
@@ -152,7 +153,7 @@ Bar: ≥ 70% of labels with usable positions, total download ≤ ~6 MB, ≤ 8 s 
 > Write only the owned files. Report test counts per file and every SPEC-GAP with the reading you chose.
 
 **Haiku brief:**
-> Phase 6, plumbing tests. `src/lib/import/zip.ts fileKey` (case, spaces, underscores, hyphens, extension, folders; key collisions reported by `readImportZip`) and the `media.sourceHash` index + `MediaRepo.findBySourceHash` + the Dexie migration (old rows still read).
+> Phase 6, plumbing tests. `src/lib/import/zip.ts imageKey` (replaces `fileKey`; case, spaces, underscores, hyphens, extension, folders; key collisions reported by `readImportZip`) and the `media.sourceHash` index + `MediaRepo.findBySourceHash` + the Dexie migration (old rows still read).
 > Read only: BUILD_PLAN §4.2, DATA_MODEL §3.8, the "Phase 6" Decisions rows.
 > Write only the owned files. Report counts and SPEC-GAPs.
 
@@ -225,3 +226,10 @@ Bar: ≥ 70% of labels with usable positions, total download ≤ ~6 MB, ≤ 8 s 
 - Step 2: `place` and `connect` have no micro hint (`hint.ts`, `exercise-ui.ts`); Q10 covers typed, list and choice only.
 - Step 2: the occlusion card path change (`occlusionBank → occlusionDrag → occlusionType`) and the `diagramFallback` removal happen in step 4 (implementation), so the spec tests drive them.
 - Step 2: `pdfjs-dist` and `scripts/spike/*` are removed (in git history at 26de7ee); the six picture pages for the OCR spike are `tests/fixtures/spike/page-{10,12,15,19,21,30}.png` (git-ignored).
+
+## Step 3 status
+- Haiku report in: `zip-imagekey.test.ts` (19), `media-source-hash.test.ts` (28); 22 pass, 25 fail (23 not implemented, 2 collision asserts: `readImportZip` must add image-key collision detection in step 6). SPEC-GAPs accepted (to the Decisions log in the step-3 commit): (1) `imageKey` strips only the final extension (`slide.12.png` = `slide.12.jpg` ≠ `slide12.png`); (2) a name with no extension keys as its base name; (3) only images count for collisions (a `.pdf` sharing a key is ignored).
+- Sonnet report in: 254 tests — build-figure 81, check-figure 41, diagram-edit 32, diagram-layout 25, occlusion-edit 34, cardgen-figure 19, import/diagram-text 22. 6 pass (regression guards), the rest fail on not implemented or on unwired `BUILDERS`/cardgen. 10 SPEC-GAPs accepted as read → Decisions log rows "Phase 6 step 3 SPEC-GAPs".
+- Step 4 must also update `cardgen.test.ts:165-171` (new occlusion path) and `exercise-edges.test.ts:84-95` (only hotspot/redraw fall back) — Decisions row "Phase 6 step 3: two older tests".
+- Not covered by the agent: "no stored occlusion card exists" (import makes `boxes: []`) → write it directly in step 6 (import tests).
+- **The 9 test files are untracked on purpose** (listed in the Agents table); the hook's `vitest --changed` would fail on them, so they are committed together with step 4. Don't delete them.
