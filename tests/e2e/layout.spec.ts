@@ -124,6 +124,18 @@ test.describe('layout', { tag: '@both' }, () => {
 		await expectNoSidewaysScroll(page);
 	});
 
+	test('the Practice menu and its flashcard deck fit', async ({ page }) => {
+		test.setTimeout(90_000);
+		await openLearnCourse(page);
+		await page.getByRole('link', { name: /Practice/ }).click();
+		await expectWithinWidth(page, page.locator('[data-practice-quiz]'));
+		await expectNoSidewaysScroll(page);
+		await page.locator('[data-practice-deck]').click();
+		await expectWithinWidth(page, page.locator('[data-deck-know]'));
+		await expectWithinWidth(page, page.locator('[data-deck-learning]'));
+		await expectNoSidewaysScroll(page);
+	});
+
 	test('a study session fits, its action in reach', async ({ page }) => {
 		await page.goto('/dev/session');
 		await page.locator('button[data-start-sample]').click();

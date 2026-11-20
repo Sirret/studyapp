@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { ArrowLeft } from '@lucide/svelte';
-	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { APP_SHORT_NAME } from '#lib/config/defaults.ts';
 	import type { CourseId } from '#lib/db/schemas/common.ts';
@@ -45,7 +44,6 @@
 	let topics = $state<LearnTopicView[]>([]);
 	let scope = $state<ScopeView | null>(null);
 	let failed = $state(false);
-	let starting = $state(false);
 	let lastImport = $state<LastImportView | null>(null);
 	let undoing = $state(false);
 	let notice = $state('');
@@ -80,30 +78,15 @@
 		await refresh();
 	}
 
-	/** Starts today's review and opens it, coming back here when it ends. */
-	async function review(): Promise<void> {
-		if (starting) return;
-		starting = true;
-		try {
-			const wiring = await import('#lib/services/study-wiring.ts');
-			const view = await wiring.coursePlanService.startReview(courseId);
-			const back = resolve('/course/[courseId]', { courseId });
-			const study = resolve('/study/[sessionId]', { sessionId: view.sessionId });
-			// eslint-disable-next-line svelte/no-navigation-without-resolve -- resolve()d path plus a query
-			await goto(`${study}?back=${encodeURIComponent(back)}`);
-		} finally {
-			starting = false;
-		}
-	}
-
-	/** A door's link; today's review is a button and Play has none. */
+	/** A door's link; Play has none. */
 	function doorHref(action: DoorAction): string | undefined {
 		switch (action.kind) {
 			case 'learn':
 				return resolve('/course/[courseId]/learn', { courseId });
+			case 'practice':
+				return resolve('/course/[courseId]/practice', { courseId });
 			case 'exam':
 				return resolve('/course/[courseId]/exam', { courseId });
-			case 'review':
 			case 'none':
 				return undefined;
 		}
@@ -151,7 +134,6 @@
 					hasWork={door.hasWork}
 					disabled={door.disabled}
 					href={doorHref(door.action)}
-					onclick={door.action.kind === 'review' ? review : undefined}
 				/>
 			{/each}
 		</ModeDoorRow>

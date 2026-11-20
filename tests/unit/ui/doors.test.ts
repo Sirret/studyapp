@@ -52,20 +52,20 @@ describe('courseDoors', () => {
 		expect(courseDoors(today(), [])[0]).toMatchObject({ hint: 'Nothing to read', hasWork: false });
 	});
 
-	it("Practice starts today's review when cards are due, else opens Exam prep", () => {
+	it('Practice opens the Practice screen, counts the in-scope cards, never shows the dot', () => {
 		const [, practice] = courseDoors(
 			today({ review: { kind: 'longterm', cards: 12, minutes: 9, cram: null } }),
-			[]
+			[topic(3, 0), topic(1, 1)]
 		);
 		expect(practice).toMatchObject({
-			hint: '12 cards due',
-			hasWork: true,
-			action: { kind: 'review' }
+			hint: '8 cards · flashcards, quiz',
+			hasWork: false,
+			action: { kind: 'practice' }
 		});
 		expect(courseDoors(today(), [])[1]).toMatchObject({
-			hint: 'Nothing due',
+			hint: 'No cards yet',
 			hasWork: false,
-			action: { kind: 'exam' }
+			action: { kind: 'practice' }
 		});
 	});
 

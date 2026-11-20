@@ -15,6 +15,7 @@ Phase 8.6 gives each course its own Learn / Practice / Exam prep flows (spec: SE
 | 2026-11-20 | 8.6 | 6 services | Opus | Split study/course-plan services; hint + `hinted`/verdict weight/kind through StudyService (queue `hinted`); ScopeService + scoped Exam prep/planner data; PracticeService (deck, quick quiz, summary; `queueWeight`); LearnService (topics, flow screens, startStep, look-back); wiring; 2135 tests green | ~30 | Step 7: components (IdeaUnitExercise, ListExercise, HintLink, MeetTerms, Reader, FlashcardDeck, ScopePicker, disabled ModeDoor, /dev/ui snapshots) | 1307bb3, 63ffe03 |
 | 2026-11-20 | 8.6 | 7 components | Opus | IdeaUnitExercise, ListExercise (+ dispatch, choose `remove` hint, TapChip `revealed`), HintLink, MeetTerms, Reader (container-query columns), FlashcardDeck, ScopePicker, disabled ModeDoor (+ 2×2 row); 5 pure helpers + 17 unit tests; `/dev/ui` Study flow section; `visual.spec.ts` snapshots (9 sections). 2152 unit green, layout 14/14, visual 10/10 twice | 31 | Step 8: screens (course page pick-then-mode, `/course/[id]/learn`, `/course/[id]/exam`; wire HintLink + `checkMeta` into the study page) | 58d4168 |
 | 2026-11-20 | 8.6 | 8 screens (Learn, scope, Exam prep) | Opus | Course page pick-then-mode (ScopeSheet, 4 doors, TopicList), `/course/[id]/exam`, `/course/[id]/learn` (LearnStep, AddedReview, learn-nav), HintLink + Check meta + `unit=learn` on the study page; Home sample-seed race fixed; e2e learn 2/2, scope 2/2, layout 16/16, modes/planner/cards/session/course-map green; 2157 unit green | 35 | Step 9: `/course/[id]/practice` (flashcards + quick quiz) and point the Practice door at it | 6e9dce7 |
+| 2026-11-20 | 8.6 | 9 Practice screen | Opus | `/course/[id]/practice`: menu, flashcard deck (PracticeDeck: "Still learning" cards go round again, nothing logged), quick quiz on `/study?unit=learn` back to `?quiz=<id>` summary (QuizResult: right first time + misses); Practice door opens it (card count, no dot; `review` door action removed); e2e `practice.spec.ts` (deck logs nothing, quiz reviews `practice`/uncredited, scheduling fields unchanged) + layout test; practice/learn/scope/course-map/modes 10/10, layout 18/18, 2157 unit green | 9 | Step 10: Settings, Shelf, Welcome/Home | (this commit) |
 
 ## What already exists (reuse; don't rebuild)
 - **Event fields:** `ReviewEvent.hinted` and `verdictKind: 'exact'|'fuzzy'|'ideaUnit'|'listN'` are in `db/schemas/event.ts:43-46` and DATA_MODEL. Nothing reads them yet. The spec is BUILD_PLAN §5.1 rows `ideaUnit`/`listN` and §6.3 (a hinted answer never counts toward the criterion; a hinted correct is rated Hard).
@@ -142,7 +143,7 @@ Tests: unit + `layout.spec.ts` + snapshots.
   - Layout row for Learn has `test.setTimeout(90_000)` (import + four screens). `learn`/`scope` import-page timeouts under 2 workers logged in UNVERIFIED_TESTS.md.
   - The look-back stamp from the mockup (04-question-lookback) is not on the study screen yet (the study page doesn't know the step); possible later polish.
 
-**9. Screen: Practice (screen checkpoint).** `/course/[id]/practice`: flashcards + quick quiz, no timer, round pause at about 20. e2e `practice.spec.ts`, which also checks that FSRS fields are unchanged.
+**9. Screen: Practice (screen checkpoint). DONE.** `/course/[id]/practice`: flashcards + quick quiz, no timer, round pause at about 20. e2e `practice.spec.ts`, which also checks that FSRS fields are unchanged.
 
 **10. Settings, Shelf, Welcome/Home (screen checkpoint).**
 - `/settings`: theme labelled "Lamp-light", companion, haptics, sounds, spelling mode (music toggle hidden until Phase 10).
@@ -178,6 +179,7 @@ Tests: unit + `layout.spec.ts` + snapshots.
 - Step 6: Meet the terms' matching check = one session card (the first term note's first card) forced to `matching`, `required: ACQ_STEP_REQUIRED`. Learn steps use `ACQ_STEP_REQUIRED` (1) per card.
 - Step 6: Learn under a scope uses only in-scope sections (Learn order and look-back distance are over the scoped sections). Look-back rng = `rngFor(chunkId, 'lookback:<event count>', 0)`.
 - Step 6: "sections the student has read in Learn" (Q8) is derived from events, no stored field: a section counts as read once any of its cards has a review event with mode `acquisition`. Learn's questions follow the reading, so a section read this visit with cards is already counted when its look-back runs; a section without cards has no look-back candidates anyway.
+- Step 9: the Practice door now always opens `/course/[id]/practice` (hint = in-scope card count, never the has-work dot); it no longer starts today's review, which lives in Exam prep. `doors.ts` `DoorAction` `review` is gone. Needs a Decisions log row at handoff.
 
 ## Agents
 | Step | Agent | Owns (writes only) | Brief |

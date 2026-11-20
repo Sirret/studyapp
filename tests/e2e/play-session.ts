@@ -97,9 +97,10 @@ export async function playOpenSession(page: Page): Promise<Set<string>> {
 	const summary = page.locator('[data-session-summary]');
 	const round = page.locator('[data-round-summary]');
 	const interstitial = page.locator('[data-interstitial]');
-	// A step inside a Learn unit or a Learn topic has no summary: the session goes straight back.
+	// A step inside a Learn unit or a Learn topic, or a Practice quick quiz, has no session
+	// summary: the session goes straight back.
 	const backInUnit = page
-		.locator('[data-step-heading], [data-learn-screen]')
+		.locator('[data-step-heading], [data-learn-screen], [data-practice-summary]')
 		.or(page.getByRole('link', { name: 'Back to Exam prep' }));
 	for (let step = 0; step < MAX_STEPS; step += 1) {
 		await expect(check.or(summary).or(round).or(interstitial).or(backInUnit).first()).toBeVisible();
