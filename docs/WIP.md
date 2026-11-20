@@ -204,5 +204,8 @@ Tests: unit for pure helpers + `layout.spec.ts` + `visual.spec.ts`.
   - Re-import the same zip: no duplicate image or note, boxes intact.
   - Go offline after first use and open an editor.
 
+## Step 1 status
+- 2026-11-20: `tests/fixtures/spike/` git-ignored (5399712). BLOCKED: waiting for the user to place `slides.pdf` (Database II Lecture 3, Indexing and Hashing) there. Early signal from the text the user attached in chat: the figures on pages 10, 12, 15, 21 and 30 (dense/sparse/secondary index tables, B-tree node layouts) contribute no text, so they are probably pictures; the B+/B-tree insertion steps (pages 22–28, 33–38) do carry their numbers as text, with two-digit keys split per digit on page 27. To confirm in the spike.
+
 ## Not yet in the docs (decided while building)
 - (none yet)
