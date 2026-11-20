@@ -58,6 +58,8 @@ export interface StudyView {
 export interface StudyAnswer {
 	verdict: ExerciseVerdict;
 	view: StudyView;
+	/** This answer made the card exam-ready or secure (the stamp sound, SESSION_NOTES §D7). */
+	becameReady: boolean;
 	/** The review event logged, for "I was right"; absent for self-rated and pretest answers. */
 	reviewEventId?: EventId;
 }

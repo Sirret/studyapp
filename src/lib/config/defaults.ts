@@ -214,3 +214,34 @@ export const HINT_WORDS = 3;
 export const HINT_LETTERS = 2;
 /** Bump when `generateCards` paths change, so stored cards are refreshed once (path-refresh.ts). 1 = Phase 8.6 list and key-word paths. */
 export const CARD_PATHS_VERSION = 1;
+/** Sound effects: master volume (0–1), kept low (SESSION_NOTES §D7; Q11). */
+export const SOUND_VOLUME = 0.3;
+/** Sound effects: fade-in time of every tone, seconds (avoids clicks). */
+export const SOUND_ATTACK_S = 0.005;
+/** Sound effects: one effect's tones. `noise` is a band-passed noise burst centred on `freq`. */
+export interface SoundTone {
+	wave: 'sine' | 'triangle' | 'noise';
+	/** Start frequency (Hz); for noise, the band's centre. */
+	freq: number;
+	/** Glide to this frequency over the tone (Hz); absent = steady. */
+	endFreq?: number;
+	/** Offset from the effect's start, seconds. */
+	at: number;
+	/** Length, seconds. */
+	duration: number;
+	/** Peak level before the master volume (0–1). */
+	gain: number;
+}
+/** The four effects (SESSION_NOTES §D7): paw tap, snow crunch (correct), low note (wrong), stamp (exam-ready). */
+export const SOUND_EFFECTS = {
+	pawTap: [{ wave: 'sine', freq: 240, endFreq: 120, at: 0, duration: 0.07, gain: 0.5 }],
+	crunch: [
+		{ wave: 'noise', freq: 2600, at: 0, duration: 0.06, gain: 0.5 },
+		{ wave: 'noise', freq: 3400, at: 0.05, duration: 0.08, gain: 0.4 }
+	],
+	lowNote: [{ wave: 'triangle', freq: 196, endFreq: 175, at: 0, duration: 0.28, gain: 0.45 }],
+	stamp: [
+		{ wave: 'sine', freq: 160, endFreq: 55, at: 0, duration: 0.14, gain: 0.8 },
+		{ wave: 'noise', freq: 900, at: 0, duration: 0.04, gain: 0.35 }
+	]
+} as const satisfies Record<string, readonly SoundTone[]>;

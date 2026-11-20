@@ -1,12 +1,14 @@
 <!--
 	The Practice flashcard deck (SESSION_NOTES §C; Decisions log "Phase 8.6 Q4"): one pass through
 	the in-scope cards; when it ends, the "Still learning" cards can go round again as a new pass.
-	Nothing is logged, so the schedule never changes.
+	Nothing is logged, so the schedule never changes. Each rating plays the paw tap (SESSION_NOTES §D7).
 -->
 <script lang="ts">
 	import type { DeckCard } from '#lib/services/practice-service.ts';
+	import { prefs } from '#lib/services/preferences.svelte.ts';
 	import FlashcardDeck from '#lib/ui/components/FlashcardDeck.svelte';
 	import StickyNote from '#lib/ui/components/StickyNote.svelte';
+	import { playSound } from '#lib/ui/delight/sound.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { countOf } from '#lib/util/plural.ts';
 
@@ -32,7 +34,7 @@
 </script>
 
 {#key round}
-	<FlashcardDeck cards={pass}>
+	<FlashcardDeck cards={pass} onrate={() => playSound('pawTap', 'practice', prefs.sounds)}>
 		{#snippet done({ learning, known })}
 			<StickyNote title="Deck done">
 				<span data-deck-done

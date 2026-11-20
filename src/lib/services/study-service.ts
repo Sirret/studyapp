@@ -139,6 +139,7 @@ export class StudyService {
 		if (!shown) throw new Error(`Session ${id} has no exercise on screen`);
 		const { result: verdict, trace } = checkResponse(shown.spec, response);
 		this.deps.logger.debug('study', 'check', trace);
+		const wasReady = await this.isReady(shown.spec.cardId);
 		const view = await this.deps.sessions.answer(id, {
 			...answerOf(shown, verdict, this.deps.clock()),
 			credited: creditedIn(this.modes.get(id)),
@@ -146,7 +147,19 @@ export class StudyService {
 		});
 		this.answered.set(id, shown.spec);
 		const reviewEventId = await this.lastReviewId(id, shown.spec.cardId);
-		return { verdict, view: await this.present(view), ...(reviewEventId ? { reviewEventId } : {}) };
+		const becameReady = !wasReady && (await this.isReady(shown.spec.cardId));
+		return {
+			verdict,
+			view: await this.present(view),
+			becameReady,
+			...(reviewEventId ? { reviewEventId } : {})
+		};
+	}
+
+	/** Whether the card counts as learned (exam-ready or secure), for the stamp sound. */
+	private async isReady(cardId: CardId): Promise<boolean> {
+		const status = (await this.deps.repos.cards.get(cardId))?.status;
+		return status === 'exam-ready' || status === 'secure';
 	}
 
 	/**
@@ -239,11 +252,8 @@ export class StudyService {
 	/** Cards practised in the session and how many now count as learned. */
 	private async summaryOf(view: SessionView): Promise<{ practised: number; ready: number }> {
 		const ids = Object.keys(view.session.snapshot.cards) as CardId[];
-		const cards = await Promise.all(ids.map((cardId) => this.deps.repos.cards.get(cardId)));
-		const ready = cards.filter(
-			(card) => card?.status === 'exam-ready' || card?.status === 'secure'
-		);
-		return { practised: ids.length, ready: ready.length };
+		const ready = await Promise.all(ids.map((cardId) => this.isReady(cardId)));
+		return { practised: ids.length, ready: ready.filter(Boolean).length };
 	}
 
 	private async buildItem(view: SessionView, material: CourseMaterial): Promise<StudyItem | null> {

@@ -29,6 +29,7 @@
 	import PawWalk from '#lib/ui/delight/PawWalk.svelte';
 	import SnowBurst from '#lib/ui/delight/SnowBurst.svelte';
 	import SnowFlurry from '#lib/ui/delight/SnowFlurry.svelte';
+	import { answerSound, playSound } from '#lib/ui/delight/sound.ts';
 	import Screen from '#lib/ui/layout/Screen.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import AnswerFeedback from './AnswerFeedback.svelte';
@@ -109,8 +110,9 @@
 		}
 	}
 
-	function react(correct: boolean): void {
+	function react(correct: boolean, becameReady: boolean): void {
 		const level = prefs.companion;
+		playSound(answerSound(correct, becameReady), 'session', prefs.sounds);
 		if (correct) {
 			streak += 1;
 			const onStreak = streak % STREAK_FOR_FLURRY === 0;
@@ -133,7 +135,7 @@
 			const graded = item.exercise.shape !== 'selfRate' && item.exercise.shape !== 'study';
 			if (!graded) show(result.view);
 			else {
-				if (item.firstAttempt) react(result.verdict.correct);
+				if (item.firstAttempt) react(result.verdict.correct, result.becameReady);
 				answer = result;
 			}
 		} finally {

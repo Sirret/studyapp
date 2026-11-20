@@ -7,6 +7,7 @@
 	import type { DeckCard, QuizSummary } from '#lib/services/practice-service.ts';
 	import EmptyState from '#lib/ui/components/EmptyState.svelte';
 	import Hero from '#lib/ui/components/Hero.svelte';
+	import SoundToggle from '#lib/ui/components/SoundToggle.svelte';
 	import StickyNote from '#lib/ui/components/StickyNote.svelte';
 	import PawLoader from '#lib/ui/delight/PawLoader.svelte';
 	import Screen from '#lib/ui/layout/Screen.svelte';
@@ -89,6 +90,7 @@
 					<Icon icon={ArrowLeft} size="nav" />
 				</Button>
 			{/snippet}
+			{#snippet trailing()}<SoundToggle />{/snippet}
 		</TopBar>
 	{/snippet}
 	{#if failed}

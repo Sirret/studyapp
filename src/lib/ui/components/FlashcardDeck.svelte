@@ -4,7 +4,7 @@
 	left, "Know it" sends it right (CardFly), and the next card rises. Keys: Space flips, ← Still
 	learning, → Know it, H hint. Tallies sit above the card on phones and in a deck panel with the
 	key hints from 1024 px. Nothing is logged (Decisions log "Phase 8.6 Q4"); `ondone` gets the
-	sorted card keys when the pass ends, and `done` renders in the deck's place.
+	sorted card keys when the pass ends, `onrate` each rating, and `done` renders in the deck's place.
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
@@ -28,12 +28,15 @@
 		cards,
 		keyboard = true,
 		ondone,
+		onrate,
 		done
 	}: {
 		cards: DeckCardView[];
 		/** Listen for the deck keys on the window (off where several decks share a page). */
 		keyboard?: boolean;
 		ondone?: (result: DeckResult) => void;
+		/** A card was rated (Practice plays the paw-tap sound here). */
+		onrate?: (verdict: DeckVerdict) => void;
 		done?: Snippet<[DeckResult]>;
 	} = $props();
 
@@ -55,6 +58,7 @@
 		if (top === null || fly !== null) return;
 		pending = verdict;
 		fly = verdict === 'learning' ? 'left' : 'right';
+		onrate?.(verdict);
 	}
 
 	function flown(): void {

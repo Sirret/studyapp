@@ -13,6 +13,7 @@
 	import ModeDoorRow from '../components/ModeDoorRow.svelte';
 	import Reader from '../components/Reader.svelte';
 	import ScopePicker from '../components/ScopePicker.svelte';
+	import SoundToggle from '../components/SoundToggle.svelte';
 	import TapChip from '../components/TapChip.svelte';
 	import Button from '../primitives/Button.svelte';
 	import { initialPicks } from '../scope/scope-selection.ts';
@@ -93,6 +94,9 @@
 			<HintLink label="Hint · first letters" hint={REVEAL} onrequest={noop} />
 			<HintLink label="Hint · remove one wrong answer" hint={REMOVE} onrequest={noop} />
 		</div>
+	</GuideRow>
+	<GuideRow label="Sound toggle (study and Practice top bar; one tap mutes, saved at once)">
+		<SoundToggle />
 	</GuideRow>
 	<GuideRow label="Meet the terms (then one matching check)">
 		<div class="wide"><MeetTerms terms={SAMPLE_TERMS} onstart={noop} /></div>
