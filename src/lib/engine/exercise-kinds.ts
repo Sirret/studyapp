@@ -36,12 +36,23 @@ const KINDS_BY_GROUP: Readonly<Record<ExerciseGroup, readonly ExerciseKind[]>> =
 
 type ExerciseInfo = { group: ExerciseGroup; weight: Weight };
 
+/**
+ * Kinds whose weight differs from their group's: matching is a warm-up kind but, as a card's own
+ * review, a recognition answer.
+ *
+ * @see Decisions log (Phase 8.6 Q5)
+ */
+const WEIGHT_OF_KIND: Readonly<Partial<Record<ExerciseKind, Weight>>> = { matching: 'recognition' };
+
 /** Group and weight of every exercise kind. @see BUILD_PLAN §3.3 */
 export const EXERCISES = Object.fromEntries(
 	Object.entries(KINDS_BY_GROUP).flatMap(([group, kinds]) =>
 		kinds.map((kind) => [
 			kind,
-			{ group: group as ExerciseGroup, weight: WEIGHT_OF_GROUP[group as ExerciseGroup] }
+			{
+				group: group as ExerciseGroup,
+				weight: WEIGHT_OF_KIND[kind] ?? WEIGHT_OF_GROUP[group as ExerciseGroup]
+			}
 		])
 	)
 ) as Readonly<Record<ExerciseKind, ExerciseInfo>>;

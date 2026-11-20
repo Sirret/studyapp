@@ -87,15 +87,15 @@ function fromCard(card: Card): FsrsCardState {
 }
 
 /**
- * The rating for a first-attempt answer: full-weight correct → good, recognition correct → hard,
- * wrong → again. `none`-weight answers never reach FSRS (null).
+ * The rating for a first-attempt answer: full-weight correct → good, recognition or hinted correct
+ * → hard, wrong → again (hinted or not). `none`-weight answers never reach FSRS (null).
  *
- * @see BUILD_PLAN §6.2
+ * @see BUILD_PLAN §6.2, §6.3 (hinted) and SESSION_NOTES §J
  */
-export function ratingFor(weight: Weight, correct: boolean): FsrsRating | null {
+export function ratingFor(weight: Weight, correct: boolean, hinted = false): FsrsRating | null {
 	if (weight === 'none') return null;
 	if (!correct) return 'again';
-	return weight === 'full' ? 'good' : 'hard';
+	return weight === 'full' && !hinted ? 'good' : 'hard';
 }
 
 /**

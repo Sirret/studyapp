@@ -212,3 +212,5 @@ export const LIST_ALL_ONLY_MAX = 3;
 export const HINT_WORDS = 3;
 /** Micro hint: letters shown per word of a typed answer (Q10). */
 export const HINT_LETTERS = 2;
+/** Bump when `generateCards` paths change, so stored cards are refreshed once (path-refresh.ts). 1 = Phase 8.6 list and key-word paths. */
+export const CARD_PATHS_VERSION = 1;

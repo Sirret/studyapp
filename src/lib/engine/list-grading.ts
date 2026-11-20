@@ -1,4 +1,6 @@
+import { LIST_ALL_ONLY_MAX, LIST_N_MIN, LIST_N_SHARE } from '#lib/config/defaults.ts';
 import type { ExerciseKind } from '#lib/db/schemas/common.ts';
+import { allowedEdits, normalizeAnswer, osaDistance, textLength } from './grading.ts';
 import type { Traced } from './trace.ts';
 
 /** A list grade. @see Decisions log "Phase 8.6 Q9" */
@@ -17,8 +19,8 @@ export interface ListGrade {
  *
  * @see Decisions log "Phase 8.6 Q9"
  */
-export function listRequired(_itemCount: number): number {
-	throw new Error('not implemented');
+export function listRequired(itemCount: number): number {
+	return Math.min(itemCount, Math.max(LIST_N_MIN, Math.ceil(itemCount * LIST_N_SHARE)));
 }
 
 /**
@@ -28,8 +30,30 @@ export function listRequired(_itemCount: number): number {
  *
  * @see Decisions log "Phase 8.6 Q9"; SESSION_NOTES D4, J
  */
-export function listPath(_itemCount: number): ExerciseKind[] {
-	throw new Error('not implemented');
+export function listPath(itemCount: number): ExerciseKind[] {
+	if (itemCount <= LIST_ALL_ONLY_MAX) return ['listAll'];
+	return ['listPick', 'listNot', 'listN', 'listAll'];
+}
+
+const ascending = (values: Iterable<number>) => [...values].sort((a, b) => a - b);
+
+/**
+ * The item a normalised entry names: an exact match, else the closest item within its tolerance,
+ * unless another item is as close (the collision guard among the list's own items).
+ */
+function itemOf(entry: string, items: readonly string[]): number | null {
+	const exact = items.indexOf(entry);
+	if (exact >= 0) return exact;
+	const distances = items.map((item) => osaDistance(entry, item));
+	let best: number | null = null;
+	distances.forEach((edits, i) => {
+		const fits = edits <= allowedEdits(textLength(items[i] ?? ''));
+		if (fits && (best === null || edits < (distances[best] ?? Infinity))) best = i;
+	});
+	if (best === null) return null;
+	const bestEdits = distances[best] ?? Infinity;
+	const rival = distances.some((edits, i) => i !== best && edits <= bestEdits);
+	return rival ? null : best;
 }
 
 /**
@@ -40,13 +64,40 @@ export function listPath(_itemCount: number): ExerciseKind[] {
  *
  * @see BUILD_PLAN §5.1 row listN ("validItems >= requiredItems")
  */
-export function gradeListTyped(_input: {
+export function gradeListTyped(input: {
 	cardId: string;
 	items: readonly string[];
 	typed: readonly string[];
 	required: number;
 }): Traced<ListGrade> {
-	throw new Error('not implemented');
+	const items = input.items.map(normalizeAnswer);
+	const valid = new Set<number>();
+	const wrong: number[] = [];
+	input.typed.forEach((raw, index) => {
+		const entry = normalizeAnswer(raw);
+		if (entry === '') return;
+		const item = itemOf(entry, items);
+		if (item === null) wrong.push(index);
+		else valid.add(item);
+	});
+	const result: ListGrade = {
+		correct: valid.size >= input.required,
+		valid: ascending(valid),
+		wrong,
+		required: input.required
+	};
+	return {
+		result,
+		trace: [
+			{
+				rule: 'list.typed',
+				cardId: input.cardId,
+				valid: result.valid,
+				wrong,
+				required: input.required
+			}
+		]
+	};
 }
 
 /**
@@ -55,10 +106,20 @@ export function gradeListTyped(_input: {
  *
  * @see Decisions log "Phase 8.6 Q9"
  */
-export function gradeListPicked(_input: {
+export function gradeListPicked(input: {
 	correct: readonly number[];
 	picked: readonly number[];
 	required: number;
 }): Traced<ListGrade> {
-	throw new Error('not implemented');
+	const right = new Set(input.correct);
+	const picked = new Set(input.picked);
+	const valid = ascending([...picked].filter((i) => right.has(i)));
+	const wrong = ascending([...picked].filter((i) => !right.has(i)));
+	const result: ListGrade = {
+		correct: wrong.length === 0 && valid.length >= input.required,
+		valid,
+		wrong,
+		required: input.required
+	};
+	return { result, trace: [{ rule: 'list.picked', valid, wrong, required: input.required }] };
 }

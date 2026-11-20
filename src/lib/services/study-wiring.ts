@@ -16,6 +16,7 @@ import { EventRepo } from '#lib/db/repos/event-repo.ts';
 import { KvRepo } from '#lib/db/repos/kv-repo.ts';
 import { SessionRepo } from '#lib/db/repos/session-repo.ts';
 import { db, logger } from './app.ts';
+import { refreshCardPaths } from './path-refresh.ts';
 import { kvReplayConfig, ReplayService } from './replay-service.ts';
 import { SessionService } from './session-service.ts';
 import { StudyService } from './study-service.ts';
@@ -76,6 +77,22 @@ export const cardListService = new CardListService(content, replay, logger);
 
 /** The course page's "Undo import" (DATA_MODEL §3.1 `lastImport`). */
 export const importUndoService = new ImportUndoService(content, logger);
+
+let pathCheck: Promise<void> | null = null;
+
+/**
+ * Moves stored cards onto the current exercise paths once (`refreshCardPaths`). Runs at most once
+ * per page load; never rejects: a failure is logged and tried again on the next start.
+ *
+ * @see path-refresh.ts
+ */
+export function ensureCardPaths(): Promise<void> {
+	pathCheck ??= refreshCardPaths({ kv, store: content, replay, logger }).then(
+		() => undefined,
+		(error: unknown) => logger.error('cards', 'card paths not refreshed', { error: String(error) })
+	);
+	return pathCheck;
+}
 
 const planRepos = { ...repos, chunks: new ChunkRepo(db, context) };
 

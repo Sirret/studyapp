@@ -8,6 +8,10 @@ Phase 8.6 gives each course its own Learn / Practice / Exam prep flows (spec: SE
 |---|---|---|---|---|---|---|---|
 | 2026-11-16 | 8.6 | 0 plan | Opus | WIP plan; Q1–Q18 answered into the Decisions log; SESSION_NOTES §I point | 3 | Step 1 (interface + data) | 97e8a91 |
 | 2026-11-16 | 8.6 | 1 interface | Opus | Mode `practice`, 5 kinds, Settings sounds/music, kv `studyScope`, DATA_MODEL; stubs: idea-unit, list-grading, hint, scope, learn-flow, practice, exercise-build-list, exercise-check-units; IdeaUnitSpec/ListSpec; verdict `verdictKind`/`weight` | 20 | Step 2: launch spec-test-writer with the brief in "Agents" | f90ccd0 |
+| 2026-11-16 | 8.6 | 2 spec tests | Opus + Sonnet agent | 204 spec tests (10 files); 11 SPEC-GAPs into the Decisions log | 2 (+10 untracked tests) | Step 3: replay/criterion/FSRS hinted + practice rules, matching weight (make `replay-hinted.test.ts` green) | NOT COMMITTED (user, 2026-11-16): docs staged, tests untracked; commit everything together once the spec tests pass (the hook runs all untracked tests, so no commit can land before that) |
+| 2026-11-16 | 8.6 | 3 replay/criterion/FSRS | Opus | `isRated`/`isCounting` (hinted never counts, opens the session's FSRS review rated Hard via `ratingFor(..., hinted)`); replay + criterionHistory skip practice; matching = recognition (`WEIGHT_OF_KIND`); 2 old tests moved from matching to hotspot; 2 Decisions log rows. replay-hinted 24/24, all 1889 + sim 12 green | 7 (+replay-hinted test) | Step 4: idea-unit, list kinds, hint (make `idea-unit`, `list-grading`, `hint`, `exercise-build-list` tests green) | NOT COMMITTED (same reason as step 2: the other 9 untracked spec-test files still fail, so the hook blocks any commit) |
+| 2026-11-20 | 8.6 | 4 idea-unit/list/hint | Opus | `idea-unit`, `list-grading`, `hint`, `exercise-build-list`, `exercise-check-units` implemented (96 spec tests green); cardgen: list facts on `listPath`, key-word facts `fwd` = `mc → ideaUnit`; `refreshCardPaths` + kv `cardPathsVersion` + `CARD_PATHS_VERSION` (DATA_MODEL rows), wired via `ensureCardPaths()` from Home; `path-refresh.test.ts` (IDs, events, FSRS unchanged); 4 Decisions log rows. 1991 unit + sim green, check 0 errors | 14 (+2 tests) | Step 5: learn-flow, scope, practice + count rounds (make `scope`, `learn-flow*`, `practice` tests green; launch spec-test-writer for `round-count.test.ts`) | NOT COMMITTED (same reason as steps 2–3: the 5 step-5 spec files still fail, so the hook blocks any commit) |
+| 2026-11-20 | 8.6 | 5 learn-flow/scope/practice/count rounds | Opus + Sonnet agent | `scope`, `practice`, `learn-flow` implemented (84 spec tests); count rounds (`SessionSnapshot.roundBy`, DATA_MODEL §3.7; `round-count.test.ts` 31 tests by agent); 2 Decisions log rows; steps 2–5 committed together; 2106 tests green | ~45 | Step 6: services (split study-service and course-plan-service first) | COMMIT |
 
 ## What already exists (reuse; don't rebuild)
 - **Event fields:** `ReviewEvent.hinted` and `verdictKind: 'exact'|'fuzzy'|'ideaUnit'|'listN'` are in `db/schemas/event.ts:43-46` and DATA_MODEL. Nothing reads them yet. The spec is BUILD_PLAN §5.1 rows `ideaUnit`/`listN` and §6.3 (a hinted answer never counts toward the criterion; a hinted correct is rated Hard).
@@ -45,7 +49,7 @@ Engine stubs (`throw new Error('not implemented')`):
 
 Config is added to `defaults.ts` (`LEARN_SECTION_QUESTIONS`, `LOOKBACK_MIN_DISTANCE`, `LEARN_ROUND_CARDS`, `MEET_TERMS_MAX`, `LIST_N_SHARE`, `HINT_WORDS`, `HINT_LETTERS`). About 14 files.
 
-**2. Spec tests (checkpoint b). NEXT.** `spec-test-writer` (Sonnet) writes tests for:
+**2. Spec tests (checkpoint b). DONE** — 204 tests in 10 files (learn-flow split into `learn-flow`, `learn-flow-topic`, `learn-flow-lookback`). Stub tests fail with "not implemented"; `replay-hinted` has 16 real failures (matching weight, hinted criterion, hinted = Hard, practice skipped) and 8 passing guards. 11 SPEC-GAPs accepted as the agent read them → Decisions log rows "Phase 8.6 SPEC-GAP (…)". **The 10 test files are untracked on purpose** (the pre-commit `vitest --changed` blocks failing tests; CLAUDE.md trap): commit `replay-hinted.test.ts` with step 3, the rest with steps 4–5 as each module turns green. Do not delete them. `spec-test-writer` (Sonnet) writes tests for:
 - the grading modules (idea-unit, list, hint) against BUILD_PLAN §5.1, SESSION_NOTES D3/D4/J
 - `learn-flow` + `pickLookBack` against §C and PROMPTS §6 rows @summary/@section/@tip
 - the replay/criterion hinted + practice rules against §6.3 and §J
@@ -53,9 +57,9 @@ Config is added to `defaults.ts` (`LEARN_SECTION_QUESTIONS`, `LOOKBACK_MIN_DISTA
 
 I resolve SPEC-GAPs into the Decisions log. Settings and scope schema tests I write directly.
 
-**3. Engine: replay/criterion/FSRS (checkpoint c).** `hinted` never counts and a hinted correct is rated Hard (`criterion.ts`, `criterion-history.ts`, `replay-card.ts`, `fsrs.ts ratingFor`). Practice events are skipped by replay (Q4). Matching weight changes per Q5. Spec tests turn green. A sim rerun confirms no plan drift.
+**3. Engine: replay/criterion/FSRS (checkpoint c). DONE (uncommitted).** `hinted` never counts and a hinted correct is rated Hard (`criterion.ts`, `criterion-history.ts`, `replay-card.ts`, `fsrs.ts ratingFor`). Practice events are skipped by replay (Q4). Matching weight changes per Q5. Spec tests turn green. A sim rerun confirms no plan drift.
 
-**4. Engine: idea-unit, list kinds, hint (checkpoint c).**
+**4. Engine: idea-unit, list kinds, hint (checkpoint c). DONE (uncommitted).**
 - Builders: new `exercise-build-list.ts`, idea-unit in `exercise-build-text.ts`.
 - `checkResponse` sets `verdictKind`.
 - `cardgen`: path for list facts and for facts with key words.
@@ -63,7 +67,11 @@ I resolve SPEC-GAPs into the Decisions log. Settings and scope schema tests I wr
 - Distractors for list pick/NOT come from other lists' items in the course.
 - **Required test (user):** import a course, log reviews, run the path refresh, then check that card IDs, every review event and FSRS state are unchanged (`tests/unit/services/path-refresh.test.ts`).
 
-**5. Engine: learn-flow, scope, practice + count rounds (checkpoint c).**
+**5. Engine: learn-flow, scope, practice + count rounds (checkpoint c). DONE.**
+- DONE: `scope.ts`, `practice.ts`, `learn-flow.ts` implemented; their 84 spec tests green. Decisions row "SPEC-GAP (quick quiz skips warm-up kinds)".
+- DONE: count-round interface: `RoundBySchema`, `SessionSnapshot.roundBy?` (DATA_MODEL §3.7 row), `PlanInput.roundBy?`, JSDoc of `planSession`/`checkRoundEnd`/`startRound`; Decisions row "step 5: count rounds". Behaviour not implemented yet.
+- DONE: spec-test-writer wrote `round-count.test.ts` (31 tests; no SPEC-GAPs; its 6 readings match the Decisions row and are accepted). Count rounds implemented (`roundWorkingSet` in `round.ts`, used by `planSession`/`startRound`). 2106 tests green.
+- DONE: steps 2–5 committed together (see Checkpoint log).
 - `round.ts`/`session.ts` get a `roundBy: 'count'` option (no minutes, `LEARN_ROUND_CARDS ≈ 20`) for Learn and Practice.
 - `spec-test-writer` adds tests for the round option, because the session engine is a risky module.
 
@@ -122,15 +130,21 @@ Tests: unit + `layout.spec.ts` + snapshots.
 - Step 1: `Exercise.svelte` renders nothing yet for the `ideaUnit` and `list` shapes (no builder produces them until step 4); step 7 adds `IdeaUnitExercise` and `ListExercise` there.
 - Stub names as built (they replace the names in the step-1 bullet above): `scope.ts` `isWholeCourse`, `inScope`, `scopeItems`, `scopeSummary`; `learn-flow.ts` `learnOrder`, `meetTerms`, `sectionQuestions`, `topicFlow`, `pickLookBack`; `practice.ts` `quickQuiz`, `missesToRetry`, `nextDeckPass`; `list-grading.ts` `listRequired`, `listPath`, `gradeListTyped`, `gradeListPicked`; `idea-unit.ts` `matchKeyWords`, `gradeIdeaUnit`; `hint.ts` `microHint`; `exercise-build-list.ts` `buildIdeaUnit`, `buildListTyped`, `buildListPick`, `buildListNot`.
 
+- Step 4: `checkResponse` returns `verdictKind` and (idea unit) `weight: 'recognition'`, but `SessionService` still logs `weight: weightOf(kind)` and no `verdictKind`; step 6 must pass the verdict's `weight ?? weightOf(kind)` and `verdictKind` (plus `hinted`) into the event.
+- Step 4: `ensureCardPaths()` (study-wiring) runs from Home's `refresh()` only; a study route opened directly before Home keeps the old (still valid) paths until the next Home visit.
+
 ## Agents
 | Step | Agent | Owns (writes only) | Brief |
 |---|---|---|---|
 | 2 | spec-test-writer (Sonnet) | `tests/unit/engine/{idea-unit,list-grading,hint,learn-flow,scope,practice,exercise-build-list,replay-hinted}.test.ts` | See the full brief below |
-| 5 | spec-test-writer (Sonnet) | `tests/unit/engine/round-count.test.ts` | `round.ts`/`session.ts` count rounds; SESSION_NOTES §C "rounds pause by count" |
+| 5 | spec-test-writer (Sonnet) | `tests/unit/engine/round-count.test.ts` | See "Step-5 brief" below |
 | 13 | reviewer (Sonnet) | none | Phase 8.6, base = step-0 commit, specs above, summary.md |
 
 ### Step-2 brief (paste as the agent prompt)
 > Phase 8.6, workflow step 2. Write unit tests (Vitest, `fast-check` where a property helps; fixtures in `tests/unit/engine/fixtures.ts`) for these stubbed modules, from their JSDoc and the spec only. Never read function bodies (they throw). Modules: `src/lib/engine/idea-unit.ts`, `list-grading.ts`, `hint.ts`, `scope.ts`, `learn-flow.ts`, `practice.ts`, `exercise-build-list.ts` + `exercise-check-units.ts` (through `buildExercise`/`checkResponse` in `exercise-spec.ts`/`exercise-check.ts`), and the replay rules not yet implemented: a review with `hinted: true` never counts toward the criterion and, if correct and the session's first attempt, is rated Hard for FSRS (`engine/replay-card.ts`, `criterion-history.ts`, `fsrs.ts ratingFor`); review events with mode `practice` are skipped entirely by replay (no FSRS, criterion, study day, acquisition handoff, accuracy or pathStep); `matching` answers carry weight `recognition` (`exercise-kinds.ts weightOf`), while `pretest` and `hotspot` stay `none`. Read only: BUILD_PLAN §5.1 rows `ideaUnit`, `listN`, `matching`; §6.2 rating map; §6.3; SESSION_NOTES §C, §D (D1–D5), §H, §J; PROMPTS §6; the BUILD_PLAN Decisions log rows starting "Phase 8.6"; `docs/WIP.md` section "Decisions"; config names in `src/lib/config/defaults.ts` (block "Phase 8.6"). Write to `tests/unit/engine/{idea-unit,list-grading,hint,learn-flow,scope,practice,exercise-build-list,replay-hinted}.test.ts` only. Report: test counts per file, and every `SPEC-GAP` (a case the spec doesn't settle) with the reading you chose.
+
+### Step-5 brief (paste as the agent prompt)
+> Phase 8.6, workflow step 2 for count rounds. Write `tests/unit/engine/round-count.test.ts` only (Vitest; reuse `tests/unit/engine/session-fixtures.ts` and the style of `tests/unit/engine/round.test.ts`, which you may read for fixtures, not for expected values). Behaviour comes from JSDoc and spec only, not from function bodies: `src/lib/engine/round.ts` (`checkRoundEnd`, `startRound`, `roundSummary`), `src/lib/engine/session.ts` `planSession` (its `PlanInput.roundBy` option), and `SessionSnapshot.roundBy` in `src/lib/db/schemas/session.ts`. Spec: BUILD_PLAN §6.4 (rounds); the BUILD_PLAN Decisions log rows "Phase 8.6 Q16" and "Phase 8.6 step 5: count rounds"; DATA_MODEL §3.7 row `snapshot`; config `LEARN_ROUND_CARDS`, `ROUND_WORKING_SET`, `ROUND_MAX_ANSWERS`, `ROUND_MAX_MINUTES` in `src/lib/config/defaults.ts`. Cover: planSession with `roundBy: 'count'` stores it and fills round 1 with up to `LEARN_ROUND_CARDS` cards (without it: `roundBy` absent, `ROUND_WORKING_SET`); a count round ends on all-done or at `LEARN_ROUND_CARDS` answers, never by minutes (even hours later) and not at `ROUND_MAX_ANSWERS` if that is lower; never while `clearing`; `startRound` keeps `roundBy` and fills to `LEARN_ROUND_CARDS`; clock rounds (absent `roundBy`, or `'clock'`) unchanged; a stored snapshot without `roundBy` parses with `SessionSnapshotSchema`. Report: test count and every `SPEC-GAP` with the reading you chose.
 
 ## Decisions (user, 2026-11-16; all in the BUILD_PLAN Decisions log as "Phase 8.6 Qn")
 1. Idea-unit: correct only when every key word is ticked. If all ticks are the app's pre-ticks → recall (full); if the student ticked any → recognition (Hard). No key words → MC + typed definition → term only.

@@ -42,7 +42,9 @@
 
 	async function refresh(): Promise<void> {
 		try {
-			plan = await (await wiring()).plannerService.today();
+			const services = await wiring();
+			await services.ensureCardPaths();
+			plan = await services.plannerService.today();
 		} catch (error: unknown) {
 			logger.error('today', 'plan not loaded', { error: String(error) });
 			failed = true;

@@ -13,6 +13,8 @@ export interface CountableAnswer {
 	credited: boolean;
 	weight: Weight;
 	correct: boolean;
+	/** A hint was used: the answer never counts (Phase 8.6). */
+	hinted?: boolean | undefined;
 }
 
 /** One card's progress toward its criterion within one session. */
@@ -28,12 +30,23 @@ export interface CriterionState {
 }
 
 /**
- * Whether an answer counts: a credited first attempt with `weight` `full` or `recognition`.
+ * Whether an answer reaches FSRS when it opens its session: a credited first attempt with `weight`
+ * `full` or `recognition`, hinted or not.
  *
- * @see BUILD_PLAN §6.3 and Decisions log (counting event)
+ * @see BUILD_PLAN §6.2, §6.3 and Decisions log (Phase 8.6 SPEC-GAP hinted)
+ */
+export function isRated(answer: Omit<CountableAnswer, 'correct'>): boolean {
+	return answer.firstAttempt && answer.credited && answer.weight !== 'none';
+}
+
+/**
+ * Whether an answer counts: a credited, unhinted first attempt with `weight` `full` or
+ * `recognition`. A hinted answer neither adds to nor resets the count.
+ *
+ * @see BUILD_PLAN §6.3 and Decisions log (counting event; Phase 8.6 SPEC-GAP hinted)
  */
 export function isCounting(answer: Omit<CountableAnswer, 'correct'>): boolean {
-	return answer.firstAttempt && answer.credited && answer.weight !== 'none';
+	return isRated(answer) && answer.hinted !== true;
 }
 
 /** What decides how many corrects a card needs at the start of a session. */

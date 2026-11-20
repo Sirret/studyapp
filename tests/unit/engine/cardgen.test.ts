@@ -41,6 +41,35 @@ describe('generateCards', () => {
 		expect(variants(cardsFor(note))).toEqual(['fwd', 'rev']);
 	});
 
+	it('puts a starred list of more than LIST_ALL_ONLY_MAX items on the list path', () => {
+		const note = {
+			type: 'fact',
+			payload: { term: 'a', definition: 'w, x, y, z', keyWords: ['w', 'x', 'y', 'z'], list: true }
+		} satisfies NoteContent;
+		expect(cardsFor(note)).toEqual([
+			{ variant: 'fwd', path: ['listPick', 'listNot', 'listN', 'listAll'] }
+		]);
+	});
+
+	it('asks a short starred list whole only (listAll)', () => {
+		const note = {
+			type: 'fact',
+			payload: { term: 'a', definition: 'x, y', keyWords: ['x', 'y'], list: true }
+		} satisfies NoteContent;
+		expect(cardsFor(note)).toEqual([{ variant: 'fwd', path: ['listAll'] }]);
+	});
+
+	it('asks the definition of a fact with key words as an idea unit after MC', () => {
+		const note = {
+			type: 'fact',
+			payload: { term: 'a', definition: 'x y', keyWords: ['x'] }
+		} satisfies NoteContent;
+		expect(cardsFor(note)).toEqual([
+			{ variant: 'fwd', path: ['mc', 'ideaUnit'] },
+			{ variant: 'rev', path: ['mc', 'cloze'] }
+		]);
+	});
+
 	it('gives a cloze one card per answer, numbered from c1', () => {
 		expect(cardsFor({ type: 'cloze', payload: { text: '{{a}} x {{b}} y {{c}}' } })).toEqual([
 			{ variant: 'c1', path: ['cloze'] },

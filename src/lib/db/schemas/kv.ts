@@ -113,6 +113,8 @@ export const KV_SCHEMAS = {
 	/** The first-run sample course was decided (added, or skipped): never run again. @see sample-course.ts */
 	sampleCourseSeeded: z.literal(true),
 	offline: z.object({ persisted: z.boolean(), checkedAt: z.number() }),
+	/** The card-path version stored cards were last refreshed to (`CARD_PATHS_VERSION`). @see path-refresh.ts */
+	cardPathsVersion: z.number().int().nonnegative(),
 	/** Per course, the topics and sections every mode studies; no entry = the whole course. @see scope.ts */
 	studyScope: z.record(CourseIdSchema, StudyScopeSchema)
 };

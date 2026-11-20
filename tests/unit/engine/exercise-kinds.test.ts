@@ -31,7 +31,8 @@ describe('EXERCISES (BUILD_PLAN §3.3)', () => {
 		['pickPrinciple', 'discriminate', 'full'],
 		['mc', 'choose', 'recognition'],
 		['firstLetterBank', 'choose', 'recognition'],
-		['matching', 'warmup', 'none'],
+		['matching', 'warmup', 'recognition'],
+		['hotspot', 'warmup', 'none'],
 		['pretest', 'warmup', 'none'],
 		['flip', 'selfRated', 'none'],
 		['exampleStudy', 'selfRated', 'none']

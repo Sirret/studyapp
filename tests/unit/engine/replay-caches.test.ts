@@ -178,7 +178,7 @@ describe('replay FSRS (§6.2, Decisions log: FSRS review = first counting event 
 	it('skips a warm-up (none weight) and reviews the first counting event after it', () => {
 		const h = history();
 		const [, counting] = h.session('longterm', at(0), [
-			{ kind: 'matching', correct: false },
+			{ kind: 'hotspot', correct: false },
 			ok,
 			ok
 		]);
@@ -204,7 +204,7 @@ describe('replay FSRS (§6.2, Decisions log: FSRS review = first counting event 
 
 	it('never touches FSRS with none-weight answers', () => {
 		const h = history();
-		h.session('longterm', at(0), [{ kind: 'matching' }, { kind: 'hotspot', correct: false }]);
+		h.session('longterm', at(0), [{ kind: 'hotspot' }, { kind: 'hotspot', correct: false }]);
 		const caches = cachesOf(h.events);
 		expect(caches.fsrs).toBeNull();
 		expect(caches.due).toBeUndefined();
@@ -279,7 +279,7 @@ describe('replay status over days (§6.5, Decisions log: status, daysCorrect and
 
 	it('is learning after none-weight answers only', () => {
 		const h = history();
-		h.session('longterm', at(0), [{ kind: 'matching' }]);
+		h.session('longterm', at(0), [{ kind: 'hotspot' }]);
 		expect(cachesOf(h.events).status).toBe('learning');
 	});
 
@@ -558,7 +558,7 @@ describe('replay fragile (CONCEPT §7 cram-fragile, Decisions log: massed modes 
 	it('keeps fragile after long-term answers that are not FSRS reviews (uncredited, none weight)', () => {
 		const h = history();
 		h.session('cram', at(0), OK3);
-		h.session('longterm', at(1), [{ kind: 'matching' }]);
+		h.session('longterm', at(1), [{ kind: 'hotspot' }]);
 		h.session('longterm', at(2), [ok], { credited: false });
 		expect(cachesOf(h.events).fragile).toBe(true);
 	});
@@ -668,7 +668,7 @@ describe('replay weak (Decisions log: weak, §6.4 failed relearn)', () => {
 		expect(
 			weakOf((h) => {
 				h.session('longterm', at(0), OK3);
-				h.session('longterm', at(1), [{ kind: 'matching', correct: false }, ok]);
+				h.session('longterm', at(1), [{ kind: 'hotspot', correct: false }, ok]);
 			})
 		).toBe(false);
 		expect(
@@ -753,14 +753,14 @@ describe('replay pathStep (Decisions log: pathStep)', () => {
 	});
 
 	it('moves past a step on a none-weight review of that kind, even a wrong one', () => {
-		const path: ExerciseKind[] = ['matching', 'cloze'];
+		const path: ExerciseKind[] = ['hotspot', 'cloze'];
 		expect(
-			stepOf(path, (h) => h.session('longterm', at(0), [{ kind: 'matching', correct: false }]))
+			stepOf(path, (h) => h.session('longterm', at(0), [{ kind: 'hotspot', correct: false }]))
 		).toBe(1);
 	});
 
 	it('does not move on a none-weight review of another kind', () => {
-		expect(stepOf(MC_PATH, (h) => h.session('longterm', at(0), [{ kind: 'matching' }]))).toBe(0);
+		expect(stepOf(MC_PATH, (h) => h.session('longterm', at(0), [{ kind: 'hotspot' }]))).toBe(0);
 	});
 
 	it('moves past a step on a self-rated event of that kind tied to the card', () => {
@@ -786,7 +786,7 @@ describe('replay caches: validity and determinism (§6.12)', () => {
 		const h = history();
 		h.session('acquisition', at(0, 17), [mc(true), mc(false), ok]);
 		h.session('longterm', at(1), [no, { firstAttempt: false }, ok, ok, { cardId: CARD_B }, ok]);
-		h.session('longterm', at(2), [ok, { cardId: CARD_B, correct: false }, { kind: 'matching' }]);
+		h.session('longterm', at(2), [ok, { cardId: CARD_B, correct: false }, { kind: 'hotspot' }]);
 		h.selfRated(at(2, 19), 'flip', CARD_A);
 		h.session('cram', at(3, 22), [ok, { cardId: CARD_B }, { cardId: CARD_B }, { cardId: CARD_B }]);
 		h.session('longterm', rollover(4, TZ_EAST) - MS_PER_MINUTE, [ok, { cardId: CARD_B }], {
@@ -975,10 +975,10 @@ describe('replay criterion count derived without `required` (§6.3 adaptive firs
 	});
 
 	it('does not count a none-weight first review as known on first try', () => {
-		expect(statusOf((h) => h.session('cram', at(0), [{ kind: 'matching' }, ok, ok]))).toBe(
+		expect(statusOf((h) => h.session('cram', at(0), [{ kind: 'hotspot' }, ok, ok]))).toBe(
 			'provisional'
 		);
-		expect(statusOf((h) => h.session('cram', at(0), [{ kind: 'matching' }, ...OK3]))).toBe(
+		expect(statusOf((h) => h.session('cram', at(0), [{ kind: 'hotspot' }, ...OK3]))).toBe(
 			'exam-ready'
 		);
 	});

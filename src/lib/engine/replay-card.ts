@@ -6,6 +6,7 @@ import {
 	emptyCriterionHistory,
 	recordCriterion,
 	type CriterionHistory,
+	type RecordedCriterion,
 	type SessionCriterion
 } from './criterion-history.ts';
 import { advancePathStep } from './exercise-kinds.ts';
@@ -94,7 +95,7 @@ function survivedSpacedGap(
 
 /** Applies the session's FSRS review, with the massed-mode cap and the fragile rules. */
 function applyFsrs(fold: CardFold, event: ReviewEvent, input: ReplayCardInput): void {
-	const rating = ratingFor(event.weight, event.correct);
+	const rating = ratingFor(event.weight, event.correct, event.hinted === true);
 	if (rating === null) throw new Error('A none-weight answer never reaches FSRS');
 	const previous = fold.fsrs;
 	let next = reviewFsrs(previous, event.ts, rating, input.fsrs).result;
@@ -115,18 +116,22 @@ function applyFsrs(fold: CardFold, event: ReviewEvent, input: ReplayCardInput): 
 	});
 }
 
-/** A counting event: criterion, the session's first FSRS review, study days and status facts. */
-function foldCounting(
+/**
+ * A rated event: the session's first FSRS review (hinted or not); a counting one also folds study
+ * days and status facts. A hinted event stops after FSRS.
+ */
+function foldRated(
 	fold: CardFold,
 	event: ReviewEvent,
-	recorded: { session: SessionCriterion; isFirstOfSession: boolean },
+	recorded: RecordedCriterion,
 	input: ReplayCardInput
 ): void {
-	const { session, isFirstOfSession } = recorded;
+	const { session, isFirstOfSession, counting } = recorded;
 	if (isFirstOfSession) {
 		fold.modes.set(event.sessionId, event.mode);
 		applyFsrs(fold, event, input);
 	}
+	if (!counting) return;
 	fold.tally = tallyDay(fold.tally, {
 		day: dayIndex(event.ts, eventTz(event, input.tzOffsetMin)),
 		correct: event.correct
@@ -151,10 +156,12 @@ function foldReview(fold: CardFold, event: ReviewEvent, input: ReplayCardInput):
 		fold.pathStep = advancePathStep(input.path, fold.pathStep, event.kind);
 	}
 	const recorded = recordCriterion(fold.criteria, event);
-	if (recorded) foldCounting(fold, event, recorded, input);
+	if (recorded) foldRated(fold, event, recorded, input);
 }
 
+/** Practice reviews are skipped entirely (Decisions log Phase 8.6 Q4). */
 function foldEvent(fold: CardFold, event: StudyEvent, input: ReplayCardInput): void {
+	if (event.type === 'review' && event.mode === 'practice') return;
 	if (event.type === 'review') foldReview(fold, event, input);
 	else if (event.type === 'pretest') recordCriterion(fold.criteria, event);
 	else if (event.type === 'selfRated') {
@@ -204,9 +211,10 @@ function cachesOf(fold: CardFold, tzOffsetMin: number): Traced<CardCaches> {
 /**
  * Folds one card's events, already in replay order and all for this card, into its caches.
  * Review events drive accuracy, `pathStep`, the criterion, the session's FSRS review (its first
- * counting event), fragile, study days and status; self-rated events can move `pathStep`.
+ * rated event; a hinted correct is Hard), fragile, study days and status; self-rated events can
+ * move `pathStep`. Practice reviews are skipped entirely.
  *
- * @see BUILD_PLAN §6.2, §6.3, §6.5, §6.12 and Decisions log (Phase 4 rows)
+ * @see BUILD_PLAN §6.2, §6.3, §6.5, §6.12 and Decisions log (Phase 4 rows, Phase 8.6 Q4/Q5)
  */
 export function replayCard(
 	events: readonly StudyEvent[],

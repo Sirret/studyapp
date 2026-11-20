@@ -287,7 +287,7 @@ Indexes: `id, ts, cardId, sessionId, type, [cardId+ts]` (unchanged by `tzOffsetM
 | `startedAt` / `endedAt` | `number` | ✓ / — | |
 | `plannedMinutes` | `number` | ✓ | From the planner |
 | `phase` | `'warmup' \| 'new' \| 'recall' \| 'discrimination' \| 'cleanup'` | ✓ | Current phase |
-| `snapshot` | `{ queue: CardId[]; backlog: CardId[]; cards: Record<CardId, SessionCard>; clearing: CardId \| null; cleanup: boolean; round: SessionRound; studySince: number }` | ✓ | The round's cards in play (head = current card), cards not yet in play, per-card state, the card being cleared by redo-till-right, whether cleanup has started, the current round, and when study started or the last break ended — saved after every answer so a closed tab resumes |
+| `snapshot` | `{ queue: CardId[]; backlog: CardId[]; cards: Record<CardId, SessionCard>; clearing: CardId \| null; cleanup: boolean; round: SessionRound; studySince: number; roundBy?: 'clock' \| 'count' }` | ✓ | The round's cards in play (head = current card), cards not yet in play, per-card state, the card being cleared by redo-till-right, whether cleanup has started, the current round, when study started or the last break ended, and how rounds pause (`roundBy`: absent or `clock` = Exam prep rounds by `ROUND_MAX_ANSWERS`/`ROUND_MAX_MINUTES`; `count` = Learn and Practice rounds of `LEARN_ROUND_CARDS` cards ending after `LEARN_ROUND_CARDS` answers, no minutes; Phase 8.6) — saved after every answer so a closed tab resumes |
 
 `SessionCard` (plan §6.3, §6.4):
 
@@ -368,7 +368,7 @@ Indexes: `id, hash`.
 | Note type | Variants |
 |---|---|
 | keyterm | `fwd` |
-| fact | `fwd`, `rev` |
+| fact | `fwd`, `rev` (a starred list: `fwd` only, on the list path `listPick → listNot → listN → listAll`, or `listAll` alone for ≤ 3 items; a fact with key words: `fwd` path `mc → ideaUnit`. Phase 8.6) |
 | cloze | `c1`, `c2`, … |
 | sequence | `seq`, `step:<i>` |
 | example | `ex` |
@@ -428,6 +428,7 @@ From an Import v2 reply (docs/PROMPTS.md §3 FORMAT, §6).
 | `lastExportAt` | `number` | local | For the backup reminder |
 | `offline` | `{ persisted: boolean; checkedAt: number }` | local | "Ready offline" status |
 | `studyScope` | `Record<CourseId, { topicIds: ID[]; chunkIds: ID[] }>` | content | Per course, the topics and sections every mode studies (SESSION_NOTES §J). No entry, or both lists empty = the whole course; a card is in scope when its note's topic or section is listed (Decisions log "Phase 8.6 Q12") |
+| `cardPathsVersion` | `number` (int ≥ 0) | local | The card-path version (`CARD_PATHS_VERSION`) stored cards were last brought onto: when lower, `refreshCardPaths` updates kept cards' `path` once (IDs and events untouched) and replays them (Decisions log "Phase 8.6 Q19") |
 | `sampleCourseSeeded` | `true` | local | The first-run sample course was decided (added, or skipped because the student had courses). Never set back; a deleted sample is not re-added (BUILD_PLAN Decisions log, "Default course") |
 
 `Settings`:

@@ -2,12 +2,18 @@ import type { Card } from '#lib/db/schemas/card.ts';
 import type { CardId, ExerciseKind, Mode, NoteId } from '#lib/db/schemas/common.ts';
 import type { ReviewEvent, StudyEvent } from '#lib/db/schemas/event.ts';
 import type { NoteType } from '#lib/db/schemas/note.ts';
-import type { SessionCard, SessionPhase, SessionSnapshot } from '#lib/db/schemas/session.ts';
-import { CRITERION_LATER, ROUND_WORKING_SET } from '#lib/config/defaults.ts';
+import type {
+	RoundBy,
+	SessionCard,
+	SessionPhase,
+	SessionSnapshot
+} from '#lib/db/schemas/session.ts';
+import { CRITERION_LATER } from '#lib/config/defaults.ts';
 import { requiredCorrects } from './criterion.ts';
 import { criterionHistory } from './criterion-history.ts';
 import { currentKind, groupOf, WORKED_EXAMPLE_KINDS } from './exercise-kinds.ts';
 import { compareText, sortEvents } from './replay.ts';
+import { roundWorkingSet } from './round.ts';
 import { byKind, chainConfusables, uniqueById } from './session-order.ts';
 import type { Traced } from './trace.ts';
 
@@ -28,12 +34,14 @@ export interface PlanCard {
 
 /**
  * Cards in the caller's priority order, the events that log confusions between cards, and the
- * time the session starts (its first round's `startedAt` and `studySince`).
+ * time the session starts (its first round's `startedAt` and `studySince`), and how its rounds
+ * pause (`roundBy`, default `clock`).
  */
 export interface PlanInput {
 	cards: readonly PlanCard[];
 	confusionEvents: readonly Pick<ReviewEvent, 'cardId' | 'chosenFromCardId'>[];
 	now: number;
+	roundBy?: RoundBy;
 }
 
 /** What the session knows about its context when it plans a card. @see BUILD_PLAN §6.3 */
@@ -109,6 +117,8 @@ export function phaseFor(kind: ExerciseKind, isNew: boolean): SessionPhase {
  * confusable cards (same compare note, or a logged confusion) adjacent in discrimination. A
  * repeated card ID keeps its first entry. The first `ROUND_WORKING_SET` cards in that order form
  * round 1 (`queue`), started at `now`; the rest wait in `backlog`. `studySince` is `now`.
+ * With `roundBy: 'count'` the snapshot stores `roundBy: 'count'` and round 1 holds
+ * `LEARN_ROUND_CARDS` cards instead of `ROUND_WORKING_SET`; otherwise `roundBy` is left absent.
  *
  * @see BUILD_PLAN §6.4 and Decisions log (session phases, rounds)
  */
@@ -123,7 +133,8 @@ export function planSession(input: PlanInput): Traced<SessionSnapshot> {
 	for (const card of ordered)
 		sessionCards[card.id] = freshCard(phaseOf.get(card.id) as SessionPhase, card);
 	const ids = ordered.map((card) => card.id);
-	const queue = ids.slice(0, ROUND_WORKING_SET);
+	const size = roundWorkingSet(input.roundBy);
+	const queue = ids.slice(0, size);
 	const trace = OPENING_PHASES.map((phase) => ({
 		rule: 'session.phase',
 		phase,
@@ -133,12 +144,13 @@ export function planSession(input: PlanInput): Traced<SessionSnapshot> {
 	return {
 		result: {
 			queue,
-			backlog: ids.slice(ROUND_WORKING_SET),
+			backlog: ids.slice(size),
 			cards: sessionCards,
 			clearing: null,
 			cleanup: false,
 			round,
-			studySince: input.now
+			studySince: input.now,
+			...(input.roundBy === 'count' ? { roundBy: 'count' as const } : {})
 		},
 		trace: [...trace, { rule: 'session.round', index: 1, cards: queue }]
 	};

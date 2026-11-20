@@ -3,6 +3,7 @@ import type { ReviewEvent, StudyEvent } from '#lib/db/schemas/event.ts';
 import {
 	isCounting,
 	isCriterionMet,
+	isRated,
 	requiredCorrects,
 	startCriterion,
 	stepCriterion,
@@ -42,28 +43,50 @@ export function emptyCriterionHistory(): CriterionHistory {
 	};
 }
 
+/** A rated event's session: whether it opened the session and whether it counts. */
+export interface RecordedCriterion {
+	session: SessionCriterion;
+	isFirstOfSession: boolean;
+	/** False for a hinted answer: it may open the session (its FSRS review) but never counts. */
+	counting: boolean;
+}
+
 /**
- * Folds one of the card's events into its history (mutating it). Pretests and first review
- * events update the known-on-first-try facts. A counting event joins its session: a session's
- * `required` starts as the event's `required`, or else `requiredCorrects` of the history so far
- * (no planned relearning count is known here); it follows the `required` of each later event, and
- * without one drops to `CRITERION_FIRST_REDUCED` right after a first-ever correct. Returns the
- * session for a counting event, else null.
+ * Folds one of the card's events into its history (mutating it). Practice events are ignored.
+ * Pretests and first review events update the known-on-first-try facts. A rated event (see
+ * `isRated`) joins its session: a session's `required` starts as the event's `required`, or else
+ * `requiredCorrects` of the history so far (no planned relearning count is known here); a counting
+ * event steps the criterion, follows its `required`, and without one drops the requirement to
+ * `CRITERION_FIRST_REDUCED` right after a first-ever correct. A hinted event joins the session but
+ * leaves its criterion unchanged. Returns the session for a rated event, else null.
  *
- * @see BUILD_PLAN §6.3 and Decisions log (adaptive first-session criterion, review `required`)
+ * @see BUILD_PLAN §6.3 and Decisions log (adaptive first-session criterion, review `required`,
+ *   Phase 8.6 Q4 and SPEC-GAP hinted/practice)
  */
 export function recordCriterion(
 	history: CriterionHistory,
 	event: StudyEvent
-): { session: SessionCriterion; isFirstOfSession: boolean } | null {
+): RecordedCriterion | null {
 	if (event.type === 'pretest') {
 		if (!history.attempted) history.pretested = true;
 		return null;
 	}
-	if (event.type !== 'review') return null;
+	if (event.type !== 'review' || event.mode === 'practice') return null;
 	const justKnown = noteFirstReview(history, event);
-	if (!isCounting(event)) return null;
+	if (!isRated(event)) return null;
 	const { session, isFirstOfSession } = sessionFor(history, event);
+	if (!isCounting(event)) return { session, isFirstOfSession, counting: false };
+	stepSession(history, session, event, justKnown);
+	return { session, isFirstOfSession, counting: true };
+}
+
+/** Steps a session's criterion with a counting event and follows its `required`. */
+function stepSession(
+	history: CriterionHistory,
+	session: SessionCriterion,
+	event: ReviewEvent,
+	justKnown: boolean
+): void {
 	let criterion = stepCriterion(session.criterion, event);
 	if (event.required !== undefined) criterion = { ...criterion, required: event.required };
 	else if (justKnown) {
@@ -72,14 +95,17 @@ export function recordCriterion(
 	session.criterion = criterion;
 	session.met ||= isCriterionMet(criterion);
 	history.metEver ||= session.met;
-	return { session, isFirstOfSession };
 }
 
-/** Records the card's first review event; true when it makes the card known on first try. */
+/**
+ * Records the card's first review event; true when it makes the card known on first try (a hinted
+ * correct does not).
+ */
 function noteFirstReview(history: CriterionHistory, event: ReviewEvent): boolean {
 	if (history.attempted) return false;
 	history.attempted = true;
-	history.knownOnFirstTry = event.correct && event.weight !== 'none' && !history.pretested;
+	history.knownOnFirstTry =
+		event.correct && event.weight !== 'none' && event.hinted !== true && !history.pretested;
 	return history.knownOnFirstTry;
 }
 

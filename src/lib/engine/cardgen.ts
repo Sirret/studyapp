@@ -1,6 +1,7 @@
 import type { ExerciseKind } from '#lib/db/schemas/common.ts';
 import type { Note } from '#lib/db/schemas/note.ts';
 import { assertNever } from '#lib/util/result.ts';
+import { listPath } from './list-grading.ts';
 import type { Traced } from './trace.ts';
 
 /** What card generation reads from a note. */
@@ -68,9 +69,19 @@ function diagramCards({ payload }: ContentOf<'diagram'>): CardSpec[] {
 	];
 }
 
-/** A fact gets a reverse card, except a starred list: "malware, phishing, … → ?" has no meaning, so fwd only. @see SESSION_NOTES D4 */
-function factCards(payload: { list?: boolean }): CardSpec[] {
-	const fwd: CardSpec = { variant: 'fwd', path: MC_THEN_CLOZE };
+/**
+ * A fact's cards. A starred list makes only `fwd` ("malware, phishing, … → ?" has no meaning), on
+ * the list path (`listPath`). A fact with key words asks its definition as an idea unit after MC
+ * (`ideaUnit` replaces the verbatim `cloze`). The reverse card is always MC then typed term.
+ *
+ * @see SESSION_NOTES D3, D4; Decisions log "Phase 8.6 Q1", "Q9"
+ */
+function factCards(payload: { keyWords?: readonly string[]; list?: boolean }): CardSpec[] {
+	const keyWords = payload.keyWords ?? [];
+	if (payload.list && keyWords.length > 0)
+		return [{ variant: 'fwd', path: listPath(keyWords.length) }];
+	const fwdPath: ExerciseKind[] = keyWords.length > 0 ? ['mc', 'ideaUnit'] : MC_THEN_CLOZE;
+	const fwd: CardSpec = { variant: 'fwd', path: fwdPath };
 	return payload.list ? [fwd] : [fwd, { variant: 'rev', path: MC_THEN_CLOZE }];
 }
 

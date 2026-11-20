@@ -1,5 +1,13 @@
 import type { CardId, ChunkId, ExerciseKind, NoteId, TopicId } from '#lib/db/schemas/common.ts';
 import type { NoteType } from '#lib/db/schemas/note.ts';
+import {
+	LEARN_SECTION_QUESTIONS,
+	LOOKBACK_MIN_DISTANCE,
+	MEET_TERMS_MAX,
+	MEET_TERMS_MIN
+} from '#lib/config/defaults.ts';
+import { groupOf } from './exercise-kinds.ts';
+import { normalizeAnswer } from './grading.ts';
 import type { Rng } from './rng.ts';
 import type { Traced } from './trace.ts';
 
@@ -62,8 +70,8 @@ export type LearnStep =
  *
  * @see SESSION_NOTES §C; Decisions log "Phase 8.6 Q8" and "Q13"
  */
-export function learnOrder(_sections: readonly LearnSection[]): ChunkId[] {
-	throw new Error('not implemented');
+export function learnOrder(sections: readonly LearnSection[]): ChunkId[] {
+	return sections.filter((section) => !section.added).map((section) => section.chunkId);
 }
 
 /**
@@ -74,11 +82,28 @@ export function learnOrder(_sections: readonly LearnSection[]): ChunkId[] {
  *
  * @see SESSION_NOTES D2; Decisions log "Phase 8.6 Q6"
  */
-export function meetTerms(
-	_chunkId: ChunkId,
-	_notes: readonly MeetNote[]
-): Traced<MeetTerms | null> {
-	throw new Error('not implemented');
+export function meetTerms(chunkId: ChunkId, notes: readonly MeetNote[]): Traced<MeetTerms | null> {
+	const here = notes.filter((note) => note.chunkId === chunkId);
+	const keyterms = here.filter((note) => note.type === 'keyterm');
+	const source = keyterms.length > 0 ? 'keyterm' : 'fact';
+	const pool =
+		keyterms.length > 0 ? keyterms : here.filter((note) => note.type === 'fact' && !note.list);
+	const terms = pool.slice(0, MEET_TERMS_MAX);
+	if (terms.length < MEET_TERMS_MIN) {
+		return {
+			result: null,
+			trace: [{ rule: 'learn.meetTerms.skip', chunkId, terms: terms.length }]
+		};
+	}
+	const scenarios = here.filter((note) => note.type === 'scenario');
+	const examples: Partial<Record<NoteId, NoteId>> = {};
+	for (const term of terms) {
+		const key = normalizeAnswer(term.term);
+		const example = scenarios.find((note) => normalizeAnswer(note.term) === key);
+		if (example) examples[term.id] = example.id;
+	}
+	const result = { noteIds: terms.map((note) => note.id), examples };
+	return { result, trace: [{ rule: 'learn.meetTerms', chunkId, source, terms: terms.length }] };
 }
 
 /**
@@ -89,9 +114,50 @@ export function meetTerms(
  * @see SESSION_NOTES §C, §H; Decisions log "Phase 8.6 Q7"
  */
 export function sectionQuestions(
-	_cards: readonly LearnCard[]
+	cards: readonly LearnCard[]
 ): Traced<{ questions: CardId[]; rest: CardId[] }> {
-	throw new Error('not implemented');
+	const count =
+		cards.length > LEARN_SECTION_QUESTIONS ? LEARN_SECTION_QUESTIONS : Math.min(1, cards.length);
+	const isRecall = (card: LearnCard): boolean => groupOf(card.kind) === 'recall';
+	const ranked = [...cards.filter(isRecall), ...cards.filter((card) => !isRecall(card))];
+	const questions = ranked.slice(0, count).map((card) => card.id);
+	const rest = cards.filter((card) => !questions.includes(card.id)).map((card) => card.id);
+	return {
+		result: { questions, rest },
+		trace: [{ rule: 'learn.sectionQuestions', cards: cards.length, asked: questions.length }]
+	};
+}
+
+/** Round-robin across lists: the first of each, then the second of each, and so on. */
+function interleave<T>(lists: readonly (readonly T[])[]): T[] {
+	const out: T[] = [];
+	const longest = Math.max(0, ...lists.map((list) => list.length));
+	for (let i = 0; i < longest; i += 1) {
+		for (const list of lists) {
+			const item = list[i];
+			if (item !== undefined) out.push(item);
+		}
+	}
+	return out;
+}
+
+/** One normal section's steps, and its cards left for the mixed quiz. */
+function sectionSteps(
+	section: LearnSection,
+	index: number,
+	cards: readonly LearnCard[],
+	notes: readonly MeetNote[]
+): { steps: LearnStep[]; rest: CardId[] } {
+	const { chunkId } = section;
+	const steps: LearnStep[] = [];
+	const terms = meetTerms(chunkId, notes).result;
+	if (terms) steps.push({ step: 'meetTerms', chunkId, terms });
+	if (section.words > 0) steps.push({ step: 'read', chunkId });
+	const own = cards.filter((card) => card.chunkId === chunkId);
+	const { questions, rest } = sectionQuestions(own).result;
+	if (questions.length > 0) steps.push({ step: 'questions', chunkId, cardIds: questions });
+	if (index >= LOOKBACK_MIN_DISTANCE) steps.push({ step: 'lookBack', chunkId });
+	return { steps, rest };
 }
 
 /**
@@ -104,7 +170,7 @@ export function sectionQuestions(
  *
  * @see SESSION_NOTES §C; PROMPTS §6 (@summary first and last, @section); Decisions log "Phase 8.6 Q2", "Q7", "Q13"
  */
-export function topicFlow(_input: {
+export function topicFlow(input: {
 	topicId: TopicId;
 	hasSummary: boolean;
 	/** Every section of the course, in topic then section order (for `order`). */
@@ -114,7 +180,34 @@ export function topicFlow(_input: {
 	/** This topic's notes, for Meet the terms. */
 	notes: readonly MeetNote[];
 }): Traced<LearnStep[]> {
-	throw new Error('not implemented');
+	const { topicId, hasSummary, sections, cards, notes } = input;
+	const order = learnOrder(sections);
+	const mine = sections.filter((section) => section.topicId === topicId);
+	const normal = mine.filter((section) => !section.added);
+	const added = mine.filter((section) => section.added).map((section) => section.chunkId);
+	const steps: LearnStep[] = [];
+	if (hasSummary) steps.push({ step: 'summary', topicId, at: 'start' });
+	const rests: CardId[][] = [];
+	for (const section of normal) {
+		const part = sectionSteps(section, order.indexOf(section.chunkId), cards, notes);
+		steps.push(...part.steps);
+		rests.push(part.rest);
+	}
+	const loose = cards.filter((card) => card.chunkId === null).map((card) => card.id);
+	const quiz = [...interleave(rests), ...loose];
+	if (quiz.length > 0) steps.push({ step: 'mixedQuiz', topicId, cardIds: quiz });
+	if (added.length > 0) steps.push({ step: 'added', topicId, chunkIds: added });
+	if (hasSummary) steps.push({ step: 'summary', topicId, at: 'end' });
+	const trace = [
+		{
+			rule: 'learn.topicFlow',
+			topicId,
+			sections: normal.length,
+			added: added.length,
+			quiz: quiz.length
+		}
+	];
+	return { result: steps, trace };
 }
 
 /**
@@ -126,12 +219,38 @@ export function topicFlow(_input: {
  *
  * @see SESSION_NOTES §C, §H; Decisions log "Phase 8.6 Q8"
  */
-export function pickLookBack(_input: {
+export function pickLookBack(input: {
 	order: readonly ChunkId[];
 	current: ChunkId;
 	read: ReadonlySet<ChunkId>;
 	cards: readonly LearnCard[];
 	rng: Rng;
 }): Traced<CardId | null> {
-	throw new Error('not implemented');
+	const { order, current, read, cards, rng } = input;
+	const at = order.indexOf(current);
+	const reach = new Set(order.slice(0, Math.max(0, at - LOOKBACK_MIN_DISTANCE + 1)));
+	const candidates =
+		at < 0
+			? []
+			: cards.filter((card) => {
+					const chunk = card.chunkId;
+					return chunk !== null && reach.has(chunk) && read.has(chunk);
+				});
+	const rank = (card: LearnCard): number => (card.lastCorrect === false ? 0 : 1);
+	const seen = (card: LearnCard): number => card.lastSeenAt ?? Number.NEGATIVE_INFINITY;
+	const best = candidates.reduce<LearnCard[]>((top, card) => {
+		const head = top[0];
+		if (!head) return [card];
+		const diff = rank(card) - rank(head) || seen(card) - seen(head);
+		if (diff < 0) return [card];
+		return diff === 0 ? [...top, card] : top;
+	}, []);
+	const picked = best.length > 1 ? best[Math.floor(rng() * best.length)] : best[0];
+	const result = picked?.id ?? null;
+	return {
+		result,
+		trace: [
+			{ rule: 'learn.lookBack', current, candidates: candidates.length, tied: best.length, result }
+		]
+	};
 }

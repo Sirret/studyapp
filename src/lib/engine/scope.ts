@@ -12,8 +12,8 @@ export interface Placed {
  *
  * @see SESSION_NOTES J ("Study all" is the default)
  */
-export function isWholeCourse(_scope: StudyScope | undefined): boolean {
-	throw new Error('not implemented');
+export function isWholeCourse(scope: StudyScope | undefined): boolean {
+	return scope === undefined || (scope.topicIds.length === 0 && scope.chunkIds.length === 0);
 }
 
 /**
@@ -22,16 +22,20 @@ export function isWholeCourse(_scope: StudyScope | undefined): boolean {
  *
  * @see SESSION_NOTES J; Decisions log "Phase 8.6 Q12"
  */
-export function inScope(_item: Placed, _scope: StudyScope | undefined): boolean {
-	throw new Error('not implemented');
+export function inScope(item: Placed, scope: StudyScope | undefined): boolean {
+	if (scope === undefined || isWholeCourse(scope)) return true;
+	if (scope.topicIds.includes(item.topicId)) return true;
+	return (
+		item.chunkId !== undefined && item.chunkId !== null && scope.chunkIds.includes(item.chunkId)
+	);
 }
 
 /** The in-scope items, in their given order. @see inScope */
 export function scopeItems<T extends Placed>(
-	_items: readonly T[],
-	_scope: StudyScope | undefined
+	items: readonly T[],
+	scope: StudyScope | undefined
 ): T[] {
-	throw new Error('not implemented');
+	return items.filter((item) => inScope(item, scope));
 }
 
 /**
@@ -41,8 +45,14 @@ export function scopeItems<T extends Placed>(
  * @see Decisions log "Phase 8.6 Q12"
  */
 export function scopeSummary(
-	_topics: readonly { id: TopicId; chunkIds: readonly ChunkId[] }[],
-	_scope: StudyScope | undefined
+	topics: readonly { id: TopicId; chunkIds: readonly ChunkId[] }[],
+	scope: StudyScope | undefined
 ): { topics: number; of: number; whole: boolean } {
-	throw new Error('not implemented');
+	const of = topics.length;
+	if (scope === undefined || isWholeCourse(scope)) return { topics: of, of, whole: true };
+	const listed = topics.filter(
+		(topic) =>
+			scope.topicIds.includes(topic.id) || topic.chunkIds.some((id) => scope.chunkIds.includes(id))
+	);
+	return { topics: listed.length, of, whole: false };
 }

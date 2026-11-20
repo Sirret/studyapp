@@ -30,9 +30,18 @@ export const SessionRoundSchema = z.object({
 export type SessionRound = z.infer<typeof SessionRoundSchema>;
 
 /**
+ * How rounds pause: `clock` (Exam prep; `ROUND_MAX_ANSWERS` answers or `ROUND_MAX_MINUTES`) or
+ * `count` (Learn and Practice; `LEARN_ROUND_CARDS`, no minutes).
+ *
+ * @see DATA_MODEL §3.7; Decisions log "Phase 8.6 Q16"
+ */
+export const RoundBySchema = z.enum(['clock', 'count']);
+export type RoundBy = z.infer<typeof RoundBySchema>;
+
+/**
  * The round's cards in play (head = current card), cards not yet in play, per-card state, the
  * card being cleared by redo-till-right, whether cleanup has started, the current round, and when
- * study started or the last break ended. Saved after every answer so a closed tab resumes.
+ * study started or the last break ended, and how rounds pause (absent = `clock`). Saved after every answer so a closed tab resumes.
  *
  * @see DATA_MODEL §3.7
  */
@@ -43,7 +52,8 @@ export const SessionSnapshotSchema = z.object({
 	clearing: CardIdSchema.nullable(),
 	cleanup: z.boolean(),
 	round: SessionRoundSchema,
-	studySince: z.number()
+	studySince: z.number(),
+	roundBy: RoundBySchema.optional()
 });
 export type SessionSnapshot = z.infer<typeof SessionSnapshotSchema>;
 
