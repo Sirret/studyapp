@@ -7,6 +7,7 @@ Resume: read the last Checkpoint log row, the step it points to, and the files t
 |---|---|---|---|---|---|---|---|
 | 2026-11-20 | 6 | 0 plan | Opus | Plan approved; Q1–Q13 answered into the Decisions log; WIP written | 2 | Step 1: PDF spike (confirm `tests/fixtures/spike/` is git-ignored and the PDF is there first) | see git log |
 | 2026-11-20 | 6 | 1 PDF spike | Opus | pdf.js 4.10.38 on DB II Lecture 3: drawn-diagram labels 88/88, pasted-picture diagrams 0/89 (raster images, not outlines), plain text 27/27; 1,688 KB raw / 491 KB gz; render 1.1–1.3 s/page at 4× (first 2.3 s), WebP encode 1–3.6 s; no network after load. Verdict NO-GO by the agreed bar (50% < 80%, size slightly over); report `docs/spikes/PDF_SPIKE.md` | 6 | WAITING for the user: go or no-go. No-go → uninstall `pdfjs-dist` in the step-2 commit, drop step 10, take up Q13 (OCR) | see git log |
+| 2026-11-20 | 6 | 1 decision | Opus | User: PDF no-go. Plan updated (step 5 worker encode, step 10 = OCR spike, step 11 only on its go); Decisions log row; six picture pages saved as git-ignored PNGs for the OCR spike | 2 | Step 2: interface + data (remove pdfjs-dist + spike scripts in that commit) | see git log |
 
 ## Context
 Phase 8.6 is done and pushed (983dc30). Phase 6 makes the two diagram note types studyable. Today, import already parses `@diagram` and `@occlusion` and stores images, but every diagram/occlusion kind falls back to cloze/MC/flip (`engine/exercise-spec.ts:54-93`). Occlusion notes are imported with `boxes: []`, so they have no cards. There is no editor, no figure rendering, and the chatbot prompt never mentions diagrams. The goal is the BUILD_PLAN §10 done-when: "Import an OSI stack, a flow diagram and an occlusion image; study each." The user's scope changes the original §7: text-first diagram editing, manual boxes first, OCR optional and last, and a PDF spike first.
@@ -64,6 +65,7 @@ Tests: unit + sim (`npm run test`).
 - `sourceHash` computed on the original bytes in `prepareImages`; `draftImage` reuses by `sourceHash`, then `hash`.
 - `services/storage-guard.ts`: `navigator.storage.persist()` on the first image save (once; result logged). `QuotaExceededError` from `writeBatch`/`putBatch` → typed error "Your device is out of space for images. Delete unused courses or images and try again." shown on import and in the editors.
 - Blobs stay in IndexedDB only; image URLs come from `URL.createObjectURL` with revoke on destroy (`ui/figures/media-url.ts`).
+- **Encoding never blocks the main thread** (user, after the spike: a 2000 px WebP encode took 1–3.6 s per page at 4× throttle): encode in a Web Worker (OffscreenCanvas is available there), falling back to the main thread with a progress indicator where workers can't encode.
 Tests: unit (fake encoder; quota mapping). Playwright later covers EXIF with a rotated JPEG fixture in step 9.
 
 **6. Import, zip, prompt (checkpoint c).**
@@ -101,9 +103,15 @@ Tests: unit for pure helpers + `layout.spec.ts` + `visual.spec.ts`.
 - The study page shows figures and "Show original".
 - e2e: `diagrams.spec.ts` (import a zip with OSI stack + flow + occlusion with `box:` lines; place labels; study one card of each kind including drag-by-tap and connect; edit a diagram's text and check card IDs unchanged), EXIF fixture test, quota message test (stubbed), plus `@both` layout rows for both editors.
 
-**10. PDF import (only if the spike is a go; checkpoint c).** Shape decided from the spike report: pick a PDF → choose pages → each page becomes a media image; text positions become candidate boxes; the chatbot's `box:` labels are matched to text lines (normalised) and pre-placed; anything unmatched stays `unplaced`. pdf.js stays in a lazy chunk + worker, runtime-cached.
+**10. OCR spike (no UI; go/no-go, user 2026-11-20).** Replaces the dropped PDF import step. tesseract.js on the six picture pages (10, 12, 15, 19, 21, 30) of the spike PDF, rendered before pdf.js was removed and saved as `tests/fixtures/spike/page-NN.png` (git-ignored). Ground truth = the same hand-written labels in `tests/fixtures/spike/truth.ts`. Report `docs/spikes/OCR_SPIKE.md`:
+- label hit rate with usable positions;
+- merged digits ("1 1" → "11");
+- size of worker + core + English data;
+- time per page with the CPU throttled 4×;
+- whether it works offline after first use (self-hosted `workerPath`/`corePath`/`langPath`).
+Bar: ≥ 70% of labels with usable positions, total download ≤ ~6 MB, ≤ 8 s per page throttled. **Stop for the user's go/no-go.**
 
-**11. Optional OCR (only if the user opts in after step 10; checkpoint c).** tesseract.js self-hosted (`workerPath`, `corePath`, `langPath` under `static/ocr/`), loaded on demand in a worker with progress, line-level boxes ≥ `OCR_MIN_CONFIDENCE`, runtime-cached ("works offline after first use"), out of the shell and the precache.
+**11. OCR box suggestions (only on a go after step 10; checkpoint c).** tesseract.js self-hosted (`workerPath`, `corePath`, `langPath` under `static/ocr/`), loaded on demand in a worker with progress, line-level boxes ≥ `OCR_MIN_CONFIDENCE`, runtime-cached ("works offline after first use"), out of the shell and the precache; suggestions shown in the occlusion editor for the student to confirm.
 
 **12. Service worker + verify (checkpoint d).**
 - `vite.config.ts`: `globIgnores` for heavy lazy chunks (pdf.js, tesseract, the diagram-editor chunk if large) + `runtimeCaching` CacheFirst for them.
@@ -177,13 +185,14 @@ Tests: unit for pure helpers + `layout.spec.ts` + `visual.spec.ts`.
 10. **D6 (sequences as stacks):** *Rec: out of scope*; sequences keep the arrange exercise. Log it.
 11. **Re-import of a changed diagram** (same name, different arrows): *Rec:* import it as a new note and list it in the preview as "changed diagram: kept both". Merging import text into an edited diagram is out of scope.
 12. **Hide-mode default and where it's set:** *Rec:* default "hide one", set per image in the occlusion editor only (no app-wide setting).
-13. **OCR step:** *Rec:* decide after step 10; skip it this phase if the PDF path is a go, since phone photos still work with manual boxes.
+13. **OCR step:** superseded: PDF no-go, so step 10 is now an OCR spike with its own bar (see the Answers section).
 
 ## Answers (user, 2026-11-20) — all recommendations accepted, with these additions
 - Q1: the Database 2 lecture PDF (B+ tree / B-tree slides; the chatbot reported those diagram slides as garbled) at `tests/fixtures/spike/slides.pdf`. FIRST confirm the path is git-ignored and `git status` doesn't list it. Lecturer's slides: never commit or push them. If the file isn't there, stop and ask the user to place it.
 - Q2: the report gives the hit rate separately for (a) text inside diagrams/SmartArt and (b) plain slide text. If the PDF turns diagram text into outlines (shapes, not text), say so: that makes the PDF route a no-go for diagrams.
 - Q4: own layout, tested on three real diagrams (the OSI stack, the query-plan flow from the Database 2 sample, a small state machine), with a size cap and the message "too big to draw, edit as text". ELK stays the documented fallback.
 - Q6: 2000. Q7: JPEG fallback (classmates on iPhones). Q8b: log peel-off as a later option. Q11: list "changed diagram: kept both" in the preview. Q13: decide OCR after step 10.
+- **PDF no-go (user, 2026-11-20):** remove pdf.js and the spike scripts in the step-2 commit (keep `docs/spikes/PDF_SPIKE.md`); old step 10 dropped; step 5 encodes off the main thread; new step 10 = OCR spike (bar ≥ 70% labels with usable positions, ≤ ~6 MB download, ≤ 8 s/page throttled), then stop; step 11 (OCR box suggestions) only on a go.
 - Flow: write WIP.md + the Decisions log rows, commit, then run step 1 (the spike) straight away. After the spike, stop at the checkpoint and report the verdict from `docs/spikes/PDF_SPIKE.md`. Don't start step 2 until the user says go or no-go.
 
 ## Files most touched
