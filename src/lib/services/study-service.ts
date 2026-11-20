@@ -1,28 +1,24 @@
 import type { CardRepo, CourseRepo, NoteRepo, TopicRepo } from '#lib/db/repos/content-repos.ts';
 import type { EventRepo } from '#lib/db/repos/event-repo.ts';
 import type { KvRepo } from '#lib/db/repos/kv-repo.ts';
-import type {
-	CardId,
-	CourseId,
-	EventId,
-	ExerciseKind,
-	Mode,
-	SessionId
-} from '#lib/db/schemas/common.ts';
-import type { ReviewEvent, StudyEvent } from '#lib/db/schemas/event.ts';
+import type { CardId, CourseId, EventId, ExerciseKind, SessionId } from '#lib/db/schemas/common.ts';
 import { DEFAULT_SETTINGS } from '#lib/db/schemas/kv.ts';
-import { confusionCounts } from '#lib/engine/distractors.ts';
 import { checkResponse, type ExerciseResponse } from '#lib/engine/exercise-check.ts';
-import { currentStep } from '#lib/engine/exercise-kinds.ts';
-import { buildExercise, exerciseKindFor, type ExerciseSpec } from '#lib/engine/exercise-spec.ts';
+import type { ExerciseSpec } from '#lib/engine/exercise-spec.ts';
 import { checkAccept } from '#lib/engine/grading.ts';
+import { microHint, type MicroHint } from '#lib/engine/hint.ts';
 import { rngFor } from '#lib/engine/rng.ts';
 import { toPlanCard } from '#lib/engine/session.ts';
 import type { Logger } from '#lib/log/logger.ts';
 import type { ReplayService } from './replay-service.ts';
-import type { SelfRatedInput, SessionService, SessionView } from './session-service.ts';
-import { exerciseCourse, loadCourse, practiceCards, type CourseMaterial } from './study-course.ts';
+import type { SessionService, SessionView } from './session-service.ts';
+import { answerOf, creditedIn, isReview, selfRatedOf, type Shown } from './study-answer.ts';
+import { loadCourse, practiceCards, type CourseMaterial } from './study-course.ts';
+import { cardExercise } from './study-item.ts';
+import type { PlannedSession, StartOptions } from './study-plan-types.ts';
 import type { StudyAnswer, StudyItem, StudyView } from './study-types.ts';
+
+export type { PlannedCard, PlannedSession, StartOptions } from './study-plan-types.ts';
 
 /** What `StudyService` needs; injected so tests can pass real repos on a fake database. */
 export interface StudyServiceDeps {
@@ -36,42 +32,6 @@ export interface StudyServiceDeps {
 }
 
 /**
- * Options for a practice session, for the dev e2e harness only: `cardIds` picks the cards (in this
- * order, no cap) and `forceKinds` sets the kind of a card's first showing; later showings follow its
- * path, so a card forced to a recognition kind can still meet the criterion.
- */
-export interface StartOptions {
-	cardIds?: readonly CardId[];
-	forceKinds?: Partial<Record<CardId, ExerciseKind>>;
-}
-
-/** One card of a planned session: its kind on first showing and its criterion, when the mode sets them. */
-export interface PlannedCard {
-	id: CardId;
-	kind?: ExerciseKind;
-	required?: number;
-	/** Relearning sessions the plan has for the card before the exam. */
-	relearningSessionsAhead?: number;
-}
-
-/** A session a mode has planned. Acquisition answers are logged with `credited: false`. */
-export interface PlannedSession {
-	mode: Mode;
-	cards: readonly PlannedCard[];
-	plannedMinutes: number;
-}
-
-/** Kinds answered by typing, after which the next showing uses first-letter mode (§6.10). */
-const TYPED_KINDS: ReadonlySet<ExerciseKind> = new Set([
-	'cloze',
-	'firstLetterType',
-	'fadeStep',
-	'newInstance'
-]);
-
-const isReview = (event: StudyEvent): event is ReviewEvent => event.type === 'review';
-
-/**
  * The study screen's service: starts practice sessions, builds the exercise for the current card
  * (`buildExercise`), grades the response (`checkResponse`) and logs it through `SessionService`.
  *
@@ -80,9 +40,9 @@ const isReview = (event: StudyEvent): event is ReviewEvent => event.type === 're
 export class StudyService {
 	private readonly material = new Map<SessionId, CourseMaterial>();
 	private readonly forced = new Map<SessionId, Partial<Record<CardId, ExerciseKind>>>();
-	private readonly shown = new Map<SessionId, { spec: ExerciseSpec; at: number }>();
+	private readonly shown = new Map<SessionId, Shown>();
 	private readonly answered = new Map<SessionId, ExerciseSpec>();
-	private readonly modes = new Map<SessionId, Mode>();
+	private readonly modes = new Map<SessionId, PlannedSession['mode']>();
 
 	constructor(private readonly deps: StudyServiceDeps) {}
 
@@ -136,7 +96,8 @@ export class StudyService {
 			courseIds: [courseId],
 			plannedMinutes: plan.plannedMinutes,
 			cards,
-			confusionEvents: events.filter(isReview)
+			confusionEvents: events.filter(isReview),
+			...(plan.roundBy ? { roundBy: plan.roundBy } : {})
 		});
 		this.material.set(view.session.id, material);
 		this.forced.set(view.session.id, forced);
@@ -157,6 +118,21 @@ export class StudyService {
 		return view && this.present(view);
 	}
 
+	/**
+	 * The micro hint for the exercise on screen; the answer is then logged `hinted: true`. One per
+	 * attempt: asking again gives the same hint.
+	 *
+	 * @see SESSION_NOTES J (micro hint); Decisions log "Phase 8.6 Q10"
+	 */
+	hint(id: SessionId): MicroHint {
+		const shown = this.shown.get(id);
+		if (!shown) throw new Error(`Session ${id} has no exercise on screen`);
+		const { result, trace } = microHint(shown.spec, rngFor(shown.spec.cardId, id, shown.attempt));
+		this.deps.logger.debug('study', 'hint', trace);
+		if (result.kind !== 'none') shown.hinted = true;
+		return result;
+	}
+
 	/** Grades the response to the card on screen, logs it and moves the session on. */
 	async submit(id: SessionId, response: ExerciseResponse): Promise<StudyAnswer> {
 		const shown = this.shown.get(id);
@@ -164,13 +140,8 @@ export class StudyService {
 		const { result: verdict, trace } = checkResponse(shown.spec, response);
 		this.deps.logger.debug('study', 'check', trace);
 		const view = await this.deps.sessions.answer(id, {
-			kind: shown.spec.kind,
-			correct: verdict.correct,
-			responseMs: this.deps.clock() - shown.at,
-			// Same-day acquisition answers give no scheduling credit (BUILD_PLAN §6.7).
-			credited: this.modes.get(id) !== 'acquisition',
-			...(verdict.chosen === undefined ? {} : { chosen: verdict.chosen }),
-			...(verdict.chosenFromCardId ? { chosenFromCardId: verdict.chosenFromCardId } : {}),
+			...answerOf(shown, verdict, this.deps.clock()),
+			credited: creditedIn(this.modes.get(id)),
 			...selfRatedOf(shown.spec, response)
 		});
 		this.answered.set(id, shown.spec);
@@ -280,34 +251,22 @@ export class StudyService {
 		const card = item && (await this.deps.repos.cards.get(item.cardId));
 		if (!item || !card) return null;
 		const sessionId = view.session.id;
-		const events = await this.deps.events.list();
-		const settings = (await this.deps.kv.get('settings')) ?? DEFAULT_SETTINGS;
-		const missedTyped = missedTypedIn(events, sessionId, card.id);
-		const { path, pathStep, accuracy } = card;
-		const kind =
-			(item.attempt === 0 ? this.forced.get(sessionId)?.[card.id] : undefined) ??
-			exerciseKindFor({
-				path,
-				pathStep,
-				accuracy,
-				spellingMode: settings.spellingMode,
-				missedTyped
-			});
-		const { result: exercise, trace } = buildExercise({
-			kind,
-			card: {
-				id: card.id,
-				noteId: card.noteId,
-				variant: card.variant,
-				path,
-				step: currentStep(path, pathStep, accuracy)
-			},
-			course: exerciseCourse(material),
-			confusions: confusionCounts(events.filter(isReview), card.id),
-			rng: rngFor(card.id, sessionId, item.attempt)
+		const { result: exercise, trace } = cardExercise({
+			card,
+			sessionId,
+			attempt: item.attempt,
+			forced: item.attempt === 0 ? this.forced.get(sessionId)?.[card.id] : undefined,
+			events: await this.deps.events.list(),
+			settings: (await this.deps.kv.get('settings')) ?? DEFAULT_SETTINGS,
+			material
 		});
 		this.deps.logger.debug('study', 'exercise', trace);
-		this.shown.set(sessionId, { spec: exercise, at: this.deps.clock() });
+		this.shown.set(sessionId, {
+			spec: exercise,
+			at: this.deps.clock(),
+			attempt: item.attempt,
+			hinted: false
+		});
 		return {
 			cardId: card.id,
 			exercise,
@@ -316,37 +275,4 @@ export class StudyService {
 			dots: { count: item.count, required: item.required }
 		};
 	}
-}
-
-/** The card's previous review in this session was a wrong typed answer (§6.10 first-letter mode). */
-function missedTypedIn(
-	events: readonly StudyEvent[],
-	sessionId: SessionId,
-	cardId: CardId
-): boolean {
-	const last = events
-		.filter(isReview)
-		.filter((event) => event.sessionId === sessionId && event.cardId === cardId)
-		.sort((a, b) => b.seq - a.seq)[0];
-	return last !== undefined && !last.correct && TYPED_KINDS.has(last.kind);
-}
-
-/** The self-rated fields an answer logs: ticked items, missed cards (blurt) and the rating. */
-function selfRatedOf(
-	spec: ExerciseSpec,
-	response: ExerciseResponse
-): { selfRated?: SelfRatedInput } {
-	if (spec.shape !== 'selfRate' || response.shape !== 'selfRate') return {};
-	const ticked = new Set(response.checked);
-	const checked = spec.checklist.filter((_item, i) => ticked.has(i)).map((item) => item.text);
-	const missed = spec.checklist.flatMap((item, i) =>
-		!ticked.has(i) && item.cardId ? [item.cardId] : []
-	);
-	return {
-		selfRated: {
-			...(spec.kind === 'flip' && response.rating ? { rating: response.rating } : {}),
-			...(spec.checklist.length > 0 ? { checked } : {}),
-			...(spec.kind === 'blurt' ? { missedCardIds: missed } : {})
-		}
-	};
 }

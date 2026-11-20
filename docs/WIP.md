@@ -83,6 +83,13 @@ I resolve SPEC-GAPs into the Decisions log. Settings and scope schema tests I wr
 - `hinted` through `StudyService.submit`.
 - Exam prep: `loadCourseData`/`CoursePlanService` filter by scope (Q12).
 - Unit tests written directly (plumbing).
+- Step-6 plan (2026-11-20), in order, each item ticked when done:
+  - [x] 6a split (as built): `study-answer.ts` (creditedIn, missedTypedIn, selfRatedOf, Shown, answerOf), `study-item.ts` (cardExercise), `study-plan-types.ts` (StartOptions, PlannedCard, PlannedSession + roundBy; re-exported from study-service); `course-plan-parts.ts` (Loaded, cramView, reviewPlan, stepViews). Pure moves.
+  - [x] 6b hinted + verdict into events: `StudyService.hint(id)` → `microHint` (rng `rngFor(cardId, sessionId, attempt)`), one per attempt; `AnswerInput` gains `hinted`, `weight`, `verdictKind`; event weight = `verdict.weight ?? weightOf(kind)`. Engine: `QueueAnswer.hinted` (a hinted correct neither adds nor resets the count and skips the first-ever reduction), with queue unit tests. `credited` false for `acquisition` and `practice`. `PlannedSession.roundBy` → `StartSessionInput.roundBy` → `planSession`. Tests: `tests/unit/engine/queue-hinted.test.ts`, `tests/unit/services/study-hint.test.ts` (shared stack in `tests/unit/services/study-fixtures.ts`).
+  - [ ] 6c scope: `ScopeService` (get/set/clear/summary/tree) on kv `studyScope`; `loadCourseData(…, scope?)` filters notes/cards/chunks/topics (`course-scope.ts`); CoursePlanService and PlannerService pass the course's scope.
+  - [ ] 6d `PracticeService`: `deck` (flip specs of in-scope cards), `nextPass`, `startQuiz` (mode `practice`, `roundBy: 'count'`, kinds from `quickQuiz`, required 1), `retryMisses(sessionId)`.
+  - [ ] 6e `LearnService`: `topics`, `flow(courseId, topicId)` (step views with summary/terms/reader data), `startStep(courseId, topicId, index)` (questions, meetTerms matching check, lookBack via `pickLookBack`, mixedQuiz; mode `acquisition`, `credited: false`, `roundBy: 'count'`, plannedMinutes 0).
+  - [ ] 6f wiring (`app.ts`/`study-wiring.ts`), `npm run test`, commit, checkpoint.
 
 **7. Components (component checkpoint).** All built with tokens only, each added to `/dev/ui` in both themes:
 - `IdeaUnitExercise` (type, then tick key words, pre-ticked)
@@ -132,6 +139,9 @@ Tests: unit + `layout.spec.ts` + snapshots.
 
 - Step 4: `checkResponse` returns `verdictKind` and (idea unit) `weight: 'recognition'`, but `SessionService` still logs `weight: weightOf(kind)` and no `verdictKind`; step 6 must pass the verdict's `weight ?? weightOf(kind)` and `verdictKind` (plus `hinted`) into the event.
 - Step 4: `ensureCardPaths()` (study-wiring) runs from Home's `refresh()` only; a study route opened directly before Home keeps the old (still valid) paths until the next Home visit.
+
+- Step 6: a typed answer accepted through a typo match (`verdict.typo`, correct) is logged `verdictKind: 'fuzzy'`; idea-unit/list verdicts log their own kind; exact = absent (DATA_MODEL §3.6 row).
+- Step 6: "sections the student has read in Learn" (Q8) is derived from events, no stored field: a section counts as read once any of its cards has a review event with mode `acquisition`. Learn's questions follow the reading, so a section read this visit with cards is already counted when its look-back runs; a section without cards has no look-back candidates anyway.
 
 ## Agents
 | Step | Agent | Owns (writes only) | Brief |

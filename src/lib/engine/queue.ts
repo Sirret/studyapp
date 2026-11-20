@@ -26,6 +26,12 @@ export interface QueueAnswer {
 	cardId: CardId;
 	correct: boolean;
 	weight: Weight;
+	/**
+	 * A micro hint was used: a correct neither adds to nor resets the count and doesn't lower
+	 * `required` on a first-ever answer; a wrong one is still wrong.
+	 * @see BUILD_PLAN §6.3; Decisions log "Phase 8.6 Q10"
+	 */
+	hinted?: boolean;
 }
 
 /**
@@ -99,13 +105,13 @@ function answerClearing(
 
 /** Steps the criterion; a first-ever correct counting answer first lowers `required`. */
 function stepCard(card: SessionCard, answer: QueueAnswer): SessionCard {
-	const { correct, weight } = answer;
+	const { correct, weight, hinted } = answer;
 	const stepped = {
 		...card,
-		...stepCriterion(card, { firstAttempt: true, credited: true, weight, correct })
+		...stepCriterion(card, { firstAttempt: true, credited: true, weight, correct, hinted })
 	};
 	if (!card.firstEver) return stepped;
-	const known = correct && weight !== 'none';
+	const known = correct && weight !== 'none' && hinted !== true;
 	const required = known ? Math.min(card.required, CRITERION_FIRST_REDUCED) : card.required;
 	return { ...stepped, firstEver: false, required };
 }

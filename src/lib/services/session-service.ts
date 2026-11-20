@@ -1,9 +1,16 @@
 import type { CardRepo } from '#lib/db/repos/content-repos.ts';
 import type { EventRepo } from '#lib/db/repos/event-repo.ts';
 import type { SessionRepo } from '#lib/db/repos/session-repo.ts';
-import type { CardId, CourseId, ExerciseKind, Mode, SessionId } from '#lib/db/schemas/common.ts';
+import type {
+	CardId,
+	CourseId,
+	ExerciseKind,
+	Mode,
+	SessionId,
+	Weight
+} from '#lib/db/schemas/common.ts';
 import type { NewStudyEvent, ReviewEvent } from '#lib/db/schemas/event.ts';
-import type { Session, SessionSnapshot } from '#lib/db/schemas/session.ts';
+import type { RoundBy, Session, SessionSnapshot } from '#lib/db/schemas/session.ts';
 import { weightOf } from '#lib/engine/exercise-kinds.ts';
 import { retrievabilityAt } from '#lib/engine/fsrs.ts';
 import { applyAnswer, currentItem, type CurrentItem } from '#lib/engine/queue.ts';
@@ -37,6 +44,8 @@ export interface StartSessionInput {
 	plannedMinutes: number;
 	cards: readonly PlanCard[];
 	confusionEvents: readonly Pick<ReviewEvent, 'cardId' | 'chosenFromCardId'>[];
+	/** `count` for Learn and Practice (Decisions log "Phase 8.6 Q16"); absent = clock rounds. */
+	roundBy?: RoundBy;
 }
 
 /** The student's answer to the current card, as graded by the exercise. */
@@ -50,6 +59,12 @@ export interface AnswerInput {
 	chosenFromCardId?: CardId;
 	/** What a self-rated exercise recorded (DATA_MODEL §3.6 `selfRated`). */
 	selfRated?: SelfRatedInput;
+	/** The verdict's weight when it differs from the kind's (idea unit, Q1); absent = `weightOf(kind)`. */
+	weight?: Weight;
+	/** How a typed answer was graded (DATA_MODEL §3.6); absent = exact. */
+	verdictKind?: 'fuzzy' | 'ideaUnit' | 'listN';
+	/** A micro hint was used (Q10): the answer never counts toward the criterion. */
+	hinted?: boolean;
 }
 
 /** The self-rated lane's extra fields. */
@@ -163,7 +178,8 @@ export class SessionService {
 		const answered = applyAnswer(session.snapshot, {
 			cardId: item.cardId,
 			correct: input.correct,
-			weight: weightOf(input.kind)
+			weight: input.weight ?? weightOf(input.kind),
+			...(input.hinted ? { hinted: true } : {})
 		});
 		const snapshot = checkRoundEnd(answered.result, this.deps.clock()).result;
 		const next = this.updated(session, snapshot);
@@ -239,14 +255,16 @@ export class SessionService {
 			sessionId: session.id,
 			mode: session.mode,
 			kind: input.kind,
-			weight: weightOf(input.kind),
+			weight: input.weight ?? weightOf(input.kind),
 			firstAttempt: item.firstAttempt,
 			correct: input.correct,
 			responseMs: input.responseMs,
 			credited: input.credited,
 			required,
 			...(input.chosen === undefined ? {} : { chosen: input.chosen }),
-			...(input.chosenFromCardId === undefined ? {} : { chosenFromCardId: input.chosenFromCardId })
+			...(input.chosenFromCardId === undefined ? {} : { chosenFromCardId: input.chosenFromCardId }),
+			...(input.verdictKind ? { verdictKind: input.verdictKind } : {}),
+			...(input.hinted ? { hinted: true } : {})
 		};
 	}
 

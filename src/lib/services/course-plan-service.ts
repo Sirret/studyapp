@@ -11,26 +11,17 @@ import type { KvRepo } from '#lib/db/repos/kv-repo.ts';
 import type { CardId, CourseId, ExamFormat, SessionId } from '#lib/db/schemas/common.ts';
 import type { ReviewEvent, StudyEvent } from '#lib/db/schemas/event.ts';
 import { splitFlagFor, unitSteps, type AcqStep } from '#lib/engine/acquisition.ts';
-import { planCram, type CramPlan } from '#lib/engine/cram.ts';
-import { longtermCards, todayModes, type TodayModes } from '#lib/engine/mode-select.ts';
+import { todayModes } from '#lib/engine/mode-select.ts';
 import { dayIndex } from '#lib/engine/time.ts';
 import type { Logger } from '#lib/log/logger.ts';
 import { oneNight, openUnits, pathFor, splitPrompts, unitView } from './course-learn.ts';
-import {
-	cramInput,
-	dayMinutesFrom,
-	examDayOf,
-	morningCheckCards,
-	longtermNewToday,
-	readNewCandidates,
-	reviewCards,
-	type CourseData,
-	type PlanEnv
-} from './course-plan.ts';
-import type { CourseToday, CramView, LearnStepView, LearnUnitView } from './course-types.ts';
+import { cramView, reviewPlan, stepViews, type Loaded } from './course-plan-parts.ts';
+import { dayMinutesFrom, examDayOf } from './course-plan.ts';
+import type { CourseToday, LearnUnitView } from './course-types.ts';
 import type { ReplayConfigSource } from './replay-service.ts';
 import { loadCourseData, loadPlanEnv } from './planner-inputs.ts';
-import type { PlannedCard, StudyService } from './study-service.ts';
+import type { StudyService } from './study-service.ts';
+import type { PlannedCard } from './study-plan-types.ts';
 import type { StudyView } from './study-types.ts';
 
 export interface CoursePlanDeps {
@@ -51,43 +42,6 @@ export interface CoursePlanDeps {
 	shares?: (courseId: CourseId, events: StudyEvent[]) => Promise<number[] | null>;
 }
 
-interface Loaded {
-	data: CourseData;
-	env: PlanEnv;
-	modes: TodayModes;
-	today: number;
-	/** The planner's minutes per day from today, or `null` when the course isn't planned. */
-	share: number[] | null;
-}
-
-function cramView(plan: CramPlan): CramView {
-	return {
-		feasible: plan.feasible,
-		shortfallMinutes: Math.ceil(plan.shortfallMinutes),
-		degradations: plan.degradations,
-		deferred: plan.deferred.length,
-		days: plan.sessions.map((s) => ({
-			day: s.day,
-			slot: s.slot,
-			cards: s.cardIds.length,
-			newCards: s.newCardIds.length,
-			minutes: Math.ceil(s.minutes)
-		}))
-	};
-}
-
-/** Today's cram session (day 0, or the morning top-up on exam day) and each card's later sessions. */
-function cramToday(plan: CramPlan): { cards: PlannedCard[]; minutes: number } {
-	const session = plan.sessions.find((s) => s.day === 0);
-	if (!session) return { cards: [], minutes: 0 };
-	const later = plan.sessions.filter((s) => s.day > 0 && s.slot !== 'morning');
-	const ahead = (id: CardId): number => later.filter((s) => s.cardIds.includes(id)).length;
-	return {
-		cards: session.cardIds.map((id) => ({ id, relearningSessionsAhead: ahead(id) })),
-		minutes: session.minutes
-	};
-}
-
 /**
  * The course page's service: works out today's modes for a course (`todayModes`), the review
  * session (long-term, cram or the exam-morning check), the units to learn (acquisition or
@@ -105,7 +59,7 @@ export class CoursePlanService {
 		const { course, cards } = data.material;
 		const counts: CourseToday['counts'] = {};
 		for (const card of cards) counts[card.status] = (counts[card.status] ?? 0) + 1;
-		const review = this.reviewPlan(loaded);
+		const review = reviewPlan(loaded);
 		return {
 			course: {
 				id: course.id,
@@ -144,7 +98,7 @@ export class CoursePlanService {
 	/** Starts today's review session. */
 	async startReview(courseId: CourseId): Promise<StudyView> {
 		const loaded = await this.load(courseId);
-		const review = this.reviewPlan(loaded);
+		const review = reviewPlan(loaded);
 		const mode = review.kind === 'morningCheck' ? 'onenight' : review.kind;
 		this.deps.logger.info('modes', 'review', { kind: review.kind, cards: review.cards.length });
 		return this.deps.study.startPlanned(courseId, {
@@ -159,24 +113,7 @@ export class CoursePlanService {
 		const loaded = await this.load(courseId);
 		const found = this.findUnit(loaded, key);
 		if (!found) return null;
-		const steps: LearnStepView[] = found.steps.map((step) => {
-			switch (step.step) {
-				case 'pretrain':
-				case 'pretest':
-					return { step: step.step, cards: step.cardIds.length };
-				case 'read': {
-					const chunk = loaded.data.chunks.find((candidate) => candidate.id === step.chunkId);
-					return {
-						step: 'read',
-						chunkId: step.chunkId,
-						text: chunk?.text ?? '',
-						generated: chunk?.source === 'generated'
-					};
-				}
-				case 'quiz':
-					return { step: 'quiz', cards: step.cards.length, kinds: step.cards.map((c) => c.kind) };
-			}
-		});
+		const steps = stepViews(found.steps, loaded.data.chunks);
 		return { courseId, mode: found.mode, unit: found.view, steps };
 	}
 
@@ -239,32 +176,6 @@ export class CoursePlanService {
 		const modes = todayModes({ today, examDay, hasUnread }).result;
 		const share = (await this.deps.shares?.(courseId, events)) ?? null;
 		return { data, env, modes, today, share };
-	}
-
-	private reviewPlan(loaded: Loaded) {
-		const { data, env, modes, today } = loaded;
-		const morning = modes.daysToExam === 0 ? morningCheckCards(data, today, env.tzOffsetMin) : [];
-		if (morning.length > 0) {
-			const cards = morning.map((id) => ({ id, required: CRITERION_LATER }));
-			return {
-				kind: 'morningCheck' as const,
-				cards,
-				minutes: env.availability.examMorningMinutes,
-				cram: null
-			};
-		}
-		if (modes.review === 'cram' && modes.daysToExam !== null) {
-			const share = loaded.share ?? undefined;
-			const plan = planCram(cramInput(data, env, modes.daysToExam, share)).result;
-			return { kind: 'cram' as const, ...cramToday(plan), cram: plan };
-		}
-		const ids = longtermCards({
-			cards: reviewCards(data, env.now),
-			newCandidates: readNewCandidates(data),
-			now: env.now,
-			newPerDay: longtermNewToday(data, env, modes.daysToExam, loaded.share)
-		}).result;
-		return { kind: 'longterm' as const, cards: ids.map((id) => ({ id })), minutes: 0, cram: null };
 	}
 
 	private learnPlan(loaded: Loaded): CourseToday['learn'] {
