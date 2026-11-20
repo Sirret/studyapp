@@ -28,10 +28,10 @@ async function importCourse(page: Page): Promise<void> {
 	await page.getByRole('button', { name: 'Check' }).click();
 	await page.getByRole('button', { name: 'Add to course' }).click();
 	await expect(page.getByRole('status')).toContainText('Added');
-	await page.goto('/');
+	await page.goto('/courses');
 	await page
 		.getByRole('article', { name: 'Networks' })
-		.getByRole('link', { name: 'Plan and learn' })
+		.getByRole('link', { name: 'Open course' })
 		.click();
 	await page.waitForURL(/\/course\//);
 	await page.getByRole('link', { name: /Exam prep/ }).click();

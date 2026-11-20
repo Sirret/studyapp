@@ -1,6 +1,7 @@
 import { ContentStore } from '#lib/db/repos/content-store.ts';
 import { DeviceRepo } from '#lib/db/repos/device-repo.ts';
 import { KvRepo } from '#lib/db/repos/kv-repo.ts';
+import type { CourseId } from '#lib/db/schemas/common.ts';
 export { buildPrompt, GIVING_LABELS, PDF_TIP } from '#lib/import/prompt-v2.ts';
 export type { Giving, Intake } from '#lib/import/prompt-v2.ts';
 export { buildFixPrompt } from '#lib/import/fix-prompt.ts';
@@ -26,18 +27,17 @@ export const importService = new ImportService(store, new WebImageEncoder(), new
 
 const kv = new KvRepo(db);
 
-let sampleCheck: Promise<boolean> | null = null;
+let adding: Promise<CourseId | null> | null = null;
 
 /**
- * First run: adds the built-in sample course once, when the student has no courses. Resolves to
- * `true` when this call added it, so the home page can reload its plan. Runs at most once per page
- * load (a second call gets the same promise). Never rejects: a failure is logged and tried again
- * on the next start.
+ * Welcome's "Try a sample course": adds the built-in sample course when the student has no
+ * courses. Resolves to its id, or `null` when nothing was added (courses already exist, or the
+ * import failed, which is logged). A second tap while the first runs gets the same promise.
  *
  * @see sample-course.ts
  */
-export function ensureSampleCourse(): Promise<boolean> {
-	sampleCheck ??= (async () => {
+export function addSampleCourse(): Promise<CourseId | null> {
+	adding ??= (async () => {
 		try {
 			const outcome = await seedSampleCourse({
 				kv,
@@ -45,11 +45,13 @@ export function ensureSampleCourse(): Promise<boolean> {
 				importer: importService,
 				loadText: async () => (await import('#lib/content/sample-course.ts')).SAMPLE_COURSE_REPLY
 			});
-			return outcome === 'added';
+			return outcome.kind === 'added' ? outcome.courseId : null;
 		} catch (error: unknown) {
 			logger.error('sample', 'sample course not added', { error: String(error) });
-			return false;
+			return null;
+		} finally {
+			adding = null;
 		}
 	})();
-	return sampleCheck;
+	return adding;
 }

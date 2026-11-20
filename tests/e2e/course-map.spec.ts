@@ -10,22 +10,24 @@ const REPLY = readFileSync(
 const pasteArea = (page: Page) => page.getByLabel("Paste the chatbot's text");
 
 test.describe('sample course and course map', () => {
-	test('a first visit adds the sample course once, and it opens with its course map', async ({
+	test('Welcome adds the sample course on tap, once, and it opens with its course map', async ({
 		page
 	}) => {
 		await page.goto('/');
-		// The sample is added before the plan loads (first run only). Under two parallel workers on
-		// the laptop it can take several seconds, so this waits longer than the default 5 s.
-		await expect(page.getByText(SAMPLE_NAME)).toBeVisible({ timeout: 30000 });
-		await page.reload();
-		await expect(page.getByText(SAMPLE_NAME)).toHaveCount(1);
-
-		await page.getByRole('link', { name: 'Plan and learn' }).click();
+		// Phase 8.6 Q17: nothing is added until the student taps.
+		await expect(page.getByRole('heading', { name: 'Welcome.' })).toBeVisible();
+		await page.locator('[data-try-sample]').click();
+		await page.waitForURL(/\/course\/[0-9a-f-]+$/, { timeout: 30000 });
 		await expect(page.getByRole('heading', { name: 'How it connects' })).toBeVisible();
 		await expect(
 			page.getByRole('heading', { name: 'Questions to be able to answer' })
 		).toBeVisible();
 		await expect(page.getByRole('table')).toBeVisible();
+
+		await page.goto('/');
+		await expect(page.locator(`[data-shelf-course="${SAMPLE_NAME}"]`)).toBeVisible();
+		await page.reload();
+		await expect(page.locator(`[data-shelf-course="${SAMPLE_NAME}"]`)).toHaveCount(1);
 	});
 
 	test('a partly pasted reply shows the checklist and the resume prompt', async ({ page }) => {

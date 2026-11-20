@@ -6,6 +6,8 @@ export interface DisplayPrefs {
 	companion: 'full' | 'quiet' | 'off';
 	companionName: string;
 	haptics: boolean;
+	/** Sound effects (Phase 8.6 Q11); read by the sound gate and the session TopBar's mute button. */
+	sounds: boolean;
 }
 
 /** Until the stored settings load; matches `DEFAULT_SETTINGS` (a unit test checks). */
@@ -13,7 +15,8 @@ export const DEFAULT_DISPLAY_PREFS: DisplayPrefs = {
 	theme: 'system',
 	companion: 'full',
 	companionName: 'Yuki',
-	haptics: true
+	haptics: true,
+	sounds: true
 };
 
 /** Where the resolved theme is remembered on this device, so the next start doesn't flash. */

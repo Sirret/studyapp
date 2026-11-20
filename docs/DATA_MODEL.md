@@ -429,7 +429,7 @@ From an Import v2 reply (docs/PROMPTS.md §3 FORMAT, §6).
 | `offline` | `{ persisted: boolean; checkedAt: number }` | local | "Ready offline" status |
 | `studyScope` | `Record<CourseId, { topicIds: ID[]; chunkIds: ID[] }>` | content | Per course, the topics and sections every mode studies (SESSION_NOTES §J). No entry, or both lists empty = the whole course; a card is in scope when its note's topic or section is listed (Decisions log "Phase 8.6 Q12") |
 | `cardPathsVersion` | `number` (int ≥ 0) | local | The card-path version (`CARD_PATHS_VERSION`) stored cards were last brought onto: when lower, `refreshCardPaths` updates kept cards' `path` once (IDs and events untouched) and replays them (Decisions log "Phase 8.6 Q19") |
-| `sampleCourseSeeded` | `true` | local | The first-run sample course was decided (added, or skipped because the student had courses). Never set back; a deleted sample is not re-added (BUILD_PLAN Decisions log, "Default course") |
+| `sampleCourseSeeded` | `true` | local | The sample course was added at least once (Welcome's "Try a sample course" tap). A record only: nothing reads it to block a re-add, so a student back on Welcome can add the sample again (BUILD_PLAN Decisions log, "Phase 8.6 Q17") |
 
 `Settings`:
 

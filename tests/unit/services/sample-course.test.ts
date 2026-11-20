@@ -43,39 +43,41 @@ function setup(): { deps: SampleCourseDeps; store: ContentStore; kv: KvRepo } {
 	return { deps, store, kv };
 }
 
-describe('sample course (BUILD_PLAN Decisions log, "Default course")', () => {
+describe('sample course on tap (BUILD_PLAN Decisions log, "Phase 8.6 Q17")', () => {
 	it('the bundled reply is the security fixture, byte for byte (no drift)', () => {
 		expect(SAMPLE_COURSE_REPLY).toBe(readFileSync(FIXTURE, 'utf8'));
 	});
 
-	it('adds the course once on a first run with no courses, with its map', async () => {
+	it('adds the course with its map when the student has no courses, and sets the flag', async () => {
 		const { deps, store, kv } = setup();
-		expect(await seedSampleCourse(deps)).toBe('added');
+		const outcome = await seedSampleCourse(deps);
 		const courses = await store.courses.list();
 		expect(courses.map((course) => course.name)).toStrictEqual([SAMPLE_COURSE_NAME]);
+		expect(outcome).toStrictEqual({ kind: 'added', courseId: courses[0]?.id });
 		expect(courses[0]?.map?.topics).toHaveLength(8);
 		expect(await kv.get('sampleCourseSeeded')).toBe(true);
 	});
 
-	it('never adds it again, even after the student deletes it', async () => {
+	it('a student who deleted the sample and is back on Welcome can add it again', async () => {
 		const { deps, store } = setup();
 		await seedSampleCourse(deps);
 		for (const course of await store.courses.list()) await store.courses.softDelete(course.id);
-		expect(await seedSampleCourse(deps)).toBe('already-seeded');
-		expect(await store.courses.list()).toStrictEqual([]);
+		expect((await seedSampleCourse(deps)).kind).toBe('added');
+		expect((await store.courses.list()).map((course) => course.name)).toStrictEqual([
+			SAMPLE_COURSE_NAME
+		]);
 	});
 
-	it('a student who already has a course keeps it; the sample is not added, and the flag is set', async () => {
-		const { deps, store, kv } = setup();
+	it('a student who already has a course keeps it; the sample is not added', async () => {
+		const { deps, store } = setup();
 		await deps.importer.createCourse('My own course');
-		expect(await seedSampleCourse(deps)).toBe('has-courses');
+		expect(await seedSampleCourse(deps)).toStrictEqual({ kind: 'has-courses' });
 		expect((await store.courses.list()).map((course) => course.name)).toStrictEqual([
 			'My own course'
 		]);
-		expect(await kv.get('sampleCourseSeeded')).toBe(true);
 	});
 
-	it('a failed import throws and leaves the flag unset, so the next start tries again', async () => {
+	it('a failed import throws and leaves the flag unset', async () => {
 		const { deps, kv } = setup();
 		const broken: SampleCourseDeps = {
 			...deps,

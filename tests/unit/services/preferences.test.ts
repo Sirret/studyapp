@@ -8,8 +8,14 @@ const SLEEP = { start: '23:00', end: '07:00' };
 
 describe('DEFAULT_DISPLAY_PREFS', () => {
 	it('matches the stored settings defaults (DATA_MODEL §5)', () => {
-		const { theme, companion, companionName, haptics } = DEFAULT_SETTINGS;
-		expect(DEFAULT_DISPLAY_PREFS).toStrictEqual({ theme, companion, companionName, haptics });
+		const { theme, companion, companionName, haptics, sounds } = DEFAULT_SETTINGS;
+		expect(DEFAULT_DISPLAY_PREFS).toStrictEqual({
+			theme,
+			companion,
+			companionName,
+			haptics,
+			sounds
+		});
 	});
 });
 

@@ -8,13 +8,20 @@
 	let {
 		label,
 		checked = $bindable(false),
-		disabled = false
-	}: { label: string; checked?: boolean; disabled?: boolean } = $props();
+		disabled = false,
+		onchange
+	}: {
+		label: string;
+		checked?: boolean;
+		disabled?: boolean;
+		/** Called after the user flips it (`checked` is already updated). */
+		onchange?: () => void;
+	} = $props();
 </script>
 
 <label class="toggle" class:disabled>
 	<span class="text">{label}</span>
-	<input type="checkbox" role="switch" bind:checked {disabled} />
+	<input type="checkbox" role="switch" bind:checked {disabled} {onchange} />
 	<span class="track" aria-hidden="true">
 		<span class="knob"><span class="paw"><Paw size={14} /></span></span>
 	</span>

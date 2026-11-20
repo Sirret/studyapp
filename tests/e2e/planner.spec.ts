@@ -35,8 +35,8 @@ async function courseWithExam(page: Page, name: string, days: number): Promise<v
 	await page.getByRole('button', { name: 'Check' }).click();
 	await page.getByRole('button', { name: 'Add to course' }).click();
 	await expect(page.getByRole('status')).toContainText('Added');
-	await page.goto('/');
-	await page.getByRole('article', { name }).getByRole('link', { name: 'Plan and learn' }).click();
+	await page.goto('/courses');
+	await page.getByRole('article', { name }).getByRole('link', { name: 'Open course' }).click();
 	await page.waitForURL(/\/course\//);
 	await page.getByRole('link', { name: /Exam prep/ }).click();
 	await page.waitForURL(/\/exam$/);
@@ -73,7 +73,7 @@ test.describe('planner', () => {
 		await courseWithExam(page, 'Networks', 3);
 		await courseWithExam(page, 'Databases', 5);
 
-		await page.goto('/');
+		await page.goto('/courses');
 		for (const name of ['Networks', 'Databases']) {
 			await expect(page.locator(`[data-planned="${name}"]`)).toContainText(/\d+ min today/);
 		}

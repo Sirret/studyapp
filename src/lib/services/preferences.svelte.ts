@@ -25,3 +25,17 @@ export async function loadPreferences(): Promise<void> {
 	Object.assign(prefs, stored.prefs);
 	sleep.window = stored.sleepWindow;
 }
+
+/**
+ * Saves a display setting from the Settings screen: the live `prefs` change at once (theme and
+ * companion follow straight away) and the stored settings are updated.
+ *
+ * @see DESIGN §12 row "Settings"
+ */
+export async function savePreference(
+	patch: Partial<Pick<DisplayPrefs, 'theme' | 'companion' | 'haptics' | 'sounds'>>
+): Promise<void> {
+	Object.assign(prefs, patch);
+	const { settingsService } = await import('./preferences-wiring.ts');
+	await settingsService.update(patch);
+}

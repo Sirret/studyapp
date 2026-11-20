@@ -54,6 +54,19 @@ test.describe('layout', { tag: '@both' }, () => {
 		await expectNoSidewaysScroll(page);
 	});
 
+	test('Welcome, Settings and the Shelf fit', async ({ page }) => {
+		await page.goto('/');
+		await expectWithinWidth(page, page.locator('[data-try-sample]'));
+		await expectNoSidewaysScroll(page);
+		await page.getByRole('link', { name: 'Settings' }).click();
+		await expectWithinWidth(page, page.getByRole('button', { name: 'Word bank' }));
+		await expectWithinWidth(page, page.getByRole('button', { name: 'Off' }));
+		await expectNoSidewaysScroll(page);
+		await page.goto('/courses');
+		await expect(page.getByText('No courses on the shelf yet.')).toBeVisible();
+		await expectNoSidewaysScroll(page);
+	});
+
 	test('one main nav: the Sidebar from 1024 px, else the BottomNav (DESIGN §10)', async ({
 		page
 	}) => {

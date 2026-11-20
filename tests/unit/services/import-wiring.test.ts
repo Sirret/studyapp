@@ -24,28 +24,35 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 
-describe('ensureSampleCourse', () => {
-	it('runs once per load: a second call gets the same promise and does not seed again', async () => {
-		seed.mockResolvedValue('added');
-		const { ensureSampleCourse } = await load();
-		const first = ensureSampleCourse();
-		const second = ensureSampleCourse();
+describe('addSampleCourse', () => {
+	it('a second tap while the first runs gets the same promise and does not seed again', async () => {
+		seed.mockResolvedValue({ kind: 'added', courseId: 'c1' });
+		const { addSampleCourse } = await load();
+		const first = addSampleCourse();
+		const second = addSampleCourse();
 		expect(second).toBe(first);
-		expect(await first).toBe(true);
+		expect(await first).toBe('c1');
 		expect(seed).toHaveBeenCalledTimes(1);
 	});
 
-	it('resolves to false when the seeder found nothing to add', async () => {
-		seed.mockResolvedValue('has-courses');
-		const { ensureSampleCourse } = await load();
-		expect(await ensureSampleCourse()).toBe(false);
+	it('a later tap seeds again (Welcome shows whenever there are no courses)', async () => {
+		seed.mockResolvedValue({ kind: 'added', courseId: 'c1' });
+		const { addSampleCourse } = await load();
+		await addSampleCourse();
+		await addSampleCourse();
+		expect(seed).toHaveBeenCalledTimes(2);
 	});
 
-	it('logs and swallows a failure, resolving to false', async () => {
+	it('resolves to null when the student already has courses', async () => {
+		seed.mockResolvedValue({ kind: 'has-courses' });
+		const { addSampleCourse } = await load();
+		expect(await addSampleCourse()).toBeNull();
+	});
+
+	it('logs and swallows a failure, resolving to null', async () => {
 		seed.mockRejectedValue(new Error('boom'));
-		const { ensureSampleCourse } = await load();
-		await expect(ensureSampleCourse()).resolves.toBe(false);
-		expect(seed).toHaveBeenCalledTimes(1);
+		const { addSampleCourse } = await load();
+		await expect(addSampleCourse()).resolves.toBeNull();
 		expect(error).toHaveBeenCalledWith('sample', 'sample course not added', {
 			error: 'Error: boom'
 		});

@@ -23,6 +23,7 @@ import { StudyService } from './study-service.ts';
 import { LearnService } from './learn-service.ts';
 import { PracticeService } from './practice-service.ts';
 import { ScopeService } from './scope-service.ts';
+import { HomeService } from './home-service.ts';
 
 const newId = () => crypto.randomUUID();
 const clock = () => Date.now();
@@ -141,3 +142,6 @@ export const practiceService = new PracticeService({
 	kv,
 	logger
 });
+
+/** Home's "Where you left off" and the Shelf's reading progress (SESSION_NOTES §K). */
+export const homeService = new HomeService({ repos: planRepos, events, learn: learnService });
