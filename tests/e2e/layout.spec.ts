@@ -137,6 +137,21 @@ test.describe('layout', { tag: '@both' }, () => {
 		await expectNoSidewaysScroll(page);
 	});
 
+	test('Manual mode: the new-course form and the add form fit', async ({ page }) => {
+		await page.goto('/course/new');
+		await expectWithinWidth(page, page.locator('[data-create-course]'));
+		await expectNoSidewaysScroll(page);
+		await page.getByLabel('Course name').fill('By hand');
+		await page.getByLabel('First topic').fill('One');
+		await page.locator('[data-create-course]').click();
+		await page.waitForURL(/\/add\?topic=/);
+		await page.getByLabel('Definition').fill('A long definition with several words to tick here.');
+		await expectWithinWidth(page, page.locator('[data-key-word-ticks]'));
+		await expectWithinWidth(page, page.locator('[data-new-section]'));
+		await expectWithinWidth(page, page.locator('[data-save-note]'));
+		await expectNoSidewaysScroll(page);
+	});
+
 	test('the Practice menu and its flashcard deck fit', async ({ page }) => {
 		test.setTimeout(90_000);
 		await openLearnCourse(page);

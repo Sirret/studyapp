@@ -11,6 +11,7 @@ import { PlannerService } from './planner-service.ts';
 import { CourseService } from './course-service.ts';
 import { CardListService } from './card-list-service.ts';
 import { ImportUndoService } from './import-undo.ts';
+import { ManualContentService } from './manual-content-service.ts';
 import { DeviceRepo } from '#lib/db/repos/device-repo.ts';
 import { EventRepo } from '#lib/db/repos/event-repo.ts';
 import { KvRepo } from '#lib/db/repos/kv-repo.ts';
@@ -81,6 +82,9 @@ export const cardListService = new CardListService(content, replay, logger);
 
 /** The course page's "Undo import" (DATA_MODEL §3.1 `lastImport`). */
 export const importUndoService = new ImportUndoService(content, logger);
+
+/** Manual mode: courses, topics, sections and cards made by hand (Decisions log "Phase 8.6 Q15"). */
+export const manualContentService = new ManualContentService(content, logger);
 
 let pathCheck: Promise<void> | null = null;
 

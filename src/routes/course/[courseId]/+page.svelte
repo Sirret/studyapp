@@ -146,6 +146,14 @@
 		>
 			See all cards
 		</Button>
+		<Button
+			variant="ghost"
+			full
+			href={resolve('/course/[courseId]/add', { courseId })}
+			data-add-by-hand
+		>
+			Add cards by hand
+		</Button>
 		{#if notice}<Banner tone="success">{notice}</Banner>{/if}
 		{#if lastImport}
 			<UndoImport last={lastImport} busy={undoing} onundo={undoImport} />

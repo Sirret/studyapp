@@ -8,6 +8,7 @@
 	import type { ExerciseResponse, MicroHint } from '#lib/services/study-types.ts';
 	import FlashcardDeck from '../components/FlashcardDeck.svelte';
 	import HintLink from '../components/HintLink.svelte';
+	import KeyWordTicks from '../components/KeyWordTicks.svelte';
 	import MeetTerms from '../components/MeetTerms.svelte';
 	import ModeDoor from '../components/ModeDoor.svelte';
 	import ModeDoorRow from '../components/ModeDoorRow.svelte';
@@ -97,6 +98,12 @@
 	</GuideRow>
 	<GuideRow label="Sound toggle (study and Practice top bar; one tap mutes, saved at once)">
 		<SoundToggle />
+	</GuideRow>
+	<GuideRow label="Key-word ticks (Manual mode: tick the words a typed answer must contain)">
+		<KeyWordTicks
+			definition="Data split into small packets, routed independently."
+			ticked={[3, 4, 6]}
+		/>
 	</GuideRow>
 	<GuideRow label="Meet the terms (then one matching check)">
 		<div class="wide"><MeetTerms terms={SAMPLE_TERMS} onstart={noop} /></div>

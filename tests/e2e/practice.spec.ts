@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { readTable } from './idb.ts';
 import { openLearnCourse } from './learn-course.ts';
 import { playOpenSession } from './play-session.ts';
 
@@ -8,26 +9,6 @@ import { playOpenSession } from './play-session.ts';
  * again without logging anything; the quick quiz asks every card, logs `practice` reviews that are
  * never credited, ends on its own summary, and leaves every card's scheduling fields unchanged.
  */
-
-/** Reads every record of a table straight from IndexedDB, as the app stored it. */
-async function readTable(page: Page, table: string): Promise<Record<string, unknown>[]> {
-	return page.evaluate(
-		(name) =>
-			new Promise<Record<string, unknown>[]>((resolve, reject) => {
-				const open = indexedDB.open('snowpack');
-				open.onerror = () => reject(open.error);
-				open.onsuccess = () => {
-					const request = open.result.transaction(name).objectStore(name).getAll();
-					request.onerror = () => reject(request.error);
-					request.onsuccess = () => {
-						open.result.close();
-						resolve(request.result);
-					};
-				};
-			}),
-		table
-	);
-}
 
 /** The scheduling caches replay rebuilds (CLAUDE.md rule 5), per card id. */
 async function scheduling(page: Page): Promise<Record<string, unknown>> {

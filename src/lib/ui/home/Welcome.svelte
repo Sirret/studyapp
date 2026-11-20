@@ -60,7 +60,9 @@
 <Stack gap="sm">
 	<Button full loading={adding} onclick={onsample} data-try-sample>Try a sample course</Button>
 	<Button full variant="secondary" href={resolve('/import')}>Bring my lectures</Button>
-	<Button full variant="ghost" href={resolve('/import')}>Make cards by hand</Button>
+	<Button full variant="ghost" href={resolve('/course/new')} data-make-by-hand
+		>Make cards by hand</Button
+	>
 </Stack>
 
 <style>

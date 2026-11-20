@@ -1,12 +1,5 @@
-import { DEFAULT_EXAM_FORMAT } from '#lib/config/defaults.ts';
 import type { ContentStore } from '#lib/db/repos/content-store.ts';
-import {
-	CourseColorSchema,
-	type CourseColor,
-	type CourseId,
-	type ImportId,
-	type Placement
-} from '#lib/db/schemas/common.ts';
+import type { CourseId, ImportId, Placement } from '#lib/db/schemas/common.ts';
 import type { Course, ImportGoal, LastImport, Topic } from '#lib/db/schemas/course.ts';
 import type { Note, NoteType } from '#lib/db/schemas/note.ts';
 import type { ImportError } from '#lib/import/ast.ts';
@@ -18,6 +11,7 @@ import { parseImport } from '#lib/import/parser.ts';
 import { fileKey, readImportZip } from '#lib/import/zip.ts';
 import type { Logger } from '#lib/log/logger.ts';
 import type { Result } from '#lib/util/result.ts';
+import { createEmptyCourse } from './course-new.ts';
 import { addsRecords, ImportBatchDrafter } from './import-batch.ts';
 import {
 	checkedItems,
@@ -132,14 +126,7 @@ export class ImportService {
 
 	/** Creates a course with the default format and the next colour. @see DATA_MODEL §3.1 */
 	async createCourse(name: string): Promise<Course> {
-		const colors = CourseColorSchema.options;
-		const existing = await this.store.courses.list();
-		return this.store.courses.create({
-			name,
-			status: 'active',
-			examFormat: DEFAULT_EXAM_FORMAT,
-			color: colors[existing.length % colors.length] as CourseColor
-		});
+		return createEmptyCourse(this.store.courses, name);
 	}
 
 	/** Takes the text and images out of a zip. @see BUILD_PLAN §4.2 */
