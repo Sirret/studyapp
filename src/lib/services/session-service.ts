@@ -13,6 +13,7 @@ import type { NewStudyEvent, ReviewEvent } from '#lib/db/schemas/event.ts';
 import type { RoundBy, Session, SessionSnapshot } from '#lib/db/schemas/session.ts';
 import { weightOf } from '#lib/engine/exercise-kinds.ts';
 import { retrievabilityAt } from '#lib/engine/fsrs.ts';
+import { queueWeight } from '#lib/engine/practice.ts';
 import { applyAnswer, currentItem, type CurrentItem } from '#lib/engine/queue.ts';
 import { checkRoundEnd, roundSummary, startRound, type RoundSummary } from '#lib/engine/round.ts';
 import {
@@ -178,7 +179,7 @@ export class SessionService {
 		const answered = applyAnswer(session.snapshot, {
 			cardId: item.cardId,
 			correct: input.correct,
-			weight: input.weight ?? weightOf(input.kind),
+			weight: queueWeight(session.mode, input.weight ?? weightOf(input.kind)),
 			...(input.hinted ? { hinted: true } : {})
 		});
 		const snapshot = checkRoundEnd(answered.result, this.deps.clock()).result;
@@ -221,10 +222,9 @@ export class SessionService {
 	): Promise<NewStudyEvent> {
 		const { kind } = input;
 		if (kind === 'pretest') {
-			const { cardId } = item;
 			return {
 				type: 'pretest',
-				cardId,
+				cardId: item.cardId,
 				sessionId: session.id,
 				skipped: false,
 				responseMs: input.responseMs

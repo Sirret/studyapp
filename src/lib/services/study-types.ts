@@ -25,6 +25,7 @@ export type {
 } from '#lib/engine/exercise-spec.ts';
 export type { ExerciseResponse, ExerciseVerdict } from '#lib/engine/exercise-check.ts';
 export type { RoundSummary } from '#lib/engine/round.ts';
+export type { MicroHint } from '#lib/engine/hint.ts';
 export type { SessionPhase };
 
 /** The card on screen and the exercise built for it. */

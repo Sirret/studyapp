@@ -2,7 +2,7 @@ import type { ChunkRepo, CourseRepo, TopicRepo } from '#lib/db/repos/content-rep
 import type { KvRepo } from '#lib/db/repos/kv-repo.ts';
 import type { CourseId } from '#lib/db/schemas/common.ts';
 import type { StudyEvent } from '#lib/db/schemas/event.ts';
-import { DEFAULT_AVAILABILITY, DEFAULT_SETTINGS } from '#lib/db/schemas/kv.ts';
+import { DEFAULT_AVAILABILITY, DEFAULT_SETTINGS, type StudyScope } from '#lib/db/schemas/kv.ts';
 import { triage } from '#lib/engine/cram.ts';
 import { EMPTY_CALIBRATION } from '#lib/engine/estimate.ts';
 import { retrievabilityAt } from '#lib/engine/fsrs.ts';
@@ -10,6 +10,7 @@ import type { PlanCourse, PlanItem } from '#lib/engine/planner.ts';
 import { studyMinutesOn } from '#lib/engine/study-time.ts';
 import { dayIndex } from '#lib/engine/time.ts';
 import { openUnits, pathFor, unitView } from './course-learn.ts';
+import { scopeCourseData } from './course-scope.ts';
 import {
 	cramInput,
 	dayMinutesFrom,
@@ -53,16 +54,22 @@ export async function loadPlanEnv(
 	};
 }
 
-/** A course's material, topics and chunks, with the given study history. */
+/**
+ * A course's material, topics and chunks, with the given study history, narrowed to the study
+ * scope when one is given (Exam prep plans, triages and counts readiness on in-scope cards only).
+ *
+ * @see Decisions log "Phase 8.6 Q12"
+ */
 export async function loadCourseData(
 	repos: PlanRepos,
 	courseId: CourseId,
-	events: StudyEvent[]
+	events: StudyEvent[],
+	scope?: StudyScope
 ): Promise<CourseData> {
 	const material = await loadCourse(repos, courseId);
 	const topics = await repos.topics.listByCourse(courseId);
 	const chunks = (await Promise.all(topics.map((t) => repos.chunks.listByTopic(t.id)))).flat();
-	return { material, topics, chunks, events };
+	return scopeCourseData({ material, topics, chunks, events }, scope);
 }
 
 /** Minutes studied today: session wall time with idle gaps capped (`studyMinutesOn`). */

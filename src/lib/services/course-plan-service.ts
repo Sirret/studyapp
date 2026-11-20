@@ -15,6 +15,7 @@ import { todayModes } from '#lib/engine/mode-select.ts';
 import { dayIndex } from '#lib/engine/time.ts';
 import type { Logger } from '#lib/log/logger.ts';
 import { oneNight, openUnits, pathFor, splitPrompts, unitView } from './course-learn.ts';
+import { courseScope } from './course-scope.ts';
 import { cramView, reviewPlan, stepViews, type Loaded } from './course-plan-parts.ts';
 import { dayMinutesFrom, examDayOf } from './course-plan.ts';
 import type { CourseToday, LearnUnitView } from './course-types.ts';
@@ -168,7 +169,8 @@ export class CoursePlanService {
 	private async load(courseId: CourseId): Promise<Loaded> {
 		const { repos, kv } = this.deps;
 		const events = await this.deps.events.list();
-		const data = await loadCourseData(repos, courseId, events);
+		const scope = await courseScope(kv, courseId);
+		const data = await loadCourseData(repos, courseId, events, scope);
 		const env = await loadPlanEnv(kv, this.deps.replayConfig, this.deps.clock());
 		const today = dayIndex(env.now, env.tzOffsetMin);
 		const hasUnread = openUnits(data, env, false).units.length > 0;

@@ -20,6 +20,9 @@ import { refreshCardPaths } from './path-refresh.ts';
 import { kvReplayConfig, ReplayService } from './replay-service.ts';
 import { SessionService } from './session-service.ts';
 import { StudyService } from './study-service.ts';
+import { LearnService } from './learn-service.ts';
+import { PracticeService } from './practice-service.ts';
+import { ScopeService } from './scope-service.ts';
 
 const newId = () => crypto.randomUUID();
 const clock = () => Date.now();
@@ -116,4 +119,25 @@ export const coursePlanService = new CoursePlanService({
 	clock,
 	logger,
 	shares: (courseId, events) => plannerService.shareOf(courseId, events)
+});
+
+/** The course page's "Studying N of M topics · change" and the scope picker (Phase 8.6 Q12). */
+export const scopeService = new ScopeService({ repos: planRepos, kv, logger });
+
+/** Learn: topic by topic over the in-scope material (Phase 8.6 Q2, Q3). */
+export const learnService = new LearnService({
+	repos: planRepos,
+	events,
+	kv,
+	study: studyService,
+	logger
+});
+
+/** Practice: flashcard deck and quick quiz, never scheduled (Phase 8.6 Q4, Q18). */
+export const practiceService = new PracticeService({
+	study: studyService,
+	repos,
+	events,
+	kv,
+	logger
 });

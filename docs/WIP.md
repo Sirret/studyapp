@@ -86,10 +86,10 @@ I resolve SPEC-GAPs into the Decisions log. Settings and scope schema tests I wr
 - Step-6 plan (2026-11-20), in order, each item ticked when done:
   - [x] 6a split (as built): `study-answer.ts` (creditedIn, missedTypedIn, selfRatedOf, Shown, answerOf), `study-item.ts` (cardExercise), `study-plan-types.ts` (StartOptions, PlannedCard, PlannedSession + roundBy; re-exported from study-service); `course-plan-parts.ts` (Loaded, cramView, reviewPlan, stepViews). Pure moves.
   - [x] 6b hinted + verdict into events: `StudyService.hint(id)` → `microHint` (rng `rngFor(cardId, sessionId, attempt)`), one per attempt; `AnswerInput` gains `hinted`, `weight`, `verdictKind`; event weight = `verdict.weight ?? weightOf(kind)`. Engine: `QueueAnswer.hinted` (a hinted correct neither adds nor resets the count and skips the first-ever reduction), with queue unit tests. `credited` false for `acquisition` and `practice`. `PlannedSession.roundBy` → `StartSessionInput.roundBy` → `planSession`. Tests: `tests/unit/engine/queue-hinted.test.ts`, `tests/unit/services/study-hint.test.ts` (shared stack in `tests/unit/services/study-fixtures.ts`).
-  - [ ] 6c scope: `ScopeService` (get/set/clear/summary/tree) on kv `studyScope`; `loadCourseData(…, scope?)` filters notes/cards/chunks/topics (`course-scope.ts`); CoursePlanService and PlannerService pass the course's scope.
-  - [ ] 6d `PracticeService`: `deck` (flip specs of in-scope cards), `nextPass`, `startQuiz` (mode `practice`, `roundBy: 'count'`, kinds from `quickQuiz`, required 1), `retryMisses(sessionId)`.
-  - [ ] 6e `LearnService`: `topics`, `flow(courseId, topicId)` (step views with summary/terms/reader data), `startStep(courseId, topicId, index)` (questions, meetTerms matching check, lookBack via `pickLookBack`, mixedQuiz; mode `acquisition`, `credited: false`, `roundBy: 'count'`, plannedMinutes 0).
-  - [ ] 6f wiring (`app.ts`/`study-wiring.ts`), `npm run test`, commit, checkpoint.
+  - [x] 6c scope: `ScopeService` (get/set/clear/summary/tree) on kv `studyScope`; `loadCourseData(…, scope?)` filters notes/cards/chunks/topics (`course-scope.ts`); CoursePlanService and PlannerService pass the course's scope.
+  - [x] 6d `PracticeService` (as built): `deck` (flip specs of in-scope cards), `nextPass`, `startQuiz` (mode `practice`, `roundBy: 'count'`, kinds from `quickQuiz`, required 1), `quizSummary(sessionId)` (asked, right, missed via `missesToRetry`). No `retryMisses`: see the decision below.
+  - [x] 6e `LearnService` (`learn-service.ts`, `learn-material.ts`, `learn-types.ts`; screens carry `session: true|false`): `topics`, `flow(courseId, topicId)` (step views with summary/terms/reader data), `startStep(courseId, topicId, index)` (questions, meetTerms matching check, lookBack via `pickLookBack`, mixedQuiz; mode `acquisition`, `credited: false`, `roundBy: 'count'`, plannedMinutes 0).
+  - [x] 6f wiring done (`study-wiring.ts`: scopeService, learnService, practiceService; `MicroHint` re-exported from study-types); full `npm run test` 2135 green.
 
 **7. Components (component checkpoint).** All built with tokens only, each added to `/dev/ui` in both themes:
 - `IdeaUnitExercise` (type, then tick key words, pre-ticked)
@@ -141,6 +141,10 @@ Tests: unit + `layout.spec.ts` + snapshots.
 - Step 4: `ensureCardPaths()` (study-wiring) runs from Home's `refresh()` only; a study route opened directly before Home keeps the old (still valid) paths until the next Home visit.
 
 - Step 6: a typed answer accepted through a typo match (`verdict.typo`, correct) is logged `verdictKind: 'fuzzy'`; idea-unit/list verdicts log their own kind; exact = absent (DATA_MODEL §3.6 row).
+- Step 6: new pure engine rule `practice.ts queueWeight(mode, weight)`: in Practice a `recognition` correct counts as `full` in the session queue (the queue otherwise needs a full-weight correct last, so an mc-only quick quiz never ended). Events keep the real weight; replay skips practice anyway. Tests: `tests/unit/engine/practice-queue.test.ts`. Needs a Decisions log row at handoff.
+- Step 6: Q18 "misses back once at round end" is served by the queue: a missed quiz card goes to redo-till-right, then comes back after `ERROR_LAG` and one correct finishes it (required 1). `quizSummary` lists the misses at the end. Needs a Decisions log row.
+- Step 6: Meet the terms' matching check = one session card (the first term note's first card) forced to `matching`, `required: ACQ_STEP_REQUIRED`. Learn steps use `ACQ_STEP_REQUIRED` (1) per card.
+- Step 6: Learn under a scope uses only in-scope sections (Learn order and look-back distance are over the scoped sections). Look-back rng = `rngFor(chunkId, 'lookback:<event count>', 0)`.
 - Step 6: "sections the student has read in Learn" (Q8) is derived from events, no stored field: a section counts as read once any of its cards has a review event with mode `acquisition`. Learn's questions follow the reading, so a section read this visit with cards is already counted when its look-back runs; a section without cards has no look-back candidates anyway.
 
 ## Agents

@@ -1,4 +1,4 @@
-import type { CardId, ExerciseKind } from '#lib/db/schemas/common.ts';
+import type { CardId, ExerciseKind, Mode, Weight } from '#lib/db/schemas/common.ts';
 import { groupOf, weightOf } from './exercise-kinds.ts';
 import type { Traced } from './trace.ts';
 
@@ -61,4 +61,16 @@ export function missesToRetry(answers: readonly { id: CardId; correct: boolean }
  */
 export function nextDeckPass(swipes: readonly { id: CardId; know: boolean }[]): CardId[] {
 	return swipes.filter((swipe) => !swipe.know).map((swipe) => swipe.id);
+}
+
+/**
+ * The weight the session queue counts an answer at. Practice has no criterion: the quick quiz asks
+ * every card once (one correct, `required: 1`), so a `recognition` correct finishes the card as a
+ * `full` one would (the queue otherwise needs a full-weight correct last). Every other mode, and a
+ * `none` weight, is unchanged. The logged event keeps the answer's real weight.
+ *
+ * @see Decisions log "Phase 8.6 Q4", "Q18"; BUILD_PLAN §6.3 (last counting correct is full)
+ */
+export function queueWeight(mode: Mode, weight: Weight): Weight {
+	return mode === 'practice' && weight === 'recognition' ? 'full' : weight;
 }

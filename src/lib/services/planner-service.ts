@@ -131,8 +131,9 @@ export class PlannerService {
 		const events = loaded ?? (await this.deps.events.list());
 		const courses = (await repos.courses.list()).filter((c) => c.status === 'active');
 		const data = new Map<CourseId, CourseData>();
+		const scopes = (await kv.get('studyScope')) ?? {};
 		for (const course of courses)
-			data.set(course.id, await loadCourseData(repos, course.id, events));
+			data.set(course.id, await loadCourseData(repos, course.id, events, scopes[course.id]));
 		const planned = [...data.values()].flatMap((d) => planCourse(d, env) ?? []);
 		const today = dayIndex(env.now, env.tzOffsetMin);
 		const lastExam = Math.max(today, ...planned.map((c) => c.examDay));
