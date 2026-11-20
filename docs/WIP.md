@@ -6,6 +6,7 @@ Resume: read the last Checkpoint log row, the step it points to, and the files t
 | date | phase | step | model | done | files | next | commit |
 |---|---|---|---|---|---|---|---|
 | 2026-11-20 | 6 | 0 plan | Opus | Plan approved; Q1–Q13 answered into the Decisions log; WIP written | 2 | Step 1: PDF spike (confirm `tests/fixtures/spike/` is git-ignored and the PDF is there first) | see git log |
+| 2026-11-20 | 6 | 1 PDF spike | Opus | pdf.js 4.10.38 on DB II Lecture 3: drawn-diagram labels 88/88, pasted-picture diagrams 0/89 (raster images, not outlines), plain text 27/27; 1,688 KB raw / 491 KB gz; render 1.1–1.3 s/page at 4× (first 2.3 s), WebP encode 1–3.6 s; no network after load. Verdict NO-GO by the agreed bar (50% < 80%, size slightly over); report `docs/spikes/PDF_SPIKE.md` | 6 | WAITING for the user: go or no-go. No-go → uninstall `pdfjs-dist` in the step-2 commit, drop step 10, take up Q13 (OCR) | see git log |
 
 ## Context
 Phase 8.6 is done and pushed (983dc30). Phase 6 makes the two diagram note types studyable. Today, import already parses `@diagram` and `@occlusion` and stores images, but every diagram/occlusion kind falls back to cloze/MC/flip (`engine/exercise-spec.ts:54-93`). Occlusion notes are imported with `boxes: []`, so they have no cards. There is no editor, no figure rendering, and the chatbot prompt never mentions diagrams. The goal is the BUILD_PLAN §10 done-when: "Import an OSI stack, a flow diagram and an occlusion image; study each." The user's scope changes the original §7: text-first diagram editing, manual boxes first, OCR optional and last, and a PDF spike first.
@@ -205,7 +206,8 @@ Tests: unit for pure helpers + `layout.spec.ts` + `visual.spec.ts`.
   - Go offline after first use and open an editor.
 
 ## Step 1 status
-- 2026-11-20: `tests/fixtures/spike/` git-ignored (5399712). BLOCKED: waiting for the user to place `slides.pdf` (Database II Lecture 3, Indexing and Hashing) there. Early signal from the text the user attached in chat: the figures on pages 10, 12, 15, 21 and 30 (dense/sparse/secondary index tables, B-tree node layouts) contribute no text, so they are probably pictures; the B+/B-tree insertion steps (pages 22–28, 33–38) do carry their numbers as text, with two-digit keys split per digit on page 27. To confirm in the spike.
+- 2026-11-20: `tests/fixtures/spike/` git-ignored (5399712). DONE (PDF placed by the user; was: waiting for `slides.pdf` (Database II Lecture 3, Indexing and Hashing) there. Early signal from the text the user attached in chat: the figures on pages 10, 12, 15, 21 and 30 (dense/sparse/secondary index tables, B-tree node layouts) contribute no text, so they are probably pictures; the B+/B-tree insertion steps (pages 22–28, 33–38) do carry their numbers as text, with two-digit keys split per digit on page 27. Confirmed by the spike.)
+- Spike: `scripts/spike/pdf-spike.ts` (text), `scripts/spike/pdf-render.ts` (throttled render); ground truth in the git-ignored `tests/fixtures/spike/truth.ts`; `pdfjs-dist` 4.10.38 is a devDependency until the go/no-go. Step 5 note: the WebP encode of a 2000 px canvas takes 1–3.6 s at 4× throttle, so encode off the main thread or show progress.
 
 ## Not yet in the docs (decided while building)
 - (none yet)
