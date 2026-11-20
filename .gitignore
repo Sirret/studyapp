@@ -12,3 +12,6 @@ playwright-report/
 Thumbs.db
 *.log
 .claude/settings.local.json
+
+# Phase 6 spike: lecturer slides, never commit or push
+tests/fixtures/spike/
