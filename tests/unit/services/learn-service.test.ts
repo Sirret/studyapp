@@ -110,6 +110,22 @@ describe('LearnService', () => {
 		expect(reviews.every((e) => e.mode === 'acquisition' && !e.credited)).toBe(true);
 	});
 
+	it("a section counts as read once its questions are answered, in the topic's outline", async () => {
+		const { env, learn, sec } = await setup();
+		const before = (await learn.topics(env.courseId)).find((t) => t.id === sec.id);
+		expect(before?.read).toBe(0);
+		expect(before?.outline.map((s) => s.read)).toStrictEqual([false, false]);
+		const screens = (await learn.flow(env.courseId, sec.id))?.screens ?? [];
+		const index = indexOf(screens, (s) => s.step === 'questions');
+		const view = await learn.startStep(env.courseId, sec.id, index);
+		if (!view) throw new Error('fixture');
+		await finish(env, view);
+		const after = (await learn.topics(env.courseId)).find((t) => t.id === sec.id);
+		expect(after?.read).toBe(1);
+		expect(after?.outline.map((s) => s.read)).toStrictEqual([true, false]);
+		expect(after?.outline.every((s) => s.title !== null)).toBe(true);
+	});
+
 	it('meet the terms runs one matching check', async () => {
 		const { env, learn, sec } = await setup();
 		const screens = (await learn.flow(env.courseId, sec.id))?.screens ?? [];

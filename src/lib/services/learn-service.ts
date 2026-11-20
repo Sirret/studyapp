@@ -48,19 +48,32 @@ interface TopicLoad {
 export class LearnService {
 	constructor(private readonly deps: LearnServiceDeps) {}
 
-	/** The in-scope topics, in course order, with their section and card counts. */
+	/** The in-scope topics, in course order, with their sections, card counts and what is read. */
 	async topics(courseId: CourseId): Promise<LearnTopicView[]> {
 		const data = await this.load(courseId);
-		const sections = learnSections(data.topics, data.chunks);
+		const sections = learnSections(data.topics, data.chunks).filter((s) => !s.added);
 		const cards = this.liveCards(data);
+		const read = readSections(cards, data.events);
+		const chunks = new Map(data.chunks.map((chunk) => [chunk.id, chunk]));
 		return [...data.topics]
 			.sort((a, b) => a.order - b.order)
-			.map((topic) => ({
-				id: topic.id,
-				name: topic.name,
-				sections: sections.filter((s) => s.topicId === topic.id && !s.added).length,
-				cards: cards.filter((card) => card.topicId === topic.id).length
-			}));
+			.map((topic) => {
+				const outline = sections
+					.filter((s) => s.topicId === topic.id)
+					.map((s) => ({
+						id: s.chunkId,
+						title: chunks.get(s.chunkId)?.title ?? null,
+						read: read.has(s.chunkId)
+					}));
+				return {
+					id: topic.id,
+					name: topic.name,
+					sections: outline.length,
+					cards: cards.filter((card) => card.topicId === topic.id).length,
+					read: outline.filter((s) => s.read).length,
+					outline
+				};
+			});
 	}
 
 	/** A topic's flow as screens; null when the topic is not in the course or not in scope. */

@@ -5,17 +5,19 @@
 	import { STREAK_FOR_FLURRY } from '#lib/config/defaults.ts';
 	import type { SessionId } from '#lib/db/schemas/common.ts';
 	import Exercise from '#lib/exercises/Exercise.svelte';
+	import { checkMeta, hintLabel } from '#lib/exercises/exercise-ui.ts';
 	import { logger } from '#lib/services/app.ts';
 	import { prefs } from '#lib/services/preferences.svelte.ts';
 	import type {
 		ExerciseResponse,
+		MicroHint,
 		StudyAnswer,
 		StudyView,
 		SessionPhase
 	} from '#lib/services/study-types.ts';
 	import EmptyState from '#lib/ui/components/EmptyState.svelte';
 	import ExerciseCard from '#lib/ui/components/ExerciseCard.svelte';
-	import FeedbackPanel from '#lib/ui/components/FeedbackPanel.svelte';
+	import HintLink from '#lib/ui/components/HintLink.svelte';
 	import PhaseInterstitial from '#lib/ui/components/PhaseInterstitial.svelte';
 	import RoundSummary from '#lib/ui/components/RoundSummary.svelte';
 	import SessionSummary from '#lib/ui/components/SessionSummary.svelte';
@@ -29,6 +31,7 @@
 	import SnowFlurry from '#lib/ui/delight/SnowFlurry.svelte';
 	import Screen from '#lib/ui/layout/Screen.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import AnswerFeedback from './AnswerFeedback.svelte';
 	import SessionTop from './SessionTop.svelte';
 	import type { PageProps } from './$types';
 
@@ -54,6 +57,7 @@
 	let failed = $state(false);
 	let answer = $state<StudyAnswer | null>(null);
 	let response: ExerciseResponse | null = $state(null);
+	let hint: MicroHint | null = $state(null);
 	let busy = $state(false);
 	let accepted: string | null = $state(null);
 	let interstitial: SessionPhase | null = $state(null);
@@ -94,6 +98,7 @@
 		view = next;
 		answer = null;
 		response = null;
+		hint = null;
 		accepted = null;
 		presented += 1;
 		if (__DEV_ROUTES__) {
@@ -136,6 +141,11 @@
 		}
 	}
 
+	/** The micro hint for the exercise on screen; the answer is then logged `hinted`. */
+	function askHint(): void {
+		if (service && view && !answer) hint = service.hint(view.sessionId);
+	}
+
 	async function iWasRight(): Promise<void> {
 		// The typed exercise just answered: `response` still holds what was typed.
 		if (!service || !view || !answer || response?.shape !== 'type') return;
@@ -151,7 +161,8 @@
 
 	/**
 	 * Inside a Learn unit there is no ceremony (SESSION_NOTES B): a round that ends carries straight
-	 * on, and the end of the step goes straight back to the unit.
+	 * on, and the end of the step goes straight back to the unit. A Learn topic step (`unit=learn`)
+	 * also goes straight back, but its count rounds still pause (Q16).
 	 */
 	let leaving = false;
 	$effect(() => {
@@ -162,7 +173,7 @@
 			if (current.ended && !leaving) {
 				leaving = true;
 				void leave();
-			} else if (current.round && !current.ended) {
+			} else if (current.round && !current.ended && !data.roundPause) {
 				void act(() =>
 					(service as Service).continueRound(current.sessionId, { afterBreak: false })
 				);
@@ -182,7 +193,15 @@
 </script>
 
 {#snippet checkBar()}
-	<Button full size="session" disabled={!response} loading={busy} onclick={submit} data-check>
+	<Button
+		full
+		size="session"
+		disabled={!response}
+		loading={busy}
+		meta={checkMeta(response)}
+		onclick={submit}
+		data-check
+	>
 		{shown?.exercise.shape === 'selfRate' || shown?.exercise.shape === 'study' ? 'Done' : 'Check'}
 	</Button>
 {/snippet}
@@ -208,7 +227,7 @@
 		{#snippet top()}
 			{#if view && !view.ended}<SessionTop {view} {yuki} {companion} />{/if}
 		{/snippet}
-		{#if data.inUnit && (view.ended || view.round)}
+		{#if data.inUnit && (view.ended || (view.round && !data.roundPause))}
 			<EmptyState message="Back to the part…" companion={false}>
 				{#snippet action()}<PawLoader />{/snippet}
 			</EmptyState>
@@ -252,30 +271,26 @@
 						<Exercise
 							spec={shown.exercise}
 							verdict={answer?.verdict ?? null}
+							{hint}
 							bind:response
 							onsubmit={submit}
 						/>
+						{@const hintText = hintLabel(shown.exercise.shape)}
+						{#if hintText && !answer}
+							<HintLink label={hintText} {hint} onrequest={askHint} />
+						{/if}
 						<SnowBurst key={burst} />
 						<SnowFlurry key={flurry} />
 					{/snippet}
 					{#snippet feedback()}
 						{#if answer}
-							<FeedbackPanel
-								correct={answer.verdict.correct}
-								reveal={answer.verdict.reveal}
-								contrast={answer.verdict.contrast}
-								typo={answer.verdict.typo}
-								note={accepted ?? undefined}
-							>
-								{#snippet actions()}
-									<Button full size="session" onclick={() => answer && show(answer.view)} data-next>
-										{answer?.verdict.correct ? 'Continue' : 'Try again'}
-									</Button>
-									{#if !answer?.verdict.correct && shown.exercise.shape === 'type' && !accepted}
-										<Button full variant="ghost" onclick={iWasRight}>I was right</Button>
-									{/if}
-								{/snippet}
-							</FeedbackPanel>
+							<AnswerFeedback
+								verdict={answer.verdict}
+								{accepted}
+								canClaim={shown.exercise.shape === 'type'}
+								oncontinue={() => answer && show(answer.view)}
+								onclaim={iWasRight}
+							/>
 						{/if}
 					{/snippet}
 				</ExerciseCard>

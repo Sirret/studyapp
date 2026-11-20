@@ -1,69 +1,68 @@
 import type { CourseToday } from '#lib/services/course-types.ts';
+import type { LearnTopicView } from '#lib/services/learn-types.ts';
 import { countOf } from '#lib/util/plural.ts';
 
-/** Where a course-page door goes: a unit to learn, today's review, or a section of the page. */
+/**
+ * Where a course-page door goes: the Learn screen, today's review, the Exam prep screen, or
+ * nowhere yet (Play, until Phase 11).
+ */
 export type DoorAction =
-	| { kind: 'unit'; unitKey: string }
-	| { kind: 'review' }
-	| { kind: 'scroll'; target: 'plan' | 'exam' };
+	{ kind: 'learn' } | { kind: 'review' } | { kind: 'exam' } | { kind: 'none' };
 
 export interface DoorView {
-	mode: 'learn' | 'practice' | 'exam';
+	mode: 'learn' | 'practice' | 'exam' | 'play';
 	hint: string;
 	hasWork: boolean;
+	/** Not open yet (Play): drawn faded with a "Coming soon" stamp. */
+	disabled: boolean;
 	action: DoorAction;
 }
 
 /**
- * The course page's three ModeDoors as shortcuts to what the page already offers (WIP decision,
- * 2026-11-15): Learn opens the first unit to learn, Practice starts today's review, Exam prep
- * scrolls to the exam section. A door with nothing to do scrolls to today's plan.
- * @see DESIGN §7 ModeDoor, §12 Course
+ * The course page's four ModeDoors, after the scope is picked (SESSION_NOTES J "pick, then
+ * mode"): Learn opens `/course/[id]/learn`, Practice starts today's review (its own screen comes
+ * in step 9 of Phase 8.6) or, with nothing due, opens Exam prep, Exam prep opens
+ * `/course/[id]/exam`, and Play is disabled until Phase 11. `topics` are the in-scope topics.
+ * @see DESIGN §7 ModeDoor, §12 Course; SESSION_NOTES C, J
  */
-export function courseDoors(today: CourseToday): DoorView[] {
-	return [learnDoor(today), practiceDoor(today), examDoor(today)];
+export function courseDoors(today: CourseToday, topics: readonly LearnTopicView[]): DoorView[] {
+	return [
+		learnDoor(topics),
+		practiceDoor(today),
+		examDoor(today),
+		{ mode: 'play', hint: 'Study games', hasWork: false, disabled: true, action: { kind: 'none' } }
+	];
 }
 
-function learnDoor(today: CourseToday): DoorView {
-	const units =
-		today.learn === null
-			? []
-			: today.learn.mode === 'acquisition'
-				? today.learn.units
-				: today.learn.plan.chosen;
-	const first = units[0];
-	if (first === undefined) {
-		return {
-			mode: 'learn',
-			hint: 'Nothing new',
-			hasWork: false,
-			action: { kind: 'scroll', target: 'plan' }
-		};
-	}
-	return {
-		mode: 'learn',
-		hint: `${countOf(units.length, 'part')} to learn`,
-		hasWork: true,
-		action: { kind: 'unit', unitKey: first.key }
-	};
+function learnDoor(topics: readonly LearnTopicView[]): DoorView {
+	const sections = topics.reduce((sum, topic) => sum + topic.sections, 0);
+	const unread = topics.reduce((sum, topic) => sum + topic.sections - topic.read, 0);
+	const hint =
+		sections === 0
+			? 'Nothing to read'
+			: unread === 0
+				? 'All read · read again'
+				: `${countOf(unread, 'section')} to read`;
+	return { mode: 'learn', hint, hasWork: unread > 0, disabled: false, action: { kind: 'learn' } };
 }
 
 function practiceDoor(today: CourseToday): DoorView {
 	const cards = today.review.cards;
-	if (cards === 0) {
-		return {
-			mode: 'practice',
-			hint: 'Nothing due',
-			hasWork: false,
-			action: { kind: 'scroll', target: 'plan' }
-		};
-	}
-	return {
-		mode: 'practice',
-		hint: `${countOf(cards, 'card')} due`,
-		hasWork: true,
-		action: { kind: 'review' }
-	};
+	return cards === 0
+		? {
+				mode: 'practice',
+				hint: 'Nothing due',
+				hasWork: false,
+				disabled: false,
+				action: { kind: 'exam' }
+			}
+		: {
+				mode: 'practice',
+				hint: `${countOf(cards, 'card')} due`,
+				hasWork: true,
+				disabled: false,
+				action: { kind: 'review' }
+			};
 }
 
 function examDoor(today: CourseToday): DoorView {
@@ -80,6 +79,7 @@ function examDoor(today: CourseToday): DoorView {
 		mode: 'exam',
 		hint,
 		hasWork: today.review.kind !== 'longterm',
-		action: { kind: 'scroll', target: 'exam' }
+		disabled: false,
+		action: { kind: 'exam' }
 	};
 }

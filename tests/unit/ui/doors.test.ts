@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import type { CourseToday, UnitView } from '#lib/services/course-types.ts';
+import type { TopicId } from '#lib/db/schemas/common.ts';
+import type { CourseToday } from '#lib/services/course-types.ts';
+import type { LearnTopicView } from '#lib/services/learn-types.ts';
 import { courseDoors } from '#lib/ui/course-map/doors.ts';
 
-/** DESIGN §7 ModeDoor, §12 Course: the doors are shortcuts to what the course page already offers. */
-function unit(key: string): UnitView {
-	return { key, title: key, minutes: 10, steps: 4 } as UnitView;
+/** DESIGN §7 ModeDoor, §12 Course; SESSION_NOTES J: pick the scope, then a mode door. */
+function topic(sections: number, read: number): LearnTopicView {
+	return { id: 't' as TopicId, name: 'T', sections, cards: sections * 2, read, outline: [] };
 }
 
 function today(overrides: Partial<CourseToday> = {}): CourseToday {
@@ -28,61 +30,58 @@ function today(overrides: Partial<CourseToday> = {}): CourseToday {
 }
 
 describe('courseDoors', () => {
-	it('gives Learn, Practice and Exam prep in that order', () => {
-		expect(courseDoors(today()).map((door) => door.mode)).toEqual(['learn', 'practice', 'exam']);
+	it('gives Learn, Practice, Exam prep and a disabled Play, in that order', () => {
+		const doors = courseDoors(today(), []);
+		expect(doors.map((door) => door.mode)).toEqual(['learn', 'practice', 'exam', 'play']);
+		expect(doors.map((door) => door.disabled)).toEqual([false, false, false, true]);
+		expect(doors[3]).toMatchObject({ hasWork: false, action: { kind: 'none' } });
 	});
 
-	it('with nothing to do, Learn and Practice scroll to the plan without the has-work dot', () => {
-		const [learn, practice] = courseDoors(today());
-		expect(learn).toMatchObject({ hasWork: false, action: { kind: 'scroll', target: 'plan' } });
-		expect(practice).toMatchObject({ hasWork: false, action: { kind: 'scroll', target: 'plan' } });
-	});
-
-	it('Learn opens the first unit to learn and counts the parts', () => {
-		const [learn] = courseDoors(
-			today({ learn: { mode: 'acquisition', path: 'full', units: [unit('u1'), unit('u2')] } })
-		);
+	it('Learn opens the Learn screen and counts the unread sections in scope', () => {
+		const [learn] = courseDoors(today(), [topic(3, 1), topic(2, 0)]);
 		expect(learn).toMatchObject({
-			hint: '2 parts to learn',
+			hint: '4 sections to read',
 			hasWork: true,
-			action: { kind: 'unit', unitKey: 'u1' }
+			action: { kind: 'learn' }
 		});
 	});
 
-	it("Learn opens tonight's first chosen part in one-night mode", () => {
-		const plan = { chosen: [unit('n1')], skipped: [] } as unknown as Extract<
-			CourseToday['learn'],
-			{ mode: 'onenight' }
-		>['plan'];
-		const [learn] = courseDoors(today({ learn: { mode: 'onenight', plan } }));
-		expect(learn).toMatchObject({
-			hint: '1 part to learn',
-			action: { kind: 'unit', unitKey: 'n1' }
-		});
+	it('Learn with everything read invites a reread, without the has-work dot', () => {
+		const [learn] = courseDoors(today(), [topic(2, 2)]);
+		expect(learn).toMatchObject({ hint: 'All read · read again', hasWork: false });
+		expect(courseDoors(today(), [])[0]).toMatchObject({ hint: 'Nothing to read', hasWork: false });
 	});
 
-	it("Practice starts today's review when cards are due", () => {
+	it("Practice starts today's review when cards are due, else opens Exam prep", () => {
 		const [, practice] = courseDoors(
-			today({ review: { kind: 'longterm', cards: 12, minutes: 9, cram: null } })
+			today({ review: { kind: 'longterm', cards: 12, minutes: 9, cram: null } }),
+			[]
 		);
 		expect(practice).toMatchObject({
 			hint: '12 cards due',
 			hasWork: true,
 			action: { kind: 'review' }
 		});
+		expect(courseDoors(today(), [])[1]).toMatchObject({
+			hint: 'Nothing due',
+			hasWork: false,
+			action: { kind: 'exam' }
+		});
 	});
 
-	it('Exam prep scrolls to the exam section and names the days left', () => {
-		const hints = [null, 0, 1, 4].map((daysToExam) => courseDoors(today({ daysToExam }))[2]?.hint);
+	it('Exam prep opens the Exam prep screen and names the days left', () => {
+		const hints = [null, 0, 1, 4].map(
+			(daysToExam) => courseDoors(today({ daysToExam }), [])[2]?.hint
+		);
 		expect(hints).toEqual(['Set a date', 'Exam today', 'Tomorrow', 'In 4 days']);
-		expect(courseDoors(today())[2]?.action).toEqual({ kind: 'scroll', target: 'exam' });
+		expect(courseDoors(today(), [])[2]?.action).toEqual({ kind: 'exam' });
 	});
 
 	it('Exam prep shows the has-work dot only while cramming or on the exam morning', () => {
 		const kinds = ['longterm', 'cram', 'morningCheck'] as const;
 		const dots = kinds.map(
 			(kind) =>
-				courseDoors(today({ review: { kind, cards: 0, minutes: 0, cram: null } }))[2]?.hasWork
+				courseDoors(today({ review: { kind, cards: 0, minutes: 0, cram: null } }), [])[2]?.hasWork
 		);
 		expect(dots).toEqual([false, true, true]);
 	});

@@ -51,15 +51,15 @@
 		}
 	}
 
-	/** First run: the sample course is added in the background, and the plan reloads when it lands. */
-	async function addSampleCourse(): Promise<void> {
-		const added = await (await import('#lib/services/import-wiring.ts')).ensureSampleCourse();
-		if (added) await refresh();
-	}
-
+	/**
+	 * First run: the sample course is added before the plan loads, so the plan never lists it half
+	 * written (a reload then would leave it empty for good). Later starts only read the kv flag.
+	 */
 	$effect(() => {
-		void refresh();
-		void addSampleCourse();
+		void (async () => {
+			await (await import('#lib/services/import-wiring.ts')).ensureSampleCourse();
+			await refresh();
+		})();
 	});
 
 	let trashTarget = $state<TodayCourseView | null>(null);

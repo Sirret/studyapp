@@ -25,7 +25,7 @@ function localDate(daysAhead: number): string {
 	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
-/** Imports a course and sets its exam `days` ahead from its course page. */
+/** Imports a course and sets its exam `days` ahead from its Exam prep screen. */
 async function courseWithExam(page: Page, name: string, days: number): Promise<void> {
 	await page.goto('/import');
 	await page.getByLabel('New course').fill(name);
@@ -38,6 +38,8 @@ async function courseWithExam(page: Page, name: string, days: number): Promise<v
 	await page.goto('/');
 	await page.getByRole('article', { name }).getByRole('link', { name: 'Plan and learn' }).click();
 	await page.waitForURL(/\/course\//);
+	await page.getByRole('link', { name: /Exam prep/ }).click();
+	await page.waitForURL(/\/exam$/);
 	await page.locator('[data-exam-date]').fill(localDate(days));
 	await page.locator('[data-save-exam]').click();
 	await expect(page.getByText(`${days} days to go`)).toBeVisible();

@@ -15,6 +15,18 @@ export interface LearnTopicView {
 	sections: number;
 	/** In-scope studyable cards. */
 	cards: number;
+	/** Normal sections already read in Learn (any card answered in an acquisition review). */
+	read: number;
+	/** The normal sections in order, each with its read flag (the course page's topic list). */
+	outline: LearnSectionView[];
+}
+
+/** A section in a topic's outline. */
+export interface LearnSectionView {
+	id: ChunkId;
+	/** The `@section` title; null for an untitled section, which the UI names by position. */
+	title: string | null;
+	read: boolean;
 }
 
 /** One term of Meet the terms, with its tiny example when a same-section scenario names it. */
@@ -31,6 +43,8 @@ export interface AddedSectionView {
 	title: string | null;
 	text: string;
 	cardIds: CardId[];
+	/** The section's notes, for keep/delete per card (deleting goes through CardListService). */
+	notes: { noteId: NoteId; title: string }[];
 }
 
 /** One screen of a topic's flow. Steps with `session: true` start a session through `startStep`. */

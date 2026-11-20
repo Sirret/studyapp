@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { openLearnCourse } from './learn-course.ts';
 
 /**
  * Layout on both viewports (Decisions log: e2e viewport split). Functional tests run on mobile
@@ -98,6 +99,28 @@ test.describe('layout', { tag: '@both' }, () => {
 		await expectWithinWidth(page, row.getByRole('button', { name: 'Delete' }));
 		await row.getByRole('button', { name: 'Edit' }).click();
 		await expectWithinWidth(page, page.getByRole('button', { name: 'Save' }));
+		await expectNoSidewaysScroll(page);
+	});
+
+	test('the course doors, the scope sheet and the Learn reader fit', async ({ page }) => {
+		// An import and four screens: longer than the 30 s default on the slow laptop.
+		test.setTimeout(90_000);
+		await openLearnCourse(page);
+		await expectWithinWidth(page, page.getByRole('button', { name: /Play/ }));
+		await expectNoSidewaysScroll(page);
+		await page.locator('[data-scope-change]').click();
+		await expectWithinWidth(page, page.locator('[data-scope-save]'));
+		await expectNoSidewaysScroll(page);
+		await page.keyboard.press('Escape');
+		await page.getByRole('link', { name: /Learn/ }).click();
+		await page.getByRole('button', { name: /Security/ }).click();
+		await page.locator('[data-learn-next]').click();
+		await expect(page.locator('[data-learn-screen="meetTerms"]')).toBeVisible();
+		await expectWithinWidth(page, page.locator('[data-meet-start]'));
+		await expectNoSidewaysScroll(page);
+		await page.goto(page.url().replace(/step=\d+/, 'step=2'));
+		await expect(page.locator('[data-learn-screen="read"]')).toBeVisible();
+		await expectWithinWidth(page, page.locator('[data-learn-next]'));
 		await expectNoSidewaysScroll(page);
 	});
 

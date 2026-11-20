@@ -4,6 +4,7 @@ import type { Chunk, Topic } from '#lib/db/schemas/course.ts';
 import type { StudyEvent } from '#lib/db/schemas/event.ts';
 import type { Note } from '#lib/db/schemas/note.ts';
 import { currentKind } from '#lib/engine/exercise-kinds.ts';
+import { titleOf } from '#lib/engine/exercise-prompts.ts';
 import type { LearnCard, LearnSection, LearnStep, MeetNote } from '#lib/engine/learn-flow.ts';
 import { isReview } from './study-answer.ts';
 import type { AddedSectionView, LearnScreen, MeetTermView } from './learn-types.ts';
@@ -142,8 +143,19 @@ function readScreen(source: ScreenSource, chunkId: ChunkId): LearnScreen {
 
 function addedSection(source: ScreenSource, chunkId: ChunkId): AddedSectionView {
 	const chunk = source.chunks.get(chunkId);
-	const cardIds = source.cards.filter((c) => c.chunkId === chunkId).map((c) => c.id);
-	return { chunkId, title: chunk?.title ?? null, text: chunk?.text ?? '', cardIds };
+	const cards = source.cards.filter((c) => c.chunkId === chunkId);
+	const noteIds = new Set(cards.map((c) => c.noteId));
+	const notes = [...noteIds].flatMap((noteId) => {
+		const note = source.notes.get(noteId);
+		return note ? [{ noteId, title: titleOf(note) }] : [];
+	});
+	return {
+		chunkId,
+		title: chunk?.title ?? null,
+		text: chunk?.text ?? '',
+		cardIds: cards.map((c) => c.id),
+		notes
+	};
 }
 
 /** The screen for one engine step. */

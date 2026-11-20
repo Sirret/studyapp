@@ -16,6 +16,10 @@ type Spec = {
 	pairs?: number[];
 	bucketOf?: number[];
 	checklist?: unknown[];
+	keyWords?: string[];
+	entry?: 'type' | 'pick';
+	items?: string[];
+	required?: number;
 };
 
 const MAX_STEPS = 200;
@@ -56,6 +60,24 @@ async function answer(page: Page, spec: Spec): Promise<void> {
 				await tap(`[data-slot-index="${bucket}"]`);
 			}
 			break;
+		case 'ideaUnit':
+			await page.locator('[data-idea-typed]').fill(spec.answer ?? '');
+			await page.locator('button[data-idea-next]').click();
+			for (const [i] of (spec.keyWords ?? []).entries()) {
+				const chip = page.locator(`[data-key-word="${i}"]`);
+				if ((await chip.getAttribute('data-pre-ticked')) !== 'true')
+					await tap(`[data-key-word="${i}"]`);
+			}
+			break;
+		case 'list':
+			if (spec.entry === 'pick') {
+				for (const i of spec.correct ?? []) await tap(`[data-option-index="${i}"]`);
+			} else {
+				for (const [i, item] of (spec.items ?? []).slice(0, spec.required).entries()) {
+					await page.locator(`[data-list-row="${i}"]`).fill(item);
+				}
+			}
+			break;
 		case 'selfRate':
 			await page.locator('button[data-reveal]').click();
 			for (const [i] of (spec.checklist ?? []).entries()) {
@@ -75,10 +97,10 @@ export async function playOpenSession(page: Page): Promise<Set<string>> {
 	const summary = page.locator('[data-session-summary]');
 	const round = page.locator('[data-round-summary]');
 	const interstitial = page.locator('[data-interstitial]');
-	// A step inside a Learn unit has no summary: the session goes straight back to the unit.
+	// A step inside a Learn unit or a Learn topic has no summary: the session goes straight back.
 	const backInUnit = page
-		.locator('[data-step-heading]')
-		.or(page.getByRole('link', { name: 'Back to the course' }));
+		.locator('[data-step-heading], [data-learn-screen]')
+		.or(page.getByRole('link', { name: 'Back to Exam prep' }));
 	for (let step = 0; step < MAX_STEPS; step += 1) {
 		await expect(check.or(summary).or(round).or(interstitial).or(backInUnit).first()).toBeVisible();
 		if (await summary.isVisible()) return seen;

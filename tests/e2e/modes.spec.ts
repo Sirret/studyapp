@@ -3,7 +3,8 @@ import { playOpenSession } from './play-session.ts';
 
 /**
  * Phase 7 (BUILD_PLAN §6.6–§6.8): a course imported as "haven't read" is learnt part by part on
- * the learn screen, and an exam date switches the course page to cram or one-night.
+ * the learn screen, and an exam date switches Exam prep to cram or one-night. Since Phase 8.6 the
+ * plan lives behind the course page's Exam prep door (`/course/[id]/exam`).
  */
 
 const TEXT = `@deck Transport
@@ -33,6 +34,8 @@ async function importCourse(page: Page): Promise<void> {
 		.getByRole('link', { name: 'Plan and learn' })
 		.click();
 	await page.waitForURL(/\/course\//);
+	await page.getByRole('link', { name: /Exam prep/ }).click();
+	await page.waitForURL(/\/exam$/);
 }
 
 function localDate(daysAhead: number): string {
@@ -55,7 +58,7 @@ test.describe('modes', () => {
 		await learn.getByRole('link', { name: 'Start' }).first().click();
 		await page.waitForURL(/\/learn\//);
 		for (let guard = 0; guard < 8; guard += 1) {
-			const done = page.getByRole('link', { name: 'Back to the course' });
+			const done = page.getByRole('link', { name: 'Back to Exam prep' });
 			const read = page.locator('[data-read-done]');
 			const startStep = page.locator('[data-start-step]');
 			await expect(done.or(read).or(startStep).first()).toBeVisible();
@@ -74,8 +77,8 @@ test.describe('modes', () => {
 		}
 		// One summary, at the end of the unit.
 		await expect(page.locator('[data-unit-summary]')).toContainText("You've met");
-		await page.getByRole('link', { name: 'Back to the course' }).click();
-		await page.waitForURL(/\/course\//);
+		await page.getByRole('link', { name: 'Back to Exam prep' }).click();
+		await page.waitForURL(/\/exam$/);
 		await expect(page.getByRole('heading', { name: 'Learn new material' })).toHaveCount(0);
 	});
 

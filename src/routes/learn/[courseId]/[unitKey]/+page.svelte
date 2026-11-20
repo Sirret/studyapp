@@ -119,8 +119,8 @@
 				<Button
 					variant="ghost"
 					size="icon"
-					href={resolve('/course/[courseId]', { courseId: data.courseId })}
-					aria-label="Course page"
+					href={resolve('/course/[courseId]/exam', { courseId: data.courseId })}
+					aria-label="Exam prep"
 				>
 					<Icon icon={ArrowLeft} size="nav" />
 				</Button>
@@ -130,15 +130,17 @@
 	{#if missing && data.step > 0}
 		<StickyNote title="Part done">
 			Re-quiz everything from tonight once every part is done, then sleep.
-			{#snippet actions()}<Button href={resolve('/course/[courseId]', { courseId: data.courseId })}
-					>Back to the course</Button
+			{#snippet actions()}<Button
+					href={resolve('/course/[courseId]/exam', { courseId: data.courseId })}
+					>Back to Exam prep</Button
 				>{/snippet}
 		</StickyNote>
 	{:else if missing}
 		<StickyNote title="This part is already learnt">
 			Its retest comes tomorrow. Pick another part from the course page.
-			{#snippet actions()}<Button href={resolve('/course/[courseId]', { courseId: data.courseId })}
-					>Back to the course</Button
+			{#snippet actions()}<Button
+					href={resolve('/course/[courseId]/exam', { courseId: data.courseId })}
+					>Back to Exam prep</Button
 				>{/snippet}
 		</StickyNote>
 	{:else if !unit}
@@ -153,8 +155,9 @@
 			{unit.mode === 'onenight'
 				? 'When every part is done, take the break, then re-quiz everything from tonight.'
 				: "Tomorrow's retest is where it counts. It'll be the first thing in your review."}
-			{#snippet actions()}<Button href={resolve('/course/[courseId]', { courseId: data.courseId })}
-					>Back to the course</Button
+			{#snippet actions()}<Button
+					href={resolve('/course/[courseId]/exam', { courseId: data.courseId })}
+					>Back to Exam prep</Button
 				>{/snippet}
 		</StickyNote>
 	{:else}

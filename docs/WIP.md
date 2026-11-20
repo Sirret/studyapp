@@ -124,6 +124,22 @@ Tests: unit + `layout.spec.ts` + snapshots.
 - New route `/course/[id]/learn` (Q2).
 - `/course/[id]/exam` collects the existing exam/plan cards and respects the scope (no logic change).
 - e2e: `learn.spec.ts`, `scope.spec.ts`, `@both` layout rows.
+- Step-8 plan (2026-11-20), each ticked when done:
+  - [x] 8a services: `LearnTopicView` gains `read` + `outline` (sections with `read`), `AddedSectionView` gains `notes` (`titleOf`); test in `learn-service.test.ts`.
+  - [x] 8b doors (`ui/course-map/doors.ts`): `courseDoors(today, topics)` → Learn (`/course/[id]/learn`, "N sections to read"), Practice (today's review if due, else Exam prep; its own screen in step 9), Exam prep (`/course/[id]/exam`), Play disabled. `doors.test.ts` rewritten.
+  - [x] 8c course page: hero "Course · N topics · N sections", `ScopeSheet.svelte` ("Studying N of M topics · change" + Sheet + ScopePicker + Save), 4 doors, `TopicList.svelte` (ChecklistRow + PawRings, "N of M read", first unread = current; tap → Learn topic), cards, undo import, course map.
+  - [x] 8d `/course/[id]/exam`: plan cards, status counts, split prompts, Yuki line, sleep reminder (`?done=`), exam form, "Planning N of M topics" when scoped. `ExamForm`/`PlanCards` moved there. `/learn/[courseId]/[unitKey]` links go back to Exam prep ("Back to Exam prep").
+  - [x] 8e `/course/[id]/learn` (`?topic=&step=`): topic picker (TopicList), `LearnStep.svelte` per screen, `AddedReview.svelte` (keep/delete per note via `cardListService.deleteNote`), "Topic done" with next topic; pure `ui/learn/learn-nav.ts` + `tests/unit/ui/learn-nav.test.ts`.
+  - [x] 8f study page: HintLink (label from `hintLabel`, `studyService.hint`, `hint` passed to Exercise), Check meta `checkMeta`, `unit=learn` (no session summary, count rounds still pause); feedback moved to `AnswerFeedback.svelte` (300-line limit).
+  - [x] 8g e2e: `learn.spec.ts`, `scope.spec.ts`, shared `learn-course.ts`; `play-session.ts` answers `ideaUnit`/`list`; modes/planner helpers go through the Exam prep door; layout `@both` row "course doors, scope sheet and the Learn reader fit".
+  - [x] 8h e2e: learn 2/2, scope 2/2, modes/planner/cards/session green, course-map fixed (see note), layout 16/16 on both; commit; checkpoint.
+- Step-8 notes (Decisions log rows at handoff):
+  - The course page no longer shows today's plan or the exam form; they moved to `/course/[id]/exam` (Exam prep door). Home's "Plan and learn" still opens the course page.
+  - Learn session steps start straight from the previous screen's button (e.g. "Done reading" → questions); landing on a session screen by URL shows a short intro with Start. Meet the terms always shows its terms first. A step with nothing to ask (no look-back candidate yet) is skipped.
+  - `/study?unit=learn`: like `unit=1` (straight back, no session summary) but the count round's summary still shows (Q16 "keep going / break").
+  - Bug found by `course-map.spec` (from step 4): Home's refresh, slowed by `ensureCardPaths()`, listed the sample course after `createCourse` but before its commit; a reload then cut the seed off and the next start saw "has courses", leaving the sample empty. Fix: Home awaits `ensureSampleCourse()` before planning (first run shows the loader a few seconds longer). Step 10 (Q17: sample only on tap) replaces this flow.
+  - Layout row for Learn has `test.setTimeout(90_000)` (import + four screens). `learn`/`scope` import-page timeouts under 2 workers logged in UNVERIFIED_TESTS.md.
+  - The look-back stamp from the mockup (04-question-lookback) is not on the study screen yet (the study page doesn't know the step); possible later polish.
 
 **9. Screen: Practice (screen checkpoint).** `/course/[id]/practice`: flashcards + quick quiz, no timer, round pause at about 20. e2e `practice.spec.ts`, which also checks that FSRS fields are unchanged.
 

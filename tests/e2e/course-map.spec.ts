@@ -14,7 +14,7 @@ test.describe('sample course and course map', () => {
 		page
 	}) => {
 		await page.goto('/');
-		// The sample is added in the background after the plan shows. Under two parallel workers on
+		// The sample is added before the plan loads (first run only). Under two parallel workers on
 		// the laptop it can take several seconds, so this waits longer than the default 5 s.
 		await expect(page.getByText(SAMPLE_NAME)).toBeVisible({ timeout: 30000 });
 		await page.reload();
