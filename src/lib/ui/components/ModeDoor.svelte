@@ -4,11 +4,13 @@
 	hint. A small brass dot marks "has work"; the words "has work" are read out with it (§11). The
 	label colour follows the fill through `--door-label`: wool on dark fills (pine, night,
 	oxblood), ink on the light brass fill (lamp-light: its text-strong / bg). With `href` it is a
-	link, otherwise a button.
+	link, otherwise a button. `disabled` (Play until Phase 11) is a disabled button with a dashed
+	"Coming soon" stamp, faded but still readable, and no "has work" dot.
 -->
 <script lang="ts">
 	import { BookOpen, Gamepad2, GraduationCap, Layers } from '@lucide/svelte';
 	import Icon from '../primitives/Icon.svelte';
+	import Stamp from './Stamp.svelte';
 
 	type Mode = 'learn' | 'practice' | 'exam' | 'play';
 
@@ -17,11 +19,17 @@
 		hint,
 		hasWork = false,
 		href,
+		disabled = false,
+		stamp = 'Coming soon · Phase 11',
 		onclick
 	}: {
 		mode: Mode;
 		hint: string;
 		hasWork?: boolean;
+		/** Not open yet: no link, no action. */
+		disabled?: boolean;
+		/** The stamp on a disabled door. */
+		stamp?: string;
 		/** A resolve()d href; without it the door is a button. */
 		href?: string;
 		onclick?: () => void;
@@ -40,12 +48,18 @@
 	<Icon icon={door.icon} size="nav" />
 	<span class="label">{door.label}</span>
 	<span class="hint">{hint}</span>
-	{#if hasWork}
+	{#if disabled}
+		<span class="stamp"><Stamp text={stamp} dashed /></span>
+	{:else if hasWork}
 		<span class="dot" aria-hidden="true"></span><span class="sr-only">, has work</span>
 	{/if}
 {/snippet}
 
-{#if href}
+{#if disabled}
+	<button type="button" class="door {mode} disabled" disabled data-door-disabled>
+		{@render inside()}
+	</button>
+{:else if href}
 	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- callers pass resolve()d hrefs -->
 	<a class="door {mode}" {href}>{@render inside()}</a>
 {:else}
@@ -79,6 +93,29 @@
 
 	.door:active {
 		transform: translateY(var(--press-travel));
+	}
+
+	.disabled {
+		cursor: default;
+	}
+
+	.disabled:active {
+		transform: none;
+	}
+
+	/* Faded with opacity only, so the label keeps its contrast ratio against its own fill. */
+	.disabled > :global(:not(.stamp)) {
+		opacity: 0.7;
+	}
+
+	.stamp {
+		max-width: 100%;
+		margin-top: var(--gap-xs);
+	}
+
+	/* A narrow door: the stamp wraps instead of spilling out of the arch. */
+	.stamp > :global(.stamp) {
+		white-space: normal;
 	}
 
 	.practice {

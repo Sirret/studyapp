@@ -15,6 +15,8 @@ export type {
 	ChooseSpec,
 	ExerciseShape,
 	ExerciseSpec,
+	IdeaUnitSpec,
+	ListSpec,
 	OrderSpec,
 	PairSpec,
 	SelfRateSpec,

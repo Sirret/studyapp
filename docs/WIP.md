@@ -104,6 +104,19 @@ I resolve SPEC-GAPs into the Decisions log. Settings and scope schema tests I wr
 - `/dev/ui` visual-regression snapshots (the item deferred from the reskin).
 
 Tests: unit + `layout.spec.ts` + snapshots.
+- Step-7 plan (2026-11-20), each ticked when done:
+  - [x] 7a pure helpers + 17 unit tests (`tests/unit/ui/phase86-ui-helpers.test.ts`): `services/exercise-helpers.ts` `preTickedKeyWords` (UI can't import the engine), `exercises/exercise-ui.ts` `hintLabel(shape)`/`checkMeta(response)`, `ui/reader/mark-terms.ts` `markSection`, `ui/scope/scope-selection.ts` (picks = section ids, or topic id for a section-less topic; `toScope` → whole = empty lists, null = nothing), `ui/flashcards/deck-state.ts` (`startDeck`/`rateCard`/`deckKey`). `IdeaUnitSpec`/`ListSpec` re-exported from study-types.
+  - [x] 7b exercises: `IdeaUnitExercise` (type → "Next" → definition shown + key-word TapChips pre-ticked), `ListExercise` (type rows / pick chips + "List card" stamp + n/N), dispatch in `Exercise.svelte`, `hint` prop (choose hides the removed option), TapChip `revealed` state.
+  - [x] 7c `HintLink`, `MeetTerms`, `Reader`, `FlashcardDeck` (+ Flashcard `hinted` bindable), `ScopePicker`, ModeDoor `disabled` + stamp.
+  - [x] 7d `/dev/ui` guide section "Phase 8.6 components"; `tests/e2e/visual.spec.ts` (`toHaveScreenshot` per guide section, mobile); CI `updateSnapshots: 'missing'` (baselines are per OS: win32 committed, Linux written on CI). Needs a Decisions log row at handoff.
+  - [x] 7e `npm run check`, unit, `npm run build:test`, `layout.spec.ts` + `visual.spec.ts`; commit; checkpoint.
+- Wiring into screens (HintLink + `checkMeta` on the study page, deck/scope/reader routes) is steps 8–9.
+- Step-7 notes (not yet in the docs; Decisions log rows at handoff):
+  - Reader goes three-column by a **container query** at 900 px of its own width (not the 1024 px window media query): beside the 260 px Sidebar a 1280 px window leaves ~1020 px, and the style-guide panes are narrower. `FlashcardDeck` keeps the 1024 px media query (its columns have 0 minimums, no overflow).
+  - `ModeDoorRow` with 4 doors is 2 × 2 below 768 px (`:has(> :global(:nth-child(4)))`); a disabled door's stamp wraps.
+  - Visual snapshots: `tests/e2e/visual.spec.ts`, one full-page shot clipped to each guide section from scroll 0 (element shots shifted text by a sub-pixel between runs), `maxDiffPixelRatio 0.002`, CI `updateSnapshots: 'missing'`. Refresh after deliberate visual changes with `npx playwright test visual --project=mobile --update-snapshots`. Rule: every new guide section id must be added to its `SECTIONS` list (a test checks).
+  - `FlashcardDeck` takes plain `{ key, term, answer }` cards (the page maps `DeckCard`'s selfRate spec: prompt → term, answer); `keyboard={false}` where several decks share a page. Flashcard's hint now uses `HINT_WORDS`.
+  - IdeaUnit stage 1 has its own "Next: tick the key words" button (response stays null, so the page's Check is disabled until the ticking stage).
 
 **8. Screens: pick → Learn, Exam prep wiring (screen checkpoint).**
 - Course page: doors become pick-then-mode (scope picker → Learn / Practice / Exam prep / Play disabled), and the topics list gets PawRings and "N topics · N sections".

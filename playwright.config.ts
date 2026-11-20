@@ -12,6 +12,10 @@ export default defineConfig({
 	// load; two keep the full run stable. CI uses Playwright's default.
 	workers: isCi ? undefined : 2,
 	retries: 0,
+	// Screenshot baselines are per OS; the committed ones are Windows. On CI (Linux) a missing
+	// baseline is written instead of failing; an existing one is still compared (visual.spec.ts).
+	updateSnapshots: isCi ? 'missing' : 'none',
+	expect: { toHaveScreenshot: { maxDiffPixelRatio: 0.002 } },
 	reporter: [
 		['list'],
 		['html', { outputFolder: 'playwright-report', open: 'never' }],

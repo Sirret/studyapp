@@ -1,10 +1,11 @@
 <!--
 	Tap chip (DESIGN §7 Chip, for WordBank and DragList): a chip in a bank. Tap to pick it up (it lifts and
 	fills ink, like a selected Chip), then tap a slot to place it — the tap alternative to every drag.
-	After checking, chips show correct (✓) or wrong (✕) with icon and colour.
+	After checking, chips show correct (✓) or wrong (✕) with icon and colour; `revealed` marks a
+	right chip the student missed (dashed correct outline, read out as "missed").
 -->
 <script module lang="ts">
-	export type ChipState = 'default' | 'selected' | 'used' | 'correct' | 'wrong';
+	export type ChipState = 'default' | 'selected' | 'used' | 'correct' | 'wrong' | 'revealed';
 </script>
 
 <script lang="ts">
@@ -28,6 +29,8 @@
 	{#if state === 'correct'}<span aria-hidden="true">✓</span><span class="sr-only">correct:</span
 		>{/if}
 	{#if state === 'wrong'}<span aria-hidden="true">✕</span><span class="sr-only">wrong:</span>{/if}
+	{#if state === 'revealed'}<span aria-hidden="true">✓</span><span class="sr-only">missed:</span
+		>{/if}
 	<span>{text}</span>
 </button>
 
@@ -87,7 +90,15 @@
 		border-width: var(--stroke);
 	}
 
-	.correct > :first-child {
+	.revealed {
+		--tap-border: var(--correct);
+		--tap-style: dashed;
+
+		border-width: var(--stroke);
+	}
+
+	.correct > :first-child,
+	.revealed > :first-child {
 		color: var(--correct);
 	}
 

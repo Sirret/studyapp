@@ -1,21 +1,22 @@
 <!--
 	Flashcard (DESIGN §7, §8 card-flip): a soft tab-shaped card on a small stacked deck (two cards
 	peeking behind). The front shows the term in Literata 26; tapping the card flips it in 3D to
-	the answer. "Hint" is a link button that reveals the answer's first three words. The hidden
+	the answer. "Hint" is a link button that reveals the answer's first `HINT_WORDS` words
+	(`hinted` is bindable, so a deck's H key can reveal it too). The hidden
 	face is inert. Under reduced motion the flip is an instant change. The fly-away after "Know it"
 	or "Still learning" belongs to the session (§8 card-fly), not this component.
 -->
 <script lang="ts">
+	import { HINT_WORDS } from '#lib/config/defaults.ts';
 	import Button from '../primitives/Button.svelte';
 
 	let {
 		term,
 		answer,
-		flipped = $bindable(false)
-	}: { term: string; answer: string; flipped?: boolean } = $props();
+		flipped = $bindable(false),
+		hinted = $bindable(false)
+	}: { term: string; answer: string; flipped?: boolean; hinted?: boolean } = $props();
 
-	const HINT_WORDS = 3;
-	let hinted = $state(false);
 	const hint = $derived(`${answer.split(/\s+/).slice(0, HINT_WORDS).join(' ')}…`);
 </script>
 
