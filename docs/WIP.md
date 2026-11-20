@@ -19,6 +19,7 @@ Phase 8.6 gives each course its own Learn / Practice / Exam prep flows (spec: SE
 | 2026-11-20 | 8.6 | 10 Settings, Shelf, Welcome/Home | Opus | Welcome (Yuki, 3 steps, sample on tap → course page), Home den (date stamp, gear, where you left off + Continue, gentle suggestion, shelf rows), Shelf `/courses` (plan cards moved from Home), `/settings` (theme with Lamp-light, companion, haptics, sounds, spelling; saves at once); SettingsService, HomeService, home-text helpers; e2e home 2/2, settings 1/1, course-map, planner/modes/import/learn/scope/practice/cards/session/logging/pwa 43/44 (planner once under load → UNVERIFIED_TESTS), layout 20/20 both, visual 10/10; 2173 unit green | 33 | Step 11: sounds (`ui/delight/sound.ts`, `soundAllowed`, TopBar mute) + Manual mode (`/course/new`, `/course/[id]/add`) | 80f51d1 |
 | 2026-11-20 | 8.6 | 11 sounds + Manual mode | Opus | Web Audio synth (4 effects, `soundAllowed`, `SOUND_*` config), `StudyAnswer.becameReady` (stamp), SoundToggle in study/Practice TopBars, deck paw tap; ManualContentService + manual-fields (key-word ticks, list facts), `/course/new`, `/course/[id]/add`, Welcome + course page links; e2e manual 1/1, sounds 1/1, layout 22/22 both, visual 10/10 (study-flow refreshed), home/practice/settings/learn/session/modes/import green (home once under load → UNVERIFIED_TESTS); 2197 unit green | 34 | Step 12: `npm run build:test` then `npm run verify` | 9b08c35, 8a769d5 |
 | 2026-11-20 | 8.6 | 12 verify | Opus | `npm run build:test` + `npm run verify` all green: check, lint, stub-check, 2197 unit + sim, coverage 95.3% lines (engine 99.4%), shell 95.7 KB / 150, e2e 85/85, 0 flaky | 1 | Step 13: reviewer (Sonnet), fresh session, diff since 97e8a91 | see git log |
+| 2026-11-20 | 8.6 | 13 review | Opus + Sonnet agent | Reviewer PASS, no blockers. Fixed 2 should-fix: study page 302 → 297 lines (`session-text.ts nextLineFor`); `queue.ts` hinted JSDoc now matches Decisions row "Phase 8.6 SPEC-GAP (hinted)" (hinted wrong neither adds nor resets, still clears, rated Again). Nits left for PROGRESS (see "Review findings") | 3 | Step 14: HANDOFF, Decisions log rows from "Not yet in the docs", PROGRESS entry, BUILD_PLAN phase table, delete WIP.md | see git log |
 
 ## What already exists (reuse; don't rebuild)
 - **Event fields:** `ReviewEvent.hinted` and `verdictKind: 'exact'|'fuzzy'|'ideaUnit'|'listN'` are in `db/schemas/event.ts:43-46` and DATA_MODEL. Nothing reads them yet. The spec is BUILD_PLAN §5.1 rows `ideaUnit`/`listN` and §6.3 (a hinted answer never counts toward the criterion; a hinted correct is rated Hard).
@@ -179,6 +180,16 @@ Tests: unit + `layout.spec.ts` + snapshots.
 
 **14. Handoff + PROGRESS (checkpoint f).** HANDOFF current state and patterns, Decisions log rows, PROGRESS entry, BUILD_PLAN phase table, delete WIP.md. Push only after you confirm.
 
+## Review findings (step 13, reviewer Sonnet, PASS; for the PROGRESS entry)
+- should-fix, FIXED: study page over 300 lines; `queue.ts` hinted JSDoc said "a wrong one is still wrong" (now matches the Decisions row).
+- nit, left: `exercise-check.ts`/`hint.ts` checker tables cast `as never` (mapped type still enforces exhaustiveness).
+- nit, left: `ui/delight/sound.ts:72` noise buffer uses `Math.random()` (UI, allowed).
+- nit, left: `learn-material.ts readSections` counts any `acquisition` event as read, so Exam prep learn steps count too (intended: both are Learn reading).
+- nit, left: `learn-flow.ts topicFlow` ~55 lines (mostly the trace object).
+- nit, left: test files over 300 lines (`exercise-build-list.test.ts` 301, `replay-caches.test.ts`, `course-plan-service.test.ts`).
+- nit, left: `ideaUnit` and list kinds are not in `TYPED_KINDS` (first-letter mode after a miss); intended, since they have their own micro hint. Decisions log row at handoff.
+- note: Q18 "misses back once at round end" has no visible test beyond `missesToRetry`; check at handoff.
+
 ## Not yet in the docs (decided while building)
 - Step 1: `Settings.sounds` defaults to **on** (like `haptics`); both new settings fields use zod `.default()` so settings stored before 8.6 still parse. Tell the user at the step-1 checkpoint.
 - Step 1: `exercise-check.ts` `verdictOf` is now a per-shape checker table (lint complexity); `checkIdeaUnit`/`checkList` live in `exercise-check-units.ts`.
@@ -210,7 +221,7 @@ Tests: unit + `layout.spec.ts` + snapshots.
 |---|---|---|---|
 | 2 | spec-test-writer (Sonnet) | `tests/unit/engine/{idea-unit,list-grading,hint,learn-flow,scope,practice,exercise-build-list,replay-hinted}.test.ts` | See the full brief below |
 | 5 | spec-test-writer (Sonnet) | `tests/unit/engine/round-count.test.ts` | See "Step-5 brief" below |
-| 13 | reviewer (Sonnet) | none | Phase 8.6, base = step-0 commit, specs above, summary.md |
+| 13 | reviewer (Sonnet) | none | Phase 8.6, base = step-0 commit, specs above, summary.md. DONE 2026-11-20: PASS, no blockers |
 
 ### Step-2 brief (paste as the agent prompt)
 > Phase 8.6, workflow step 2. Write unit tests (Vitest, `fast-check` where a property helps; fixtures in `tests/unit/engine/fixtures.ts`) for these stubbed modules, from their JSDoc and the spec only. Never read function bodies (they throw). Modules: `src/lib/engine/idea-unit.ts`, `list-grading.ts`, `hint.ts`, `scope.ts`, `learn-flow.ts`, `practice.ts`, `exercise-build-list.ts` + `exercise-check-units.ts` (through `buildExercise`/`checkResponse` in `exercise-spec.ts`/`exercise-check.ts`), and the replay rules not yet implemented: a review with `hinted: true` never counts toward the criterion and, if correct and the session's first attempt, is rated Hard for FSRS (`engine/replay-card.ts`, `criterion-history.ts`, `fsrs.ts ratingFor`); review events with mode `practice` are skipped entirely by replay (no FSRS, criterion, study day, acquisition handoff, accuracy or pathStep); `matching` answers carry weight `recognition` (`exercise-kinds.ts weightOf`), while `pretest` and `hotspot` stay `none`. Read only: BUILD_PLAN §5.1 rows `ideaUnit`, `listN`, `matching`; §6.2 rating map; §6.3; SESSION_NOTES §C, §D (D1–D5), §H, §J; PROMPTS §6; the BUILD_PLAN Decisions log rows starting "Phase 8.6"; `docs/WIP.md` section "Decisions"; config names in `src/lib/config/defaults.ts` (block "Phase 8.6"). Write to `tests/unit/engine/{idea-unit,list-grading,hint,learn-flow,scope,practice,exercise-build-list,replay-hinted}.test.ts` only. Report: test counts per file, and every `SPEC-GAP` (a case the spec doesn't settle) with the reading you chose.

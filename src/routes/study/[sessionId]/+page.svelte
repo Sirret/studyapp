@@ -34,6 +34,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import AnswerFeedback from './AnswerFeedback.svelte';
 	import SessionTop from './SessionTop.svelte';
+	import { nextLineFor } from './session-text.ts';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -47,13 +48,7 @@
 	type Service = (typeof import('#lib/services/study-wiring.ts'))['studyService'];
 	let service: Service | undefined;
 	let view = $state<StudyView | null>(null);
-	const nextLine = $derived(
-		view?.mode === 'acquisition'
-			? "Tomorrow's retest is where it counts."
-			: view?.mode === 'onenight'
-				? 'Sleep is part of the plan: the morning check is the real test.'
-				: "Come back tomorrow for the retest — that's when it sticks."
-	);
+	const nextLine = $derived(nextLineFor(view?.mode));
 
 	let failed = $state(false);
 	let answer = $state<StudyAnswer | null>(null);

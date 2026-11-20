@@ -27,9 +27,10 @@ export interface QueueAnswer {
 	correct: boolean;
 	weight: Weight;
 	/**
-	 * A micro hint was used: a correct neither adds to nor resets the count and doesn't lower
-	 * `required` on a first-ever answer; a wrong one is still wrong.
-	 * @see BUILD_PLAN §6.3; Decisions log "Phase 8.6 Q10"
+	 * A micro hint was used: the answer neither adds to nor resets the count (right or wrong) and
+	 * doesn't lower `required` on a first-ever answer; a hinted wrong still sends the card to
+	 * clearing (and replay rates it Again).
+	 * @see BUILD_PLAN §6.3; Decisions log "Phase 8.6 Q10", "Phase 8.6 SPEC-GAP (hinted)"
 	 */
 	hinted?: boolean;
 }
