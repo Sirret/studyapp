@@ -81,7 +81,7 @@ describe('Dexie v2 migration', () => {
 		for (const topic of await opened.topics.toArray()) TopicSchema.parse(topic);
 		for (const chunk of await opened.chunks.toArray()) ChunkSchema.parse(chunk);
 		for (const note of await opened.notes.toArray()) NoteSchema.parse(note);
-		expect(opened.verno).toBe(2);
+		expect(opened.verno).toBe(3);
 	});
 
 	it('leaves a section that already has a title alone', async () => {

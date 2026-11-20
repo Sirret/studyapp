@@ -75,7 +75,7 @@ describe('createDb indexes', () => {
 			notes: 'id, courseId, topicId, chunkId, type, updatedAt',
 			cards: 'id, noteId, courseId, status, due, updatedAt',
 			events: 'id, ts, cardId, sessionId, type, [cardId+ts]',
-			media: 'id, hash',
+			media: 'id, hash, sourceHash',
 			sessions: 'id, startedAt, mode',
 			kv: 'key',
 			logs: '++seq, ts, level, area'

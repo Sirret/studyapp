@@ -89,6 +89,10 @@ function rightResponse(spec: ExerciseSpec): ExerciseResponse {
 			return { shape: 'selfRate', checked: spec.checklist.map((_c, i) => i), rating: 'good' };
 		case 'study':
 			return { shape: 'study' };
+		case 'place':
+			return { shape: 'place', at: { boxId: spec.boxId } };
+		case 'connect':
+			return { shape: 'connect', edges: spec.edges };
 	}
 }
 

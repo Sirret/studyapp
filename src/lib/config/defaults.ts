@@ -162,8 +162,8 @@ export const SEC_PER_ATTEMPT_DEFAULT = 15;
 export const FSRS_OPTIMISE_MIN_REVIEWS = 1000;
 /** Tesseract word confidence (0–100). */
 export const OCR_MIN_CONFIDENCE = 60;
-/** Long side of an imported image, in pixels. */
-export const IMAGE_MAX_PX = 1600;
+/** Long side of an imported image, in pixels (Decisions log "Phase 6 Q6–Q7"). */
+export const IMAGE_MAX_PX = 2000;
 /** WebP quality of an imported image, from 0 to 1. */
 export const IMAGE_WEBP_QUALITY = 0.8;
 /** Exam format of a new course (DATA_MODEL §3.1). */
@@ -245,3 +245,22 @@ export const SOUND_EFFECTS = {
 		{ wave: 'noise', freq: 900, at: 0, duration: 0.04, gain: 0.35 }
 	]
 } as const satisfies Record<string, readonly SoundTone[]>;
+
+// Phase 6 — Diagrams (BUILD_PLAN §7; Decisions log "Phase 6 …").
+/** Fewest options an occlusion word bank shows (the answer + 1); fewer boxes → `occlusionType`. Options come only from the same image's boxes. */
+export const OCCLUSION_BANK_MIN_OPTIONS = 2;
+/** A box placed by a tap (or from an `unplaced` label), as fractions of the image's width and height. */
+export const OCCLUSION_NEW_BOX = { w: 0.16, h: 0.07 } as const;
+/** Smallest box side, as a fraction of the image side. */
+export const OCCLUSION_MIN_BOX = 0.02;
+/** One press of a move or resize button in the occlusion editor, as a fraction of the image side. */
+export const OCCLUSION_NUDGE = 0.01;
+/** Largest diagram drawn; bigger ones show "too big to draw, edit as text" (Decisions log "Phase 6 Q4"). */
+export const DIAGRAM_MAX_NODES = 24;
+export const DIAGRAM_MAX_EDGES = 40;
+/** Node box size in layout units (1 unit = 1 CSS px at scale 1): width grows with the label. */
+export const DIAGRAM_NODE = { minWidth: 96, maxWidth: 220, charWidth: 9, height: 44 } as const;
+/** Gaps between nodes in one layer (x) and between layers (y), in layout units. */
+export const DIAGRAM_GAP = { x: 32, y: 56 } as const;
+/** Down-and-up barycentre passes when ordering a flow's layers to reduce crossings. */
+export const DIAGRAM_LAYOUT_SWEEPS = 4;

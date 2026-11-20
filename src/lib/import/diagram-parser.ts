@@ -1,3 +1,4 @@
+import type { DiagramStructure, ParsedDiagram } from '#lib/engine/diagram-edit.ts';
 import type { ImportError } from './ast.ts';
 import {
 	failBlock,
@@ -95,4 +96,42 @@ export function parseDiagram(raw: RawBlock): BlockOutput {
 	if (!match?.[2])
 		return failBlock(raw, '@diagram must be followed by stack or flow, then a name.');
 	return match[1] === 'stack' ? parseStack(raw, match[2]) : parseFlow(raw, match[2]);
+}
+
+/** One line of the diagram text editor that couldn't be read. */
+export interface DiagramTextError {
+	line: number;
+	message: string;
+}
+
+/**
+ * Reads the diagram editor's text: the lines of a `@diagram` block without the directive. A
+ * stack is one layer per line (`label` or `label :: role`); a flow is one arrow per line
+ * (`A -> B` or `A -> B : label`). Blank lines are ignored; a `source:` line is not allowed here
+ * (the source image is kept by the editor). Line numbers are 1-based. Any error gives
+ * `parsed: null`, the same rule as import (a bad line would teach the wrong structure); the
+ * messages match import's. A stack needs at least two layers (`MIN_STACK_LAYERS` in `ast.ts`) and no repeated
+ * label; a flow needs at least one arrow.
+ *
+ * @see BUILD_PLAN §4.1, §7.2; Decisions log "Phase 6 Q5" (text-first editor)
+ */
+export function parseDiagramText(
+	kind: 'stack' | 'flow',
+	text: string
+): { parsed: ParsedDiagram | null; errors: DiagramTextError[] } {
+	void kind;
+	void text;
+	throw new Error('not implemented');
+}
+
+/**
+ * The editor's text for a stored diagram: the inverse of `parseDiagramText` (layers top to
+ * bottom; a flow's arrows in `edges` order, by node label), so `parseDiagramText` of the result
+ * gives back the same structure.
+ *
+ * @see BUILD_PLAN §7.2
+ */
+export function formatDiagram(diagram: Pick<DiagramStructure, 'kind' | 'nodes' | 'edges'>): string {
+	void diagram;
+	throw new Error('not implemented');
 }

@@ -1,6 +1,7 @@
-import type { CardId, ExerciseKind, NoteId } from '#lib/db/schemas/common.ts';
+import type { CardId, ExerciseKind, MediaId, NoteId } from '#lib/db/schemas/common.ts';
 import type { Note } from '#lib/db/schemas/note.ts';
 import type { AnswerNote } from './answers.ts';
+import type { DiagramLayout } from './diagram-layout.ts';
 import type { OtherAnswer } from './grading.ts';
 import type { Rng } from './rng.ts';
 
@@ -30,6 +31,54 @@ export interface ChecklistItem {
 	cardId?: CardId;
 }
 
+/** A hide box of an image, as fractions of its width and height. The label is never sent. */
+export interface FigureBox {
+	id: string;
+	x: number;
+	y: number;
+	w: number;
+	h: number;
+}
+
+/**
+ * An image with hide boxes. `covered` lists the boxes drawn covered: only the target in hide-one
+ * mode, every box in hide-all mode and for `occlusionDrag`. `target` is the box the question asks
+ * about, drawn highlighted; null when the student must find it (`occlusionDrag`).
+ *
+ * @see BUILD_PLAN §7.1; Decisions log "Phase 6 Q3", "Phase 6 Q10–Q13"
+ */
+export interface OcclusionFigure {
+	kind: 'occlusion';
+	mediaId: MediaId;
+	/** The image's name for screen readers. */
+	title: string;
+	boxes: FigureBox[];
+	covered: string[];
+	target: string | null;
+}
+
+/**
+ * A drawn diagram. A node or arrow label that is `null` is hidden (the asked part). `layout` is
+ * null when the diagram is too big to draw (Decisions log "Phase 6 Q4"); the screen then shows
+ * its text form. `sourceMediaId` is the original picture, for "Show original" after answering.
+ *
+ * @see BUILD_PLAN §7.2
+ */
+export interface DiagramFigure {
+	kind: 'diagram';
+	shape: 'stack' | 'flow';
+	title: string;
+	nodes: { id: string; label: string | null; role?: string }[];
+	edges: { id: string; from: string; to: string; label: string | null }[];
+	/** The node or arrow the question asks about, drawn highlighted; null for none. */
+	target: string | null;
+	layout: DiagramLayout | null;
+	sourceMediaId?: MediaId;
+}
+
+/** What a figure-based exercise shows above or around its question. */
+export type Figure = OcclusionFigure | DiagramFigure;
+
 /** Typed recall. @see BUILD_PLAN §5.1 */
 export interface TypeSpec extends SpecBase {
 	shape: 'type';
@@ -43,6 +92,8 @@ export interface TypeSpec extends SpecBase {
 	letter: string | null;
 	/** Lines shown above the prompt (the worked steps of a `fadeStep`), else empty. */
 	context: string[];
+	/** The image or diagram the question is about (`occlusionType`, `nodeCloze`, `edgeCloze`). */
+	figure?: Figure;
 }
 
 /** Pick one option. */
@@ -52,6 +103,8 @@ export interface ChooseSpec extends SpecBase {
 	correctIndex: number;
 	/** The first letter (`firstLetterBank`), else null. */
 	letter: string | null;
+	/** The image the question is about (`occlusionBank`). */
+	figure?: Figure;
 }
 
 /** Pick every option that applies. */
@@ -71,6 +124,8 @@ export interface OrderSpec extends SpecBase {
 	correctOrder: number[];
 	/** Item indexes that don't belong (`parsons`); empty otherwise. */
 	extras: number[];
+	/** The stack drawn with its layer labels hidden (`layerOrder`). */
+	figure?: Figure;
 }
 
 /** Match each left entry to a right entry. */
@@ -137,6 +192,36 @@ export interface ListSpec extends SpecBase {
 	correct: number[];
 }
 
+/**
+ * Drag a label onto its box, or tap the box (`occlusionDrag`): every box is covered and none is
+ * highlighted. Graded by `hitTest` on the drop point, or by the tapped box's id.
+ *
+ * @see BUILD_PLAN §7.1, §6.10 (hit test); Decisions log "Phase 6 Q3"
+ */
+export interface PlaceSpec extends SpecBase {
+	shape: 'place';
+	figure: OcclusionFigure;
+	/** The label to place. */
+	label: string;
+	/** The box it belongs on. */
+	boxId: string;
+}
+
+/**
+ * Reconnect a diagram's arrows (`structureRebuild`): the nodes are drawn without arrows; the
+ * student adds arrows by tapping a source node, then a target node. Graded as a set on
+ * from → to only; arrow labels are not asked (Decisions log "Phase 6 Q8").
+ *
+ * @see BUILD_PLAN §7.2, §6.10 (set comparison)
+ */
+export interface ConnectSpec extends SpecBase {
+	shape: 'connect';
+	/** The diagram with every arrow removed (`edges` empty). */
+	figure: DiagramFigure;
+	/** The reference arrows, from → to node ids. */
+	edges: { from: string; to: string }[];
+}
+
 /** What an exercise component renders. Discriminated on `shape`. @see BUILD_PLAN §5.1 */
 export type ExerciseSpec =
 	| TypeSpec
@@ -148,7 +233,9 @@ export type ExerciseSpec =
 	| SelfRateSpec
 	| StudySpec
 	| IdeaUnitSpec
-	| ListSpec;
+	| ListSpec
+	| PlaceSpec
+	| ConnectSpec;
 
 export type ExerciseShape = ExerciseSpec['shape'];
 

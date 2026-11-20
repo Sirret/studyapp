@@ -136,6 +136,8 @@ db.version(1).stores({
 	kv: 'key', // settings, availability, deviceId, seq, lastExportAt, schemaVersion, fsrsParams, calibration
 	logs: '++seq, ts, level, area', // app log ring buffer (local)
 });
+db.version(2).stores({}).upgrade(upgradeToV2); // Import v2: chunk titles from tags
+db.version(3).stores({ media: 'id, hash, sourceHash' }); // Phase 6: re-import de-duplication
 ```
 
 ### 3.2 Types (abbreviated — full definitions in `DATA_MODEL.md`, implemented as zod schemas in `db/schemas/`)
@@ -1245,3 +1247,4 @@ Choices this plan makes where the concept was silent. Add new ones here.
 | Phase 6 data for Phase 9: images are blobs in IndexedDB (`media`, never base64 in JSON or localStorage) with `hash` (stored blob) and `sourceHash` (original bytes); Phase 9 export must carry the blobs and restore by `sourceHash` | Backup completeness |
 | Phase 6 step 1 result (2026-11-20, user): **PDF route no-go.** pdf.js 4.10.38 on a real lecture PDF: labels of diagrams drawn in PowerPoint 88/88 (100%), labels inside pasted pictures 0/89 (the figures are raster images, not outlines), plain slide text 27/27; 1.7 MB raw / 491 KB gzipped; 1.1–1.3 s per page at 4× CPU throttle. 50% < the 80% bar, so pdf.js is removed and PDF import is dropped from Phase 6. Slide images come from upload, paste, camera or a zip. Report: `docs/spikes/PDF_SPIKE.md` | Decisions row "Phase 6 Q1–Q2" |
 | Phase 6 after the PDF spike (user): **image encoding never blocks the main thread** (a 2000 px WebP encode took 1–3.6 s per page at 4× throttle): encode in a Web Worker, else show progress. **New step 10 = OCR spike** (tesseract.js on the six picture pages; no UI). Bar: ≥ 70% of labels with usable positions, merged digits handled, total download ≤ ~6 MB, ≤ 8 s per page throttled, offline after first use. OCR box suggestions are built only on a go | The failed figures are printed textbook pictures, which OCR handles; size and speed bound the cost |
+| Phase 6 step 2: **Dexie version 3** adds the `media.sourceHash` index (§3.1, DATA_MODEL §3.8). Two tests that pinned the old schema were updated with it, keeping their intent: `log-repo.test.ts` "createDb indexes" (now `media: 'id, hash, sourceHash'`) and `migration-v2.test.ts` "keeps every old record valid" (the database now opens at version 3, after the v2 upgrade ran) | Rule 15: the schema changed by design, not a loosened test |

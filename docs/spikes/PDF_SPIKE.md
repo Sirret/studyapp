@@ -9,7 +9,7 @@
 - **Library:** `pdfjs-dist` 4.10.38, pinned as a dev dependency for the spike only.
 - **Ground truth:** written by hand from the slide pictures, not from the PDF's text layer, so the test isn't circular: 177 diagram labels on 19 diagram slides and 27 plain-text phrases. It lives in the git-ignored `tests/fixtures/spike/truth.ts`.
 - **What counts as a hit:** a label is found when a text item, or items joined on one line, holds it as a whole token inside the figure's area, with a box inside the page.
-- **Scripts:** `scripts/spike/pdf-spike.ts` (Node, text and operators) and `scripts/spike/pdf-render.ts` (Chromium with 4× CPU throttling to model a phone). Neither is part of `verify`. Raw output: `test-results/spike/pdf-text.json`.
+- **Scripts:** `scripts/spike/pdf-spike.ts` (Node, text and operators) and `scripts/spike/pdf-render.ts` (Chromium with 4× CPU throttling to model a phone). Neither was part of `verify`; both were removed with `pdfjs-dist` after the no-go (step 2) and stay in git history at commit 26de7ee. Raw output: `test-results/spike/pdf-text.json`.
 
 ## Results
 

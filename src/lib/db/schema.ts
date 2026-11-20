@@ -47,7 +47,8 @@ export async function upgradeToV2(tx: Transaction): Promise<void> {
 }
 
 /**
- * Opens the database: the version 1 tables and indexes, then the version 2 upgrade.
+ * Opens the database: the version 1 tables and indexes, the version 2 upgrade, then version 3
+ * (the `media.sourceHash` index).
  *
  * @see BUILD_PLAN §3.1
  * @see DATA_MODEL §3
@@ -67,5 +68,7 @@ export function createDb(name: string = DB_NAME): SnowpackDb {
 		logs: '++seq, ts, level, area'
 	});
 	db.version(2).stores({}).upgrade(upgradeToV2);
+	// Phase 6: index media by the original file's hash (no upgrade; older images lack it).
+	db.version(3).stores({ media: 'id, hash, sourceHash' });
 	return db;
 }

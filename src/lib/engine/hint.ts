@@ -76,7 +76,9 @@ const HINTS: { readonly [S in ExerciseSpec['shape']]: HintOf<S> } = {
 	pair: () => NONE,
 	sort: () => NONE,
 	selfRate: () => NONE,
-	study: () => NONE
+	study: () => NONE,
+	place: () => NONE,
+	connect: () => NONE
 };
 
 /**
@@ -87,7 +89,7 @@ const HINTS: { readonly [S in ExerciseSpec['shape']]: HintOf<S> } = {
  * - `list`: its first `HINT_WORDS` items' words, i.e. the first `HINT_WORDS` words of the items
  *   joined by ", ", then "…".
  * - `choose`: removes one wrong option, picked with `rng`.
- * - every other shape: `none`.
+ * - every other shape (`place` and `connect` included; Phase 6): `none`.
  *
  * @see SESSION_NOTES J (micro hint); Decisions log "Phase 8.6 Q10"
  */

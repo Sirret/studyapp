@@ -10,7 +10,8 @@ import type {
 } from './exercise-types.ts';
 import { checkIdeaUnit, checkList } from './exercise-check-units.ts';
 import { gradeTyped } from './grading.ts';
-import { gradeSequence } from './grading-shapes.ts';
+import { gradeSequence, type Point, type RenderedSize } from './grading-shapes.ts';
+import { checkConnect, checkPlace } from './exercise-check-figure.ts';
 import type { Traced } from './trace.ts';
 
 /** The student's response, matching the spec's `shape`. @see BUILD_PLAN §5.1 */
@@ -26,7 +27,14 @@ export type ExerciseResponse =
 	/** The typed definition and the key word indexes ticked (pre-ticks the student kept included). */
 	| { shape: 'ideaUnit'; typed: string; ticked: number[] }
 	/** Typed items (`entry: 'type'`) or picked option indexes (`entry: 'pick'`); the other is empty. */
-	| { shape: 'list'; typed: string[]; picked: number[] };
+	| { shape: 'list'; typed: string[]; picked: number[] }
+	/** A drop point in rendered pixels with the rendered image size, or the tapped box (tap alternative). */
+	| {
+			shape: 'place';
+			at: { boxId: string } | { point: Point; size: RenderedSize };
+	  }
+	/** The arrows the student drew, from → to node ids, in drawing order. */
+	| { shape: 'connect'; edges: { from: string; to: string }[] };
 
 /** The verdict and what feedback shows. @see BUILD_PLAN §5.1 (feedback) and §6.4 */
 export interface ExerciseVerdict {
@@ -173,7 +181,9 @@ const CHECKERS: { readonly [S in ExerciseSpec['shape']]: Checker<S> } = {
 		marks: []
 	}),
 	ideaUnit: checkIdeaUnit,
-	list: checkList
+	list: checkList,
+	place: checkPlace,
+	connect: checkConnect
 };
 
 function verdictOf(spec: ExerciseSpec, response: ExerciseResponse): ExerciseVerdict {

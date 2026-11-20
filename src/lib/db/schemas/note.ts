@@ -62,7 +62,13 @@ const OcclusionPayloadSchema = z.object({
 			h: FractionSchema,
 			label: z.string()
 		})
-	)
+	),
+	/** Hide one box at a time (absent = one) or all of them; set per image (Decisions log "Phase 6 Q10–Q13"). */
+	hide: z.enum(['one', 'all']).optional(),
+	/** The image's name for screen readers; the file name when absent. */
+	title: z.string().optional(),
+	/** Labels from the import's `box:` lines not yet given a position; they make no cards. */
+	unplaced: z.array(z.string()).optional()
 });
 
 const NoteBaseSchema = MetaSchema.extend({

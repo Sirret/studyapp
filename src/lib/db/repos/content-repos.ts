@@ -111,4 +111,15 @@ export class MediaRepo extends ContentRepo<Media, Omit<Media, RepoManaged>> {
 		const matches = await this.table.where('hash').equals(hash).toArray();
 		return matches.find((media) => !media.deleted);
 	}
+
+	/**
+	 * Finds a live image by the hash of its original file, so re-importing the same file reuses
+	 * it (and the occlusion boxes made on it).
+	 *
+	 * @see DATA_MODEL §3.8
+	 */
+	async findBySourceHash(sourceHash: string): Promise<Media | undefined> {
+		void sourceHash;
+		throw new Error('not implemented');
+	}
 }

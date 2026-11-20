@@ -22,7 +22,9 @@ const HINT_LABELS: { readonly [S in ExerciseShape]: string | null } = {
 	pair: null,
 	sort: null,
 	selfRate: null,
-	study: null
+	study: null,
+	place: null,
+	connect: null
 };
 
 /** The hint link's label for an exercise shape, or null when that shape offers no hint. */

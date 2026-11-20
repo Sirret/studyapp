@@ -149,7 +149,13 @@ export type Chunk = z.infer<typeof ChunkSchema>;
 export const MediaSchema = MetaSchema.extend({
 	id: MediaIdSchema,
 	hash: z.string().regex(/^[0-9a-f]{64}$/),
-	mime: z.literal('image/webp'),
+	/** SHA-256 of the original file bytes; absent on images stored before Phase 6. */
+	sourceHash: z
+		.string()
+		.regex(/^[0-9a-f]{64}$/)
+		.optional(),
+	/** JPEG only where the browser can't write WebP (Decisions log "Phase 6 Q6–Q7"). */
+	mime: z.enum(['image/webp', 'image/jpeg']),
 	width: z.number().int().positive(),
 	height: z.number().int().positive(),
 	bytes: z.number().int().min(0),

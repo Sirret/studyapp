@@ -84,8 +84,9 @@ erDiagram
   }
   MEDIA {
     uuid id PK
-    string hash "sha-256"
-    blob blob "WebP"
+    string hash "sha-256 of stored bytes"
+    string sourceHash "sha-256 of original file"
+    blob blob "WebP or JPEG"
   }
   DEVICE {
     uuid deviceId PK "kv.deviceId"
@@ -319,15 +320,20 @@ Not exported (events keep `sessionId` for grouping).
 | Field | Type | Req | Constraints | Meaning |
 |---|---|---|---|---|
 | *Meta* | | ✓ | | |
-| `hash` | `string` | ✓ | SHA-256 hex of the WebP bytes | De-duplication |
-| `mime` | `'image/webp'` | ✓ | | Re-encoded on import |
-| `width` / `height` | `number` | ✓ | ≤ 1600 on long side | Pixels |
+| `hash` | `string` | ✓ | SHA-256 hex of the stored (re-encoded) bytes | De-duplication of stored images |
+| `sourceHash` | `string` | — | SHA-256 hex of the original file bytes, before EXIF rotation and re-encoding | De-duplication on re-import: the same file always gives the same `sourceHash`, while re-encoding can differ between browsers (Phase 6, Decisions log "Phase 6 Q10–Q13"). Absent on images stored before Phase 6 |
+| `mime` | `'image/webp' \| 'image/jpeg'` | ✓ | | Re-encoded on import (EXIF rotation baked in); JPEG only where the browser can't write WebP (Safari/iPhone; Decisions log "Phase 6 Q6–Q7") |
+| `width` / `height` | `number` | ✓ | ≤ `IMAGE_MAX_PX` (2000) on long side | Pixels |
 | `bytes` | `number` | ✓ | | Size, for storage display |
 | `blob` | `Blob` | ✓ | | The image |
 | `fileName` | `string` | — | | Original name (for `@occlusion` matching on import) |
 | `importId` | `ID` | — | UUID, one per import commit | The import that stored it; undo of the latest import tombstones what carries it (Phase 8.5). Absent on records made by hand or before 8.5 |
 
-Indexes: `id, hash`.
+Indexes: `id, hash, sourceHash`.
+
+**Dexie version 3** (Phase 6): adds the `sourceHash` index; no upgrade function (older images have no `sourceHash` and are matched by `hash` as before).
+
+**Images are blobs** in this table only: never base64 in JSON, `kv` or localStorage. Phase 9 export writes each referenced blob as a file and restores it by `sourceHash` (then `hash`), so a restore never duplicates an image already on the device (§7).
 
 **`importId` and `lastImport`** (Phase 8.5) are optional and unindexed, so there is no Dexie version bump: undo finds an import's records through the existing `courseId` / `topicId` indexes and filters on `importId`.
 
@@ -361,7 +367,7 @@ Indexes: `id, hash`.
 | `compare` | `{ items: string[]; rows: { attribute: string; values: string[] }[] }` — `values.length === items.length` |
 | `scenario` | `{ situation: string; answer: string }` |
 | `diagram` | `{ kind: 'stack' \| 'flow'; name: string; nodes: { id: ID; label: string; role?: string }[]; edges: { id: ID; from: ID; to: ID; label?: string }[]; layout?: Record<ID, { x: number; y: number }>; sourceMediaId?: ID }` — `stack` has no edges; edge endpoints must exist |
-| `occlusion` | `{ mediaId: ID; boxes: { id: ID; x: number; y: number; w: number; h: number; label: string }[] }` — `x,y,w,h` are fractions in [0, 1] |
+| `occlusion` | `{ mediaId: ID; boxes: { id: ID; x: number; y: number; w: number; h: number; label: string }[]; hide?: 'one' \| 'all'; title?: string; unplaced?: string[] }` — `x,y,w,h` are fractions in [0, 1]; box `id`s are UUIDs, so deleting or reordering boxes never moves history to another card. `hide`: hide one box at a time (default, absent) or all of them, set per image. `title`: the image's name for screen readers (default: the file name). `unplaced`: labels from the import's `box:` lines not yet given a position; they make no cards until placed (Phase 6) |
 
 ### 4.3 Card variants
 
@@ -376,7 +382,7 @@ Indexes: `id, hash`.
 | scenario | `fwd` |
 | diagram (stack) | `layers`, `layer:<nodeId>` |
 | diagram (flow) | `node:<nodeId>`, `edge:<edgeId>`, `rebuild` |
-| occlusion | `box:<boxId>` |
+| occlusion | `box:<boxId>` (path `occlusionBank → occlusionDrag → occlusionType`; Decisions log "Phase 6 Q3") |
 
 Variant strings are stable: editing a note keeps existing variants (and their card IDs) and only adds/removes the ones that changed.
 
@@ -492,7 +498,7 @@ Indexes: `++seq, ts, level, area`. Trimmed to `LOG_RING_SIZE` (2000). Exported o
 
 `data.json`: `{ courses, topics, chunks, notes, cards, events?, settings?, availability? }` — cards **without** cache fields; `events` only if `includesProgress`; `settings`/`availability` only if scope is `all`.
 
-`media/<id>.webp`: one file per referenced image.
+`media/<id>.webp` (or `.jpg` for `image/jpeg`): one file per referenced image. The `media` records (with `hash` and `sourceHash`) go in `data.json` without their blobs; restore pairs each record with its file and skips an image whose `sourceHash` (else `hash`) is already stored (Phase 6 note for Phase 9).
 
 ---
 
