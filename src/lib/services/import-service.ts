@@ -1,4 +1,4 @@
-import type { ContentStore } from '#lib/db/repos/content-store.ts';
+import type { ContentBatch, ContentStore } from '#lib/db/repos/content-store.ts';
 import type { CourseId, ImportId, Placement } from '#lib/db/schemas/common.ts';
 import type { Course, ImportGoal, LastImport, Topic } from '#lib/db/schemas/course.ts';
 import type { Note, NoteType } from '#lib/db/schemas/note.ts';
@@ -24,10 +24,12 @@ import {
 	countNoteTypes,
 	flagGaps,
 	imageIdentity,
+	labelsToPlace,
 	referencedFiles,
 	sha256Hex,
 	topicPreview,
-	type CheckedItem
+	type CheckedItem,
+	type LabelsToPlace
 } from './import-preview-parts.ts';
 import {
 	mapChecklist,
@@ -56,7 +58,7 @@ export interface PreparedImage {
 	blob: Blob;
 }
 
-export type { ChangedDiagram, EncodedImage };
+export type { ChangedDiagram, EncodedImage, LabelsToPlace };
 
 /** Decodes and re-encodes images. The browser version lives in `web-image-encoder.ts`. */
 export interface ImageEncoder {
@@ -115,6 +117,8 @@ export interface ImportSummary {
 	notes: number;
 	cards: number;
 	images: number;
+	/** Image notes whose `box:` labels still need placing; absent when there are none. */
+	toPlace?: LabelsToPlace[];
 }
 
 /**
@@ -274,13 +278,7 @@ export class ImportService {
 			batch.courses = [this.store.courses.draftChange(course, changes, deviceId)];
 			if (batch.media.length > 0) await this.storageGuard?.ensurePersisted();
 			await this.store.writeBatch(batch);
-			const summary = {
-				topics: preview.topics.length,
-				chunks: batch.chunks.length,
-				notes: batch.notes.length,
-				cards: batch.cards.length,
-				images: batch.media.length
-			};
+			const summary = summarize(preview.topics.length, batch);
 			this.logger.info('import', 'committed', summary);
 			return { ok: true, value: summary };
 		} catch (error) {
@@ -292,4 +290,21 @@ export class ImportService {
 			};
 		}
 	}
+}
+
+/** What a written batch added, with the image notes whose labels still need a place. */
+function summarize(
+	topics: number,
+	batch: Pick<ContentBatch, 'chunks' | 'notes' | 'cards' | 'media'>
+): ImportSummary {
+	const { chunks, notes, cards, media } = batch;
+	const counts = {
+		topics,
+		chunks: chunks.length,
+		notes: notes.length,
+		cards: cards.length,
+		images: media.length
+	};
+	const toPlace = labelsToPlace(notes, media);
+	return toPlace.length > 0 ? { ...counts, toPlace } : counts;
 }

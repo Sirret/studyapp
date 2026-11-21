@@ -17,13 +17,23 @@
 		row: CardListRow;
 		/** Opened from a link to this row (e.g. an unsure card after an import). */
 		highlighted?: boolean;
+		/** The image or diagram editor for this note (`CardListService.editorHref`); null for text notes. */
+		editorHref?: string | null;
 		onedit: () => void;
 		onflag: () => void;
 		onunflag: () => void;
 		ondelete: () => void;
 	}
 
-	let { row, highlighted = false, onedit, onflag, onunflag, ondelete }: Props = $props();
+	let {
+		row,
+		highlighted = false,
+		editorHref = null,
+		onedit,
+		onflag,
+		onunflag,
+		ondelete
+	}: Props = $props();
 
 	const statuses = $derived([...new Set<CardStatus>(row.cards.map((card) => card.status))]);
 	const paused = $derived(row.cards.some((card) => card.suspended));
@@ -46,6 +56,8 @@
 			<Row gap="sm">
 				{#if editable}
 					<Button variant="secondary" onclick={onedit}>Edit</Button>
+				{:else if editorHref}
+					<Button variant="secondary" href={editorHref} data-edit-in-editor>Edit in editor</Button>
 				{/if}
 				{#if row.flagged}
 					<Button variant="ghost" onclick={onunflag}>It's fine</Button>
@@ -54,9 +66,6 @@
 				{/if}
 				<Button variant="danger" onclick={ondelete}>Delete</Button>
 			</Row>
-			{#if !editable}
-				<span class="note">Image cards are fixed in the diagram editor.</span>
-			{/if}
 		</Stack>
 	</Card>
 </div>
@@ -78,8 +87,7 @@
 		overflow-wrap: anywhere;
 	}
 
-	.answer,
-	.note {
+	.answer {
 		color: var(--text-soft);
 		font-size: var(--type-small-size);
 		overflow-wrap: anywhere;

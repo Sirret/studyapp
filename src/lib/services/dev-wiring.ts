@@ -1,7 +1,12 @@
 import type { Note } from '#lib/db/schemas/note.ts';
-import type { SessionId } from '#lib/db/schemas/common.ts';
+import type { CourseId, SessionId } from '#lib/db/schemas/common.ts';
 import { cardAnswer } from '#lib/engine/answers.ts';
-import { sampleKindPlan, SAMPLE_COURSE_TEXT, type SampleCard } from './dev-sample.ts';
+import {
+	figureKindPlan,
+	sampleKindPlan,
+	SAMPLE_COURSE_TEXT,
+	type SampleCard
+} from './dev-sample.ts';
 import { importService } from './import-wiring.ts';
 import { studyService, studyRepos } from './study-wiring.ts';
 import { loadCourse } from './study-course.ts';
@@ -44,5 +49,22 @@ export async function startSampleSession(): Promise<SessionId> {
 		return { id: card.id, variant: card.variant, noteType: note.type, noteKey: noteKey(note) };
 	});
 	const view = await studyService.startCourse(course.id, sampleKindPlan(cards));
+	return view.sessionId;
+}
+
+/**
+ * Dev and e2e only: a session over a course's image and diagram cards, showing the occlusion
+ * bank, place and type kinds once each and every diagram card.
+ *
+ * @see WIP step 9
+ */
+export async function startFigureSession(courseId: CourseId): Promise<SessionId> {
+	const material = await loadCourse(studyRepos, courseId);
+	const cards: SampleCard[] = material.cards.map((card) => {
+		const note = material.notes.get(card.noteId);
+		if (!note) throw new Error(`Card ${card.id} has no note`);
+		return { id: card.id, variant: card.variant, noteType: note.type, noteKey: '' };
+	});
+	const view = await studyService.startCourse(courseId, figureKindPlan(cards));
 	return view.sessionId;
 }

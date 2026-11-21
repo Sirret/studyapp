@@ -42,6 +42,7 @@
 	let deleting = $state<CardListRow | null>(null);
 	let deleteOpen = $state(false);
 	let busy = $state(false);
+	let editorHref = $state<(row: CardListRow) => string | null>(() => null);
 
 	const shown = $derived(view ? filterCardList(view, query, filter) : null);
 	const filters = $derived([
@@ -56,7 +57,9 @@
 
 	async function refresh(): Promise<void> {
 		try {
-			view = await (await service()).list(courseId);
+			const cards = await service();
+			view = await cards.list(courseId);
+			editorHref = (row) => cards.editorHref({ courseId, noteId: row.noteId, type: row.type });
 		} catch (error: unknown) {
 			logger.error('cards', 'list not loaded', { error: String(error) });
 			failed = true;
@@ -159,6 +162,7 @@
 						<CardRow
 							{row}
 							highlighted={row.noteId === data.note}
+							editorHref={editorHref(row)}
 							onedit={() => (editing = row.noteId)}
 							onflag={() => act('flag', row.noteId)}
 							onunflag={() => act('unflag', row.noteId)}

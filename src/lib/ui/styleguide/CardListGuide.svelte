@@ -32,6 +32,7 @@
 				<CardRow
 					{row}
 					highlighted={i === 1}
+					editorHref={row.type === 'occlusion' || row.type === 'diagram' ? '#card-list' : null}
 					onedit={noop}
 					onflag={noop}
 					onunflag={noop}

@@ -108,3 +108,31 @@ export function sampleKindPlan(cards: readonly SampleCard[]): {
 
 /** Every kind the harness covers (all non-diagram kinds). */
 export const SAMPLE_KINDS: readonly ExerciseKind[] = KIND_PLAN.map((entry) => entry.kind);
+
+/** The kinds an image's box cards show first, in box order (the occlusion path, Decisions "Phase 6 Q3"). */
+const OCCLUSION_KINDS: readonly ExerciseKind[] = [
+	'occlusionBank',
+	'occlusionDrag',
+	'occlusionType'
+];
+
+/**
+ * The figure harness plan for a course: every image and diagram card, the first three box cards
+ * forced to the bank, place and type kinds so one session shows each; diagram cards keep their
+ * own one-step paths.
+ *
+ * @see WIP step 9 (e2e: one card of each figure kind)
+ */
+export function figureKindPlan(cards: readonly SampleCard[]): {
+	cardIds: CardId[];
+	forceKinds: Record<CardId, ExerciseKind>;
+} {
+	const forceKinds: Record<CardId, ExerciseKind> = {};
+	const boxes = cards.filter((card) => card.noteType === 'occlusion');
+	boxes.slice(0, OCCLUSION_KINDS.length).forEach((card, i) => {
+		const kind = OCCLUSION_KINDS[i];
+		if (kind) forceKinds[card.id] = kind;
+	});
+	const diagrams = cards.filter((card) => card.noteType === 'diagram');
+	return { cardIds: [...boxes, ...diagrams].map((card) => card.id), forceKinds };
+}

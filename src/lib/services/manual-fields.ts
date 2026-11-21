@@ -16,6 +16,20 @@ export const MANUAL_TYPES: readonly { value: EditableType; label: string }[] = [
 	{ value: 'example', label: 'Worked example' }
 ];
 
+/** The picture types Manual mode offers; each opens its own editor after it is made (WIP step 9). */
+export const MANUAL_FIGURE_TYPES = [
+	{ value: 'occlusion', label: 'Image (hide parts)' },
+	{ value: 'diagram', label: 'Diagram' }
+] as const;
+
+/** A type the Manual mode picker can choose: a text type or a picture type. */
+export type ManualType = EditableType | (typeof MANUAL_FIGURE_TYPES)[number]['value'];
+
+/** Whether a picked type is a picture type (made in its own editor, not with text boxes). */
+export function isFigureType(type: ManualType): type is 'occlusion' | 'diagram' {
+	return type === 'occlusion' || type === 'diagram';
+}
+
 /** Empty content per type, so the add form shows the card editor's own boxes and hints. */
 const BLANK: { [T in EditableType]: Extract<NoteContent, { type: T }> } = {
 	keyterm: { type: 'keyterm', payload: { term: '', meaning: '' } },

@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { ArrowLeft } from '@lucide/svelte';
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { ChunkId, CourseId, TopicId } from '#lib/db/schemas/common.ts';
 	import { logger } from '#lib/services/app.ts';
 	import type { ManualOutline } from '#lib/services/manual-content-service.ts';
+	import type { ImageSource } from '#lib/services/import-service.ts';
 	import type { NoteContent } from '#lib/services/manual-fields.ts';
 	import Banner from '#lib/ui/components/Banner.svelte';
 	import EmptyState from '#lib/ui/components/EmptyState.svelte';
@@ -79,6 +81,35 @@
 		await refresh();
 		return null;
 	}
+
+	const figures = () => import('#lib/services/figure-wiring.ts');
+	const place = (): [TopicId, ChunkId | null] | null =>
+		topicId === undefined
+			? null
+			: [topicId as TopicId, chunkId === '' ? null : (chunkId as ChunkId)];
+
+	/** A picture note opens its editor at once: boxes are drawn there. */
+	async function addImage(source: ImageSource): Promise<string | null> {
+		const at = place();
+		if (!at) return 'Add a topic first.';
+		const made = await (await figures()).occlusionService.create(...at, source);
+		if (!made.ok) return made.error;
+		await goto(resolve('/course/[courseId]/image/[noteId]', { courseId, noteId: made.value }));
+		return null;
+	}
+
+	async function addDiagram(input: {
+		kind: 'stack' | 'flow';
+		name: string;
+		text: string;
+	}): Promise<string | null> {
+		const at = place();
+		if (!at) return 'Add a topic first.';
+		const made = await (await figures()).diagramService.create(...at, input);
+		if (!made.ok) return made.error.message;
+		await goto(resolve('/course/[courseId]/diagram/[noteId]', { courseId, noteId: made.value }));
+		return null;
+	}
 </script>
 
 <svelte:head><title>Add cards</title></svelte:head>
@@ -115,7 +146,7 @@
 				/>
 			</Card>
 			<Card>
-				<NoteForm onsave={addNote} />
+				<NoteForm onsave={addNote} onimage={addImage} ondiagram={addDiagram} />
 			</Card>
 			{#if saved}<Banner tone="success">{saved}</Banner>{/if}
 			{#if topic}

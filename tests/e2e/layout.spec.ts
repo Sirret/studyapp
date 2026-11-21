@@ -152,6 +152,43 @@ test.describe('layout', { tag: '@both' }, () => {
 		await expectNoSidewaysScroll(page);
 	});
 
+	test('the image and diagram editors fit (Phase 6 step 9)', async ({ page }) => {
+		test.setTimeout(90_000);
+		await page.goto('/course/new');
+		await page.getByLabel('Course name').fill('Pictures');
+		await page.getByLabel('First topic').fill('One');
+		await page.locator('[data-create-course]').click();
+		await page.waitForURL(/\/add\?topic=/);
+		const add = page.url();
+		await page.getByLabel('Card type').selectOption({ label: 'Diagram' });
+		await page.getByLabel('Diagram name').fill('Layers');
+		await page.locator('[data-diagram-text]').fill('Application\nTransport\nNetwork\nLink');
+		await expectWithinWidth(page, page.locator('[data-make-diagram]'));
+		await expectNoSidewaysScroll(page);
+		await page.locator('[data-make-diagram]').click();
+		await page.waitForURL(/\/diagram\//);
+		await expectWithinWidth(page, page.locator('[data-figure-save]'));
+		await expectNoSidewaysScroll(page);
+		await page.goto(add);
+		await page.getByLabel('Card type').selectOption({ label: 'Image (hide parts)' });
+		const png = await page.evaluate(async () => {
+			const canvas = new OffscreenCanvas(1200, 600);
+			canvas.getContext('2d')?.fillRect(0, 0, 1200, 600);
+			const bytes = new Uint8Array(await (await canvas.convertToBlob()).arrayBuffer());
+			return [...bytes];
+		});
+		await page.getByLabel('Choose an image').setInputFiles({
+			name: 'wide.png',
+			mimeType: 'image/png',
+			buffer: Buffer.from(png)
+		});
+		await page.waitForURL(/\/image\//);
+		await expect(page.locator('[data-occlusion-editor] img')).toBeVisible();
+		await expectWithinWidth(page, page.locator('[data-occlusion-editor] [data-figure]'));
+		await expectWithinWidth(page, page.locator('[data-figure-save]'));
+		await expectNoSidewaysScroll(page);
+	});
+
 	test('the Practice menu and its flashcard deck fit', async ({ page }) => {
 		test.setTimeout(90_000);
 		await openLearnCourse(page);

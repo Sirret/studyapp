@@ -20,6 +20,8 @@ type Spec = {
 	entry?: 'type' | 'pick';
 	items?: string[];
 	required?: number;
+	boxId?: string;
+	edges?: { from: string; to: string }[];
 };
 
 const MAX_STEPS = 200;
@@ -76,6 +78,16 @@ async function answer(page: Page, spec: Spec): Promise<void> {
 				for (const [i, item] of (spec.items ?? []).slice(0, spec.required).entries()) {
 					await page.locator(`[data-list-row="${i}"]`).fill(item);
 				}
+			}
+			break;
+		case 'place':
+			// The tap alternative to dragging the label (CLAUDE.md rule 10).
+			await page.locator(`[data-figure] button[data-box-id="${spec.boxId}"]`).click();
+			break;
+		case 'connect':
+			for (const edge of spec.edges ?? []) {
+				await page.locator(`button[data-node-id="${edge.from}"]`).click();
+				await page.locator(`button[data-node-id="${edge.to}"]`).click();
 			}
 			break;
 		case 'selfRate':

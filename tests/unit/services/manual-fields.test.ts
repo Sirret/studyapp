@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
 	blankFields,
+	isFigureType,
 	listDefinition,
+	MANUAL_FIGURE_TYPES,
 	MANUAL_TYPES,
 	manualFact,
 	starTicked,
@@ -76,6 +78,12 @@ describe('manual fact form', () => {
 		expect(manualFact({ kind: 'list', term: 'T', items: ['a*', 'b'] }).ok).toBe(false);
 		const blank = manualFact({ kind: 'definition', term: '', definition: 'x', ticked: new Set() });
 		expect(blank.ok).toBe(false);
+	});
+
+	it('offers the picture types separately, each made in its own editor (WIP step 9)', () => {
+		expect(MANUAL_FIGURE_TYPES.map((t) => t.value)).toEqual(['occlusion', 'diagram']);
+		expect(MANUAL_FIGURE_TYPES.every((t) => isFigureType(t.value))).toBe(true);
+		expect(MANUAL_TYPES.some((t) => isFigureType(t.value))).toBe(false);
 	});
 
 	it('offers every text type with empty boxes (no image types)', () => {

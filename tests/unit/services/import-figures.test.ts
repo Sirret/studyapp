@@ -159,6 +159,23 @@ describe('ImportService with images and diagrams', () => {
 			expect(await store.cards.list()).toEqual([]);
 		});
 
+		it('lists image notes with labels to place in the commit summary (WIP step 9)', async () => {
+			const text = '@deck A\n@occlusion s.png\nbox: Disk\nbox: Buffer\n@occlusion t.png';
+			const shown = await preview(text, [image('s.png'), image('t.png')]);
+			const result = await service.commit(courseId, shown, new Map());
+			const notes = await store.notes.list();
+			const withLabels = notes.find((n) => n.type === 'occlusion' && n.payload.unplaced);
+			expect(result.ok && result.value.toPlace).toEqual([
+				{ noteId: withLabels?.id, name: 's.png', count: 2 }
+			]);
+		});
+
+		it('leaves toPlace out when every image is placed', async () => {
+			const shown = await preview('@deck A\n@occlusion s.png', [image('s.png')]);
+			const result = await service.commit(courseId, shown, new Map());
+			expect(result.ok && 'toPlace' in result.value).toBe(false);
+		});
+
 		it('stores no unplaced field when the block has no box: lines', async () => {
 			await commit('@deck A\n@occlusion s.png', [image('s.png')]);
 			const [note] = await store.notes.list();

@@ -4,7 +4,12 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import type { CourseId, Placement } from '#lib/db/schemas/common.ts';
 	import type { Course, ImportGoal } from '#lib/db/schemas/course.ts';
-	import type { ImageSource, ImportPreview, PreparedImage } from '#lib/services/import-service.ts';
+	import type {
+		ImageSource,
+		ImportPreview,
+		LabelsToPlace,
+		PreparedImage
+	} from '#lib/services/import-service.ts';
 	import { buildFixPrompt, importService } from '#lib/services/import-wiring.ts';
 	import { DEFAULT_IMPORT_GOAL } from '#lib/config/defaults.ts';
 	import { countOf } from '#lib/util/plural.ts';
@@ -43,6 +48,7 @@
 	let added = $state<CourseId | null>(null);
 	/** The last import flagged some cards (unsure or starred-word gaps): link to "Check these". */
 	let addedFlagged = $state(false);
+	let toPlace = $state.raw<LabelsToPlace[]>([]);
 	/** A text paste checks the import as soon as the text is in (preview on paste). */
 	let checkAfterPaste = false;
 	let isBusy = $state(false);
@@ -161,6 +167,7 @@
 		notice = `Added ${countOf(notes, 'note')} and ${countOf(cards, 'card')} across ${countOf(topics, 'topic')}.`;
 		added = courseId;
 		addedFlagged = preview.checked.length > 0 || preview.starredGaps.length > 0;
+		toPlace = result.value.toPlace ?? [];
 		text = '';
 		images = [];
 		imageErrors = [];
@@ -171,6 +178,7 @@
 	/** Back to an empty paste box for the next chatbot reply, same course. */
 	function importMore(): void {
 		added = null;
+		toPlace = [];
 		notice = '';
 		textArea?.focus();
 	}
@@ -288,6 +296,6 @@
 		<Banner tone="success">{notice}</Banner>
 	{/if}
 	{#if added}
-		<ImportDone courseId={added} flagged={addedFlagged} onImportMore={importMore} />
+		<ImportDone courseId={added} flagged={addedFlagged} {toPlace} onImportMore={importMore} />
 	{/if}
 </Screen>

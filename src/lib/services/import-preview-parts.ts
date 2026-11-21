@@ -1,6 +1,7 @@
 import type { MediaRepo } from '#lib/db/repos/content-repos.ts';
-import type { Topic } from '#lib/db/schemas/course.ts';
-import type { NoteType } from '#lib/db/schemas/note.ts';
+import type { NoteId } from '#lib/db/schemas/common.ts';
+import type { Media, Topic } from '#lib/db/schemas/course.ts';
+import type { Note, NoteType } from '#lib/db/schemas/note.ts';
 import type { ImageIdentity } from '#lib/import/duplicates.ts';
 import type { ImportPlan, PlannedTopic } from '#lib/import/build.ts';
 import { readLine, splitLines } from '#lib/import/lexer.ts';
@@ -91,4 +92,28 @@ export function topicPreview(topic: PlannedTopic, existing: Topic | undefined): 
 		notes: topic.notes.length,
 		cards: topic.notes.reduce((sum, note) => sum + note.cards.length, 0)
 	};
+}
+
+/** An imported image note whose `box:` labels still need a place ("Place 5 labels"). */
+export interface LabelsToPlace {
+	noteId: NoteId;
+	/** The image's title, else its file name. */
+	name: string;
+	count: number;
+}
+
+/**
+ * The image notes of a commit with labels still to place, for the import's done screen.
+ *
+ * @see WIP step 9; Decisions log "Phase 6 step 6"
+ */
+export function labelsToPlace(notes: readonly Note[], media: readonly Media[]): LabelsToPlace[] {
+	const names = new Map(media.map((image) => [image.id, image.fileName]));
+	return notes.flatMap((note) => {
+		if (note.type !== 'occlusion') return [];
+		const count = note.payload.unplaced?.length ?? 0;
+		if (count === 0) return [];
+		const name = note.payload.title ?? names.get(note.payload.mediaId) ?? 'An image';
+		return [{ noteId: note.id, name, count }];
+	});
 }
