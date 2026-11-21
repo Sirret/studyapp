@@ -122,17 +122,27 @@ export class ImportBatchDrafter {
 		return this.batch;
 	}
 
-	/** Stores each image once, by content hash: reuses one already stored or already in this batch. */
+	/**
+	 * Stores each image once: reuses one already stored (by original-file hash, then by stored
+	 * hash for images saved before Phase 6) or already in this batch.
+	 *
+	 * @see DATA_MODEL §3.8
+	 */
 	private async draftImage(image: PreparedImage): Promise<void> {
-		const { fileName, hash, width, height, blob } = image;
-		const stored = await this.store.media.findByHash(hash);
+		const { fileName, hash, sourceHash, mime, width, height, blob } = image;
+		const stored =
+			(await this.store.media.findBySourceHash(sourceHash)) ??
+			(await this.store.media.findByHash(hash));
 		const media =
 			stored ??
-			this.batch.media.find((candidate) => candidate.hash === hash) ??
+			this.batch.media.find(
+				(candidate) => candidate.sourceHash === sourceHash || candidate.hash === hash
+			) ??
 			this.store.media.draft(
 				{
 					hash,
-					mime: 'image/webp',
+					sourceHash,
+					mime,
 					width,
 					height,
 					bytes: blob.size,

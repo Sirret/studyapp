@@ -166,6 +166,8 @@ export const OCR_MIN_CONFIDENCE = 60;
 export const IMAGE_MAX_PX = 2000;
 /** WebP quality of an imported image, from 0 to 1. */
 export const IMAGE_WEBP_QUALITY = 0.8;
+/** JPEG quality where the browser can't write WebP (Safari), from 0 to 1. */
+export const IMAGE_JPEG_QUALITY = 0.85;
 /** Exam format of a new course (DATA_MODEL §3.1). */
 export const DEFAULT_EXAM_FORMAT = 'mixed';
 export const BACKUP_REMINDER_DAYS = 7;

@@ -13,7 +13,10 @@ import { ImportService, type ImageEncoder } from '#lib/services/import-service.t
 import { ImportUndoService } from '#lib/services/import-undo.ts';
 
 const encoder: ImageEncoder = {
-	encode: async (source) => ({ ok: true, value: { blob: source, width: 40, height: 20 } })
+	encode: async (source) => ({
+		ok: true,
+		value: { blob: source, width: 40, height: 20, mime: 'image/webp' }
+	})
 };
 
 /** A fresh database with the Phase 8.5 services over it, and helpers to import and study. */

@@ -32,6 +32,8 @@
 	let text = $state('');
 	let images = $state.raw<PreparedImage[]>([]);
 	let imageErrors = $state.raw<string[]>([]);
+	/** "Preparing images 2 of 5" while images are encoded (off the page where the browser allows). */
+	let imageProgress = $state<{ done: number; total: number } | null>(null);
 	let preview = $state.raw<ImportPreview | undefined>();
 	/** The intake's goal (PROMPTS §2); the commit saves it on the course map. */
 	let goal = $state<ImportGoal | undefined>(DEFAULT_IMPORT_GOAL);
@@ -81,7 +83,11 @@
 	/** Prepares images and adds them, replacing any earlier image with the same name. */
 	async function addImages(sources: ImageSource[]): Promise<void> {
 		isBusy = true;
-		const prepared = await importService.prepareImages(sources);
+		imageProgress = sources.length > 0 ? { done: 0, total: sources.length } : null;
+		const prepared = await importService.prepareImages(sources, (done, total) => {
+			imageProgress = { done, total };
+		});
+		imageProgress = null;
 		const names = new Set(prepared.images.map((image) => image.fileName));
 		images = [...images.filter((image) => !names.has(image.fileName)), ...prepared.images];
 		imageErrors = prepared.errors;
@@ -244,6 +250,9 @@
 					onchange={attachFiles}
 				/>
 			</Row>
+			{#if imageProgress}
+				<p role="status">Preparing images {imageProgress.done} of {imageProgress.total}…</p>
+			{/if}
 			{#if images.length > 0}
 				<p>Attached: {images.map((image) => image.fileName).join(', ')}</p>
 			{/if}

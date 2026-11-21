@@ -8,6 +8,7 @@ export { buildFixPrompt } from '#lib/import/fix-prompt.ts';
 import { db, logger } from './app.ts';
 import { ImportService } from './import-service.ts';
 import { seedSampleCourse } from './sample-course.ts';
+import { StorageGuard } from './storage-guard.ts';
 import { WebImageEncoder } from './web-image-encoder.ts';
 
 const newId = () => crypto.randomUUID();
@@ -23,7 +24,13 @@ const store = new ContentStore(db, {
  *
  * @see CLAUDE.md rule 9
  */
-export const importService = new ImportService(store, new WebImageEncoder(), newId, logger);
+export const importService = new ImportService(
+	store,
+	new WebImageEncoder(),
+	newId,
+	logger,
+	new StorageGuard(typeof navigator === 'undefined' ? undefined : navigator.storage, logger)
+);
 
 const kv = new KvRepo(db);
 

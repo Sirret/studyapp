@@ -11,8 +11,10 @@ import { parseImport } from '#lib/import/parser.ts';
 import { fileKey, readImportZip } from '#lib/import/zip.ts';
 import type { Logger } from '#lib/log/logger.ts';
 import type { Result } from '#lib/util/result.ts';
+import type { EncodedImage, StoredImageMime } from './image-encode.ts';
 import { createEmptyCourse } from './course-new.ts';
 import { addsRecords, ImportBatchDrafter } from './import-batch.ts';
+import { saveErrorMessage, type StorageGuard } from './storage-guard.ts';
 import {
 	checkedItems,
 	countNoteTypes,
@@ -35,21 +37,20 @@ export interface ImageSource {
 	blob: Blob;
 }
 
-/** An attached image ready to store: resized, WebP, hashed. @see BUILD_PLAN §4.2 */
+/** An attached image ready to store: resized, WebP (or JPEG), hashed. @see BUILD_PLAN §4.2 */
 export interface PreparedImage {
 	fileName: string;
+	/** SHA-256 of the stored (encoded) bytes. */
 	hash: string;
+	/** SHA-256 of the original file bytes, so a re-imported file is found again (DATA_MODEL §3.8). */
+	sourceHash: string;
+	mime: StoredImageMime;
 	width: number;
 	height: number;
 	blob: Blob;
 }
 
-/** A resized WebP image. */
-export interface EncodedImage {
-	blob: Blob;
-	width: number;
-	height: number;
-}
+export type { EncodedImage };
 
 /** Decodes and re-encodes images. The browser version lives in `web-image-encoder.ts`. */
 export interface ImageEncoder {
@@ -116,7 +117,9 @@ export class ImportService {
 		private readonly store: ContentStore,
 		private readonly encoder: ImageEncoder,
 		private readonly newId: () => string,
-		private readonly logger: Logger
+		private readonly logger: Logger,
+		/** Asks for persistent storage the first time images are saved; absent in most tests. */
+		private readonly storageGuard?: StorageGuard
 	) {}
 
 	/** Lists courses to import into. */
@@ -140,23 +143,30 @@ export class ImportService {
 		return { ok: true, value: { text: zip.value.text, images } };
 	}
 
-	/** Resizes, re-encodes and hashes images. @see BUILD_PLAN §4.2 */
+	/**
+	 * Resizes, re-encodes and hashes images, one at a time; `onProgress(done, total)` after each.
+	 *
+	 * @see BUILD_PLAN §4.2
+	 */
 	async prepareImages(
-		sources: ImageSource[]
+		sources: ImageSource[],
+		onProgress?: (done: number, total: number) => void
 	): Promise<{ images: PreparedImage[]; errors: string[] }> {
 		const images: PreparedImage[] = [];
 		const errors: string[] = [];
-		for (const { name, blob } of sources) {
+		for (const [index, { name, blob }] of sources.entries()) {
 			const encoded = await this.encoder.encode(blob);
 			if (encoded.ok) {
 				images.push({
 					fileName: name,
 					hash: await sha256Hex(encoded.value.blob),
+					sourceHash: await sha256Hex(blob),
 					...encoded.value
 				});
 			} else {
 				errors.push(`${name}: ${encoded.error}`);
 			}
+			onProgress?.(index + 1, sources.length);
 		}
 		return { images, errors };
 	}
@@ -255,6 +265,7 @@ export class ImportService {
 				...(addsRecords(batch, importId) ? { lastImport } : {})
 			};
 			batch.courses = [this.store.courses.draftChange(course, changes, deviceId)];
+			if (batch.media.length > 0) await this.storageGuard?.ensurePersisted();
 			await this.store.writeBatch(batch);
 			const summary = {
 				topics: preview.topics.length,
@@ -268,7 +279,10 @@ export class ImportService {
 		} catch (error) {
 			const reason = error instanceof Error ? error.message : String(error);
 			this.logger.error('import', 'commit failed', { reason });
-			return { ok: false, error: `The import could not be saved: ${reason}` };
+			return {
+				ok: false,
+				error: saveErrorMessage(error, `The import could not be saved: ${reason}`)
+			};
 		}
 	}
 }

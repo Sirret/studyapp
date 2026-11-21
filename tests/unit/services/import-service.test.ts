@@ -17,6 +17,7 @@ import { DeviceRepo } from '#lib/db/repos/device-repo.ts';
 import { createDb, type SnowpackDb } from '#lib/db/schema.ts';
 import { DEFAULT_EXAM_FORMAT } from '#lib/config/defaults.ts';
 import { Logger } from '#lib/log/logger.ts';
+import { OUT_OF_SPACE_MESSAGE, StorageGuard } from '#lib/services/storage-guard.ts';
 import {
 	ImportService,
 	type ImageEncoder,
@@ -28,7 +29,10 @@ const NOW = 5_000;
 const GOLDEN = 'tests/golden/import';
 
 const encoder: ImageEncoder = {
-	encode: async (source) => ({ ok: true, value: { blob: source, width: 40, height: 20 } })
+	encode: async (source) => ({
+		ok: true,
+		value: { blob: source, width: 40, height: 20, mime: 'image/webp' }
+	})
 };
 
 /** Rewrites each UUID in a value to `id1`, `id2`… by first appearance, so output can be compared. */
@@ -420,7 +424,7 @@ describe('ImportService', () => {
 					encode: async (source) =>
 						source.size === 0
 							? { ok: false, error: 'not an image' }
-							: { ok: true, value: { blob: source, width: 1, height: 1 } }
+							: { ok: true, value: { blob: source, width: 1, height: 1, mime: 'image/webp' } }
 				},
 				randomUUID,
 				new Logger({ sink: { append: async () => {} }, clock: () => NOW })
@@ -483,6 +487,154 @@ describe('ImportService', () => {
 			);
 			const result = await service.commit(courseId, preview, new Map());
 			expect(result.ok && result.value.images).toBe(0);
+		});
+	});
+
+	describe('images: original-file hash, type, progress, storage (Phase 6 step 5)', () => {
+		const sha = (text: string) => createHash('sha256').update(text).digest('hex');
+		const quietLogger = () => new Logger({ sink: { append: async () => {} }, clock: () => NOW });
+		/** Re-encoding is not byte-stable across browsers or versions: each encode differs here. */
+		function unstableService(mime: 'image/webp' | 'image/jpeg' = 'image/webp'): ImportService {
+			let encodes = 0;
+			const unstable: ImageEncoder = {
+				encode: async () => {
+					encodes += 1;
+					const blob = new Blob([`encoded-${encodes}`]);
+					return { ok: true, value: { blob, width: 8, height: 4, mime } };
+				}
+			};
+			return new ImportService(store, unstable, randomUUID, quietLogger());
+		}
+		const source = (name: string, text = 'original') => ({
+			name,
+			blob: new Blob([text], { type: 'image/png' })
+		});
+
+		it('hashes the original file bytes as sourceHash, apart from the stored bytes', async () => {
+			const { images } = await unstableService().prepareImages([source('a.png')]);
+			expect(images[0]).toMatchObject({
+				sourceHash: sha('original'),
+				hash: sha('encoded-1'),
+				mime: 'image/webp'
+			});
+		});
+
+		it('re-importing the same file reuses its image by sourceHash, though re-encoding differs', async () => {
+			const importer = unstableService();
+			const first = await importer.prepareImages([source('s.png')]);
+			const firstPreview = await importer.preview(
+				courseId,
+				'@deck A\n@occlusion s.png',
+				first.images
+			);
+			await importer.commit(courseId, firstPreview, new Map());
+			const again = await importer.prepareImages([source('renamed.png')]);
+			expect(again.images[0]?.hash).not.toBe(first.images[0]?.hash);
+			const preview = await importer.preview(
+				courseId,
+				'@deck B\n@occlusion renamed.png',
+				again.images
+			);
+			const result = await importer.commit(courseId, preview, new Map());
+			expect(result.ok && result.value.images).toBe(0);
+			const media = await store.media.list();
+			expect(media).toHaveLength(1);
+			expect(media[0]?.sourceHash).toBe(sha('original'));
+		});
+
+		it('stores the same file attached twice in one import once', async () => {
+			const importer = unstableService();
+			const { images } = await importer.prepareImages([source('a.png'), source('b.png')]);
+			const preview = await importer.preview(
+				courseId,
+				'@deck A\n@occlusion a.png\n@occlusion b.png',
+				images
+			);
+			await importer.commit(courseId, preview, new Map());
+			expect(await store.media.list()).toHaveLength(1);
+		});
+
+		it('still finds an image stored before Phase 6 (no sourceHash) by its stored hash', async () => {
+			await commit('@deck A\n@occlusion s.png', await prepare('s.png'));
+			const [old] = await store.media.list();
+			await db.media.update(old?.id ?? '', { sourceHash: undefined });
+			const twin = await service.prepareImages([
+				{ name: 't.png', blob: new Blob(['s.png'], { type: 'image/png' }) }
+			]);
+			await commit('@deck A\n@occlusion t.png', twin.images);
+			expect(await store.media.list()).toHaveLength(1);
+		});
+
+		it('stores JPEG under its own type where the browser cannot write WebP', async () => {
+			const importer = unstableService('image/jpeg');
+			const { images } = await importer.prepareImages([source('p.jpg')]);
+			const preview = await importer.preview(courseId, '@deck A\n@occlusion p.jpg', images);
+			await importer.commit(courseId, preview, new Map());
+			const [media] = await store.media.list();
+			expect(media?.mime).toBe('image/jpeg');
+		});
+
+		it('reports progress after every image, failed ones included', async () => {
+			const failing = new ImportService(
+				store,
+				{
+					encode: async (blob) =>
+						blob.size === 0
+							? { ok: false, error: 'not an image' }
+							: { ok: true, value: { blob, width: 1, height: 1, mime: 'image/webp' } }
+				},
+				randomUUID,
+				quietLogger()
+			);
+			const progress: [number, number][] = [];
+			await failing.prepareImages([source('bad.png', ''), source('good.png')], (done, total) =>
+				progress.push([done, total])
+			);
+			expect(progress).toEqual([
+				[1, 2],
+				[2, 2]
+			]);
+		});
+
+		it('maps a full storage quota to the out-of-space message, writing nothing', async () => {
+			const preview = await service.preview(
+				courseId,
+				'@deck A\n@occlusion s.png',
+				await prepare('s.png')
+			);
+			vi.spyOn(db.media, 'bulkAdd').mockRejectedValue(
+				new DOMException('quota', 'QuotaExceededError')
+			);
+			const result = await service.commit(courseId, preview, new Map());
+			expect(result).toEqual({ ok: false, error: OUT_OF_SPACE_MESSAGE });
+			expect(await store.notes.list()).toEqual([]);
+		});
+
+		it('asks for persistent storage when images are saved, once, and not for text-only imports', async () => {
+			const storage = { persisted: vi.fn(async () => false), persist: vi.fn(async () => true) };
+			const guarded = new ImportService(
+				store,
+				encoder,
+				randomUUID,
+				quietLogger(),
+				new StorageGuard(storage, quietLogger())
+			);
+			await guarded.commit(
+				courseId,
+				await guarded.preview(courseId, '@deck A\nQ :: A', []),
+				new Map()
+			);
+			expect(storage.persist).not.toHaveBeenCalled();
+			for (const name of ['a.png', 'b.png']) {
+				const prepared = await guarded.prepareImages([source(name, name)]);
+				const preview = await guarded.preview(
+					courseId,
+					`@deck A\n@occlusion ${name}`,
+					prepared.images
+				);
+				await guarded.commit(courseId, preview, new Map());
+			}
+			expect(storage.persist).toHaveBeenCalledTimes(1);
 		});
 	});
 
