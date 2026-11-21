@@ -74,6 +74,8 @@ export function readImportZip(bytes: Uint8Array): Result<ImportZip, string> {
 		const mime = IMAGE_MIMES.get(extensionOf(path));
 		return mime ? [{ name: baseName(path), bytes: content, mime }] : [];
 	});
+	const collision = keyCollision(images);
+	if (collision) return { ok: false, error: collision };
 	return { ok: true, value: { text: text.value, images } };
 }
 
@@ -91,6 +93,22 @@ export function fileKey(name: string): string {
  * @see BUILD_PLAN §4.2; Decisions log "Phase 6 Q9"
  */
 export function imageKey(name: string): string {
-	void name;
-	throw new Error('not implemented');
+	const base = baseName(name);
+	const dot = base.lastIndexOf('.');
+	const stem = dot > 0 ? base.slice(0, dot) : base;
+	return stem.toLowerCase().replace(/[\s_-]+/g, '');
+}
+
+/** The first two images of a zip that share an `imageKey`, as an error naming both. */
+function keyCollision(images: readonly ZipImage[]): string | null {
+	const seen = new Map<string, string>();
+	for (const image of images) {
+		const key = imageKey(image.name);
+		const other = seen.get(key);
+		if (other !== undefined) {
+			return `Two images in this zip have the same name once case, spaces, _ and - are ignored: ${other} and ${image.name}. Rename one.`;
+		}
+		seen.set(key, image.name);
+	}
+	return null;
 }

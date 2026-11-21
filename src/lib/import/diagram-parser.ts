@@ -1,5 +1,5 @@
 import type { DiagramStructure, ParsedDiagram } from '#lib/engine/diagram-edit.ts';
-import type { ImportError } from './ast.ts';
+import { MIN_STACK_LAYERS, type ImportError } from './ast.ts';
 import {
 	failBlock,
 	finishBlock,
@@ -119,9 +119,50 @@ export function parseDiagramText(
 	kind: 'stack' | 'flow',
 	text: string
 ): { parsed: ParsedDiagram | null; errors: DiagramTextError[] } {
-	void kind;
-	void text;
-	throw new Error('not implemented');
+	const lines = text
+		.split(/\r?\n/)
+		.map((raw, index) => ({ line: index + 1, text: raw.trim() }))
+		.filter((entry) => entry.text !== '');
+	const errors: DiagramTextError[] = lines
+		.filter((entry) => SOURCE_LINE.test(entry.text))
+		.map(({ line }) => ({
+			line,
+			message: 'A source: line is not allowed here; the editor keeps the source image.'
+		}));
+	const body = lines.filter((entry) => !SOURCE_LINE.test(entry.text));
+	const parsed = kind === 'stack' ? readStackText(body, errors) : readFlowText(body, errors);
+	return errors.length > 0 ? { parsed: null, errors } : { parsed, errors };
+}
+
+type TextLine = { line: number; text: string };
+
+function readStackText(lines: TextLine[], errors: DiagramTextError[]): ParsedDiagram {
+	const seen = new Set<string>();
+	const layers = lines.map(({ line, text }) => {
+		const pair = splitPair(text);
+		const label = pair?.left ?? text;
+		if (seen.has(label)) errors.push({ line, message: `Layer "${label}" is listed twice.` });
+		seen.add(label);
+		return pair ? { label, role: pair.right } : { label };
+	});
+	if (layers.length < MIN_STACK_LAYERS) {
+		errors.push({
+			line: lines.at(-1)?.line ?? 1,
+			message: `@diagram stack needs at least ${MIN_STACK_LAYERS} layers.`
+		});
+	}
+	return { kind: 'stack', layers };
+}
+
+function readFlowText(lines: TextLine[], errors: DiagramTextError[]): ParsedDiagram {
+	const edges = lines.flatMap(({ line, text }) => {
+		const edge = parseArrow(text);
+		if (!edge) errors.push({ line, message: 'Expected "A -> B" or "A -> B : label".' });
+		return edge ? [edge] : [];
+	});
+	if (lines.length === 0)
+		errors.push({ line: 1, message: 'A flow needs at least one arrow ("A -> B").' });
+	return { kind: 'flow', edges };
 }
 
 /**
@@ -132,6 +173,14 @@ export function parseDiagramText(
  * @see BUILD_PLAN §7.2
  */
 export function formatDiagram(diagram: Pick<DiagramStructure, 'kind' | 'nodes' | 'edges'>): string {
-	void diagram;
-	throw new Error('not implemented');
+	if (diagram.kind === 'stack') {
+		return diagram.nodes.map((n) => (n.role ? `${n.label} :: ${n.role}` : n.label)).join('\n');
+	}
+	const labels = new Map(diagram.nodes.map((n) => [n.id, n.label]));
+	return diagram.edges
+		.map((e) => {
+			const arrow = `${labels.get(e.from) ?? ''} -> ${labels.get(e.to) ?? ''}`;
+			return e.label ? `${arrow} : ${e.label}` : arrow;
+		})
+		.join('\n');
 }

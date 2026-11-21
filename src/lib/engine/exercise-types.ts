@@ -58,7 +58,8 @@ export interface OcclusionFigure {
 }
 
 /**
- * A drawn diagram. A node or arrow label that is `null` is hidden (the asked part). `layout` is
+ * A drawn diagram. A node label that is `null` is hidden (the asked part); an arrow label is
+ * `null` when hidden or when the arrow has none (`target` tells which is asked). `layout` is
  * null when the diagram is too big to draw (Decisions log "Phase 6 Q4"); the screen then shows
  * its text form. `sourceMediaId` is the original picture, for "Show original" after answering.
  *

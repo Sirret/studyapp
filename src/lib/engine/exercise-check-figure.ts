@@ -1,5 +1,6 @@
 import type { ExerciseResponse, ExerciseVerdict } from './exercise-check.ts';
 import type { ConnectSpec, PlaceSpec } from './exercise-types.ts';
+import { gradeEdgeSet, hitTest } from './grading-shapes.ts';
 
 /**
  * Grades `occlusionDrag`. A drop point (rendered pixels, with the rendered image size) is right
@@ -13,9 +14,17 @@ export function checkPlace(
 	spec: PlaceSpec,
 	response: Extract<ExerciseResponse, { shape: 'place' }>
 ): ExerciseVerdict {
-	void spec;
-	void response;
-	throw new Error('not implemented');
+	const { at } = response;
+	const boxes = spec.figure.boxes;
+	const chosen =
+		'boxId' in at
+			? at.boxId
+			: (
+					boxes.find((b) => b.id === spec.boxId && hitTest(at.point, b, at.size)) ??
+					boxes.find((b) => hitTest(at.point, b, at.size))
+				)?.id;
+	const correct = chosen === spec.boxId && boxes.some((b) => b.id === chosen);
+	return { correct, reveal: [spec.label], marks: [], ...(chosen === undefined ? {} : { chosen }) };
 }
 
 /**
@@ -30,7 +39,15 @@ export function checkConnect(
 	spec: ConnectSpec,
 	response: Extract<ExerciseResponse, { shape: 'connect' }>
 ): ExerciseVerdict {
-	void spec;
-	void response;
-	throw new Error('not implemented');
+	const { result } = gradeEdgeSet(response.edges, spec.edges);
+	const key = (e: { from: string; to: string }) => `${e.from}>${e.to}`;
+	const reference = new Set(spec.edges.map(key));
+	const marks = response.edges.flatMap((e, i) => (reference.has(key(e)) ? [] : [i]));
+	const labels = new Map(spec.figure.nodes.map((n) => [n.id, n.label ?? '']));
+	const name = (id: string) => labels.get(id) ?? '';
+	return {
+		correct: result.correct,
+		reveal: spec.edges.map((e) => `${name(e.from)} → ${name(e.to)}`),
+		marks
+	};
 }

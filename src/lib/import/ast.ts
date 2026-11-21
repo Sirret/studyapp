@@ -4,7 +4,8 @@ import { MIN_STEPS } from '#lib/db/schemas/note.ts';
 
 /** Fewest things a comparison table compares. */
 export const MIN_COMPARE_ITEMS = 2;
-const MIN_STACK_LAYERS = 2;
+/** Fewest layers a `@diagram stack` has. */
+export const MIN_STACK_LAYERS = 2;
 
 const LineSchema = z.number().int().positive();
 const TextSchema = z.string().min(1);

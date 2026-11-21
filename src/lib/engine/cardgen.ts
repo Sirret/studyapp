@@ -107,10 +107,13 @@ function cardsForNote(note: NoteContent): CardSpec[] {
 		case 'diagram':
 			return diagramCards(note);
 		case 'occlusion':
-			return note.payload.boxes.map((box) => ({
-				variant: `box:${box.id}`,
-				path: ['occlusionBank', 'occlusionType']
-			}));
+			// A box with no label yet has no card; `unplaced` labels have none either (Phase 6 Q10–Q13).
+			return note.payload.boxes
+				.filter((box) => box.label.trim() !== '')
+				.map((box) => ({
+					variant: `box:${box.id}`,
+					path: ['occlusionBank', 'occlusionDrag', 'occlusionType']
+				}));
 		default:
 			return assertNever(note);
 	}

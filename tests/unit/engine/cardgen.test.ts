@@ -167,7 +167,7 @@ describe('generateCards', () => {
 		expect(cardsFor({ type: 'occlusion', payload: { mediaId, boxes: [] } })).toEqual([]);
 		const boxes = [{ id: 'b1', x: 0, y: 0, w: 1, h: 1, label: 'a' }];
 		expect(cardsFor({ type: 'occlusion', payload: { mediaId, boxes } })).toEqual([
-			{ variant: 'box:b1', path: ['occlusionBank', 'occlusionType'] }
+			{ variant: 'box:b1', path: ['occlusionBank', 'occlusionDrag', 'occlusionType'] }
 		]);
 	});
 

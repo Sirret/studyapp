@@ -52,7 +52,14 @@ const INSTRUCTIONS: Partial<Record<ExerciseKind, string>> = {
 	matching: 'Match the pairs',
 	flip: 'Recall it, then reveal',
 	explainIt: 'Explain it to yourself, then reveal',
-	blurt: 'Recall everything, then tick what you got'
+	blurt: 'Recall everything, then tick what you got',
+	occlusionBank: 'Pick the hidden label',
+	occlusionDrag: 'Drag the label onto its place, or tap the place',
+	occlusionType: 'Type the hidden label',
+	nodeCloze: 'Type the missing label',
+	edgeCloze: 'Type the missing label',
+	structureRebuild: 'Draw the arrows: tap a box, then the box it points to',
+	layerOrder: 'Put the layers in order, top to bottom'
 };
 
 /** A fixed RNG for prompts of other cards, which never draw for anything but `which:r`. */

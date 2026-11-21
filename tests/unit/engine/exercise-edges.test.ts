@@ -83,15 +83,11 @@ describe('fallbacks when a kind does not fit the card (BUILD_PLAN §5.1)', () =>
 	});
 
 	it.each([
-		['occlusionBank', 9, 'box:b1'],
-		['occlusionType', 9, 'box:b1'],
-		['nodeCloze', 8, 'layer:n1'],
-		['layerOrder', 8, 'layers'],
 		['hotspot', 9, 'box:b1'],
 		['redraw', 8, 'layers']
-	] as const)('diagram kind %s falls back until Phase 6', (kind, n, variant) => {
+	] as const)('figure kind %s is not built yet and falls back to flip', (kind, n, variant) => {
 		const { trace } = build(COURSE, n, variant, kind);
-		expect(trace[0]).toMatchObject({ rule: 'exercise.fallback', from: kind });
+		expect(trace[0]).toMatchObject({ rule: 'exercise.fallback', from: kind, to: 'flip' });
 	});
 
 	it('flip always builds, even for a card with no text answer', () => {

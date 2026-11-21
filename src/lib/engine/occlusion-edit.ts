@@ -1,3 +1,4 @@
+import { OCCLUSION_MIN_BOX, OCCLUSION_NEW_BOX } from '#lib/config/defaults.ts';
 import type { FractionBox } from './grading-shapes.ts';
 
 /** A hide box as stored (DATA_MODEL §4.2 `occlusion`). */
@@ -19,8 +20,11 @@ export interface OcclusionBoxes {
  * @see BUILD_PLAN §7.1 (boxes as fractions)
  */
 export function clampBox<B extends FractionBox>(box: B): B {
-	void box;
-	throw new Error('not implemented');
+	const w = Math.min(Math.max(box.w, OCCLUSION_MIN_BOX), 1);
+	const h = Math.min(Math.max(box.h, OCCLUSION_MIN_BOX), 1);
+	const x = Math.min(Math.max(box.x, 0), 1 - w);
+	const y = Math.min(Math.max(box.y, 0), 1 - h);
+	return { ...box, x, y, w, h };
 }
 
 /**
@@ -35,11 +39,15 @@ export function addBox(
 	label: string,
 	newId: () => string
 ): OcclusionBoxes {
-	void payload;
-	void rect;
-	void label;
-	void newId;
-	throw new Error('not implemented');
+	const box = clampBox({
+		id: newId(),
+		x: rect.x,
+		y: rect.y,
+		w: rect.w,
+		h: rect.h,
+		label: label.trim()
+	});
+	return { ...payload, boxes: [...payload.boxes, box] };
 }
 
 /**
@@ -55,11 +63,12 @@ export function placeLabel(
 	at: { x: number; y: number },
 	newId: () => string
 ): OcclusionBoxes {
-	void payload;
-	void label;
-	void at;
-	void newId;
-	throw new Error('not implemented');
+	const unplaced = payload.unplaced ?? [];
+	const index = unplaced.indexOf(label);
+	if (index < 0) return payload;
+	const { w, h } = OCCLUSION_NEW_BOX;
+	const placed = addBox(payload, { x: at.x - w / 2, y: at.y - h / 2, w, h }, label, newId);
+	return { ...placed, unplaced: [...unplaced.slice(0, index), ...unplaced.slice(index + 1)] };
 }
 
 /** Moves a box by (dx, dy) fractions, clamped onto the image. Unknown ids change nothing. */
@@ -69,11 +78,7 @@ export function moveBox(
 	dx: number,
 	dy: number
 ): OcclusionBoxes {
-	void payload;
-	void boxId;
-	void dx;
-	void dy;
-	throw new Error('not implemented');
+	return updateBox(payload, boxId, (b) => ({ ...b, x: b.x + dx, y: b.y + dy }));
 }
 
 /**
@@ -86,11 +91,7 @@ export function resizeBox(
 	dw: number,
 	dh: number
 ): OcclusionBoxes {
-	void payload;
-	void boxId;
-	void dw;
-	void dh;
-	throw new Error('not implemented');
+	return updateBox(payload, boxId, (b) => ({ ...b, w: b.w + dw, h: b.h + dh }));
 }
 
 /**
@@ -98,7 +99,19 @@ export function resizeBox(
  * box's card is tombstoned by card regeneration (CLAUDE.md rule 7).
  */
 export function removeBox(payload: OcclusionBoxes, boxId: string): OcclusionBoxes {
-	void payload;
-	void boxId;
-	throw new Error('not implemented');
+	if (!payload.boxes.some((b) => b.id === boxId)) return payload;
+	return { ...payload, boxes: payload.boxes.filter((b) => b.id !== boxId) };
+}
+
+/** Replaces one box by `change(box)`, clamped; an unknown id returns the payload unchanged. */
+function updateBox(
+	payload: OcclusionBoxes,
+	boxId: string,
+	change: (box: OcclusionBox) => OcclusionBox
+): OcclusionBoxes {
+	if (!payload.boxes.some((b) => b.id === boxId)) return payload;
+	return {
+		...payload,
+		boxes: payload.boxes.map((b) => (b.id === boxId ? clampBox(change(b)) : b))
+	};
 }

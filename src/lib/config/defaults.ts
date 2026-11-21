@@ -264,3 +264,5 @@ export const DIAGRAM_NODE = { minWidth: 96, maxWidth: 220, charWidth: 9, height:
 export const DIAGRAM_GAP = { x: 32, y: 56 } as const;
 /** Down-and-up barycentre passes when ordering a flow's layers to reduce crossings. */
 export const DIAGRAM_LAYOUT_SWEEPS = 4;
+/** Space between a stack's rows, in layout units (a stack reads as one column of layers). */
+export const DIAGRAM_STACK_GAP = 8;

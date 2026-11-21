@@ -32,6 +32,15 @@ import {
 	buildListPick,
 	buildListTyped
 } from './exercise-build-list.ts';
+import {
+	buildEdgeCloze,
+	buildLayerOrder,
+	buildNodeCloze,
+	buildOcclusionBank,
+	buildOcclusionDrag,
+	buildOcclusionType,
+	buildStructureRebuild
+} from './exercise-build-figure.ts';
 import { fallback, makeContext, type BuildContext, type Built } from './exercise-context.ts';
 import type { ExerciseInput, ExerciseSpec, KindInput } from './exercise-types.ts';
 import type { TraceEntry, Traced } from './trace.ts';
@@ -51,9 +60,9 @@ export function exerciseKindFor(input: KindInput): ExerciseKind {
 	return kind === 'cloze' && firstLetter ? 'firstLetterBank' : kind;
 }
 
-/** Kinds that need a drawn diagram or image come in Phase 6; until then they fall back. */
-function diagramFallback(to: ExerciseKind): Built {
-	return fallback(to, 'diagram kinds come with the diagram view (Phase 6)');
+/** `hotspot` and `redraw` are not built yet (Decisions log "Phase 6"); they fall back to `flip`. */
+function notBuilt(): Built {
+	return fallback('flip', 'hotspot and redraw are not built yet');
 }
 
 type Builder = (ctx: BuildContext) => Built;
@@ -82,15 +91,15 @@ const BUILDERS: Readonly<Record<ExerciseKind, Builder>> = {
 	flip: buildFlip,
 	explainIt: buildExplainIt,
 	blurt: buildBlurt,
-	occlusionType: () => diagramFallback('cloze'),
-	occlusionDrag: () => diagramFallback('cloze'),
-	occlusionBank: () => diagramFallback('mc'),
-	hotspot: () => diagramFallback('flip'),
-	structureRebuild: () => diagramFallback('flip'),
-	layerOrder: () => diagramFallback('flip'),
-	nodeCloze: () => diagramFallback('cloze'),
-	edgeCloze: () => diagramFallback('cloze'),
-	redraw: () => diagramFallback('flip'),
+	occlusionType: buildOcclusionType,
+	occlusionDrag: buildOcclusionDrag,
+	occlusionBank: buildOcclusionBank,
+	hotspot: notBuilt,
+	structureRebuild: buildStructureRebuild,
+	layerOrder: buildLayerOrder,
+	nodeCloze: buildNodeCloze,
+	edgeCloze: buildEdgeCloze,
+	redraw: notBuilt,
 	ideaUnit: buildIdeaUnit,
 	listAll: (ctx) => buildListTyped(ctx, 'listAll'),
 	listN: (ctx) => buildListTyped(ctx, 'listN'),

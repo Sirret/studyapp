@@ -119,7 +119,7 @@ export class MediaRepo extends ContentRepo<Media, Omit<Media, RepoManaged>> {
 	 * @see DATA_MODEL §3.8
 	 */
 	async findBySourceHash(sourceHash: string): Promise<Media | undefined> {
-		void sourceHash;
-		throw new Error('not implemented');
+		const matches = await this.table.where('sourceHash').equals(sourceHash).toArray();
+		return matches.find((media) => !media.deleted);
 	}
 }
