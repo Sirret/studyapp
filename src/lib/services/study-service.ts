@@ -1,7 +1,20 @@
-import type { CardRepo, CourseRepo, NoteRepo, TopicRepo } from '#lib/db/repos/content-repos.ts';
+import type {
+	CardRepo,
+	CourseRepo,
+	MediaRepo,
+	NoteRepo,
+	TopicRepo
+} from '#lib/db/repos/content-repos.ts';
 import type { EventRepo } from '#lib/db/repos/event-repo.ts';
 import type { KvRepo } from '#lib/db/repos/kv-repo.ts';
-import type { CardId, CourseId, EventId, ExerciseKind, SessionId } from '#lib/db/schemas/common.ts';
+import type {
+	CardId,
+	CourseId,
+	EventId,
+	ExerciseKind,
+	MediaId,
+	SessionId
+} from '#lib/db/schemas/common.ts';
 import { DEFAULT_SETTINGS } from '#lib/db/schemas/kv.ts';
 import { checkResponse, type ExerciseResponse } from '#lib/engine/exercise-check.ts';
 import type { ExerciseSpec } from '#lib/engine/exercise-spec.ts';
@@ -23,7 +36,13 @@ export type { PlannedCard, PlannedSession, StartOptions } from './study-plan-typ
 /** What `StudyService` needs; injected so tests can pass real repos on a fake database. */
 export interface StudyServiceDeps {
 	sessions: SessionService;
-	repos: { courses: CourseRepo; topics: TopicRepo; notes: NoteRepo; cards: CardRepo };
+	repos: {
+		courses: CourseRepo;
+		topics: TopicRepo;
+		notes: NoteRepo;
+		cards: CardRepo;
+		media: MediaRepo;
+	};
 	events: EventRepo;
 	kv: KvRepo;
 	replay: ReplayService;
@@ -193,6 +212,16 @@ export class StudyService {
 	}
 
 	/** Opens the next round; see `SessionService.continueRound`. */
+	/**
+	 * An image's bytes, for a figure (`spec.figure.mediaId`) or "Show original" (`sourceMediaId`);
+	 * `null` when it is gone. The screen makes the object URL (`createMediaUrl`) and revokes it.
+	 *
+	 * @see BUILD_PLAN §7; WIP step 7
+	 */
+	async media(id: MediaId): Promise<Blob | null> {
+		return (await this.deps.repos.media.get(id))?.blob ?? null;
+	}
+
 	async continueRound(id: SessionId, options: { afterBreak: boolean }): Promise<StudyView> {
 		return this.present(await this.deps.sessions.continueRound(id, options));
 	}

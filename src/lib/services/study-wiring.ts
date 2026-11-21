@@ -1,5 +1,6 @@
 import {
 	CardRepo,
+	MediaRepo,
 	ChunkRepo,
 	CourseRepo,
 	NoteRepo,
@@ -34,7 +35,8 @@ const repos = {
 	courses: new CourseRepo(db, context),
 	topics: new TopicRepo(db, context),
 	notes: new NoteRepo(db, context),
-	cards: new CardRepo(db, context)
+	cards: new CardRepo(db, context),
+	media: new MediaRepo(db, context)
 };
 const tzOffsetMin = (): number => -new Date().getTimezoneOffset();
 const events = new EventRepo(db, { clock, newId, device, tzOffsetMin });

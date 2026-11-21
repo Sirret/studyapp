@@ -2,14 +2,20 @@ import 'fake-indexeddb/auto';
 import { randomUUID } from 'node:crypto';
 import { afterEach, describe, expect, it } from 'vitest';
 import { PRACTICE_SESSION_CARDS } from '#lib/config/defaults.ts';
-import { CardRepo, CourseRepo, NoteRepo, TopicRepo } from '#lib/db/repos/content-repos.ts';
+import {
+	CardRepo,
+	MediaRepo,
+	CourseRepo,
+	NoteRepo,
+	TopicRepo
+} from '#lib/db/repos/content-repos.ts';
 import { ContentStore } from '#lib/db/repos/content-store.ts';
 import { DeviceRepo } from '#lib/db/repos/device-repo.ts';
 import { EventRepo } from '#lib/db/repos/event-repo.ts';
 import { KvRepo } from '#lib/db/repos/kv-repo.ts';
 import { SessionRepo } from '#lib/db/repos/session-repo.ts';
 import { createDb } from '#lib/db/schema.ts';
-import type { CourseId, ExerciseKind } from '#lib/db/schemas/common.ts';
+import type { CourseId, ExerciseKind, MediaId } from '#lib/db/schemas/common.ts';
 import { Logger } from '#lib/log/logger.ts';
 import { SAMPLE_COURSE_TEXT, SAMPLE_KINDS, sampleKindPlan } from '#lib/services/dev-sample.ts';
 import { ImportService, type ImageEncoder } from '#lib/services/import-service.ts';
@@ -37,7 +43,8 @@ async function setup() {
 		courses: new CourseRepo(db, context),
 		topics: new TopicRepo(db, context),
 		notes: new NoteRepo(db, context),
-		cards: new CardRepo(db, context)
+		cards: new CardRepo(db, context),
+		media: new MediaRepo(db, context)
 	};
 	const events = new EventRepo(db, { clock, newId: randomUUID, device });
 	const kv = new KvRepo(db);
@@ -195,5 +202,25 @@ describe('StudyService (Decisions log, Phase 5)', () => {
 		expect(view.ended).toBe(true);
 		expect(view.item).toBeNull();
 		expect((await env.events.list()).length).toBe(1);
+	});
+});
+
+describe('StudyService.media (Phase 6 step 7)', () => {
+	it('gives a stored image for a figure, and null for an unknown or deleted one', async () => {
+		const { study, repos } = await setup();
+		const blob = new Blob(['picture'], { type: 'image/webp' });
+		const media = await repos.media.create({
+			hash: 'a'.repeat(64),
+			sourceHash: 'b'.repeat(64),
+			mime: 'image/webp',
+			width: 4,
+			height: 2,
+			bytes: blob.size,
+			blob
+		});
+		expect(await (await study.media(media.id))?.text()).toBe('picture');
+		expect(await study.media(randomUUID() as MediaId)).toBeNull();
+		await repos.media.softDelete(media.id);
+		expect(await study.media(media.id)).toBeNull();
 	});
 });

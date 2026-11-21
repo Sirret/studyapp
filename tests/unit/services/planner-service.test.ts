@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { CRAM_MAX_DAYS, DAILY_FLOOR_MIN, PLAN_FORECAST_DAYS } from '#lib/config/defaults.ts';
 import {
 	CardRepo,
+	MediaRepo,
 	ChunkRepo,
 	CourseRepo,
 	NoteRepo,
@@ -63,7 +64,8 @@ async function setup() {
 		topics: new TopicRepo(db, context),
 		chunks: new ChunkRepo(db, context),
 		notes: new NoteRepo(db, context),
-		cards: new CardRepo(db, context)
+		cards: new CardRepo(db, context),
+		media: new MediaRepo(db, context)
 	};
 	const events = new EventRepo(db, { clock, newId: randomUUID, device });
 	const kv = new KvRepo(db);

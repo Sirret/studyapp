@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { expect } from 'vitest';
 import {
 	CardRepo,
+	MediaRepo,
 	ChunkRepo,
 	CourseRepo,
 	NoteRepo,
@@ -37,7 +38,8 @@ export async function studyStack(text: string, start = Date.UTC(2026, 2, 10, 12)
 		topics: new TopicRepo(db, context),
 		chunks: new ChunkRepo(db, context),
 		notes: new NoteRepo(db, context),
-		cards: new CardRepo(db, context)
+		cards: new CardRepo(db, context),
+		media: new MediaRepo(db, context)
 	};
 	const events = new EventRepo(db, { clock, newId: randomUUID, device });
 	const kv = new KvRepo(db);

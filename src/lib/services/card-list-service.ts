@@ -1,18 +1,15 @@
 import type { ContentStore } from '#lib/db/repos/content-store.ts';
-import type { Card } from '#lib/db/schemas/card.ts';
-import type { CourseId, DeviceId, NoteId } from '#lib/db/schemas/common.ts';
-import type { Note } from '#lib/db/schemas/note.ts';
-import { planCardRegen, type CardRegenPlan } from '#lib/engine/card-regen.ts';
+import type { CourseId, NoteId } from '#lib/db/schemas/common.ts';
+import type { NoteType } from '#lib/db/schemas/note.ts';
 import type { NoteContent } from '#lib/engine/cardgen.ts';
 import type { Logger } from '#lib/log/logger.ts';
 import type { Result } from '#lib/util/result.ts';
 import type { CardListView } from './card-list-types.ts';
 import { toCardList } from './card-list.ts';
+import { NoteRegenWriter } from './note-regen.ts';
 import type { ReplayService } from './replay-service.ts';
 
 const LOG_AREA = 'cards';
-
-type NotePatch = Parameters<ContentStore['notes']['draftChange']>[1];
 
 /**
  * The "See all cards" screen's service: list a course's cards and fix them in place. Every write
@@ -22,11 +19,15 @@ type NotePatch = Parameters<ContentStore['notes']['draftChange']>[1];
  * @see BUILD_PLAN §10 row 8.5
  */
 export class CardListService {
+	private readonly writer: NoteRegenWriter;
+
 	constructor(
 		private readonly store: ContentStore,
-		private readonly replay: Pick<ReplayService, 'rebuildCards'>,
+		replay: Pick<ReplayService, 'rebuildCards'>,
 		private readonly logger: Logger
-	) {}
+	) {
+		this.writer = new NoteRegenWriter(store, replay, logger);
+	}
 
 	/** The course's card list, or `null` when the course is gone. */
 	async list(courseId: CourseId): Promise<CardListView | null> {
@@ -51,28 +52,25 @@ export class CardListService {
 		if (content.type !== note.type) {
 			return { ok: false, error: 'A note keeps its type; delete it and add a new one instead.' };
 		}
-		const existing = await this.store.cards.listByNote(noteId);
-		const { result: plan, trace } = planCardRegen(content, existing);
-		if (plan.keep.length + plan.add.length === 0) {
-			return { ok: false, error: 'This note would make no cards.' };
+		const saved = await this.writer.save(note, content, { area: LOG_AREA });
+		return saved.ok ? { ok: true, value: undefined } : saved;
+	}
+
+	/**
+	 * Where an image or diagram note is edited (its own editor screen; the card list's inline
+	 * editor has no fields for them), or `null` for every other type.
+	 *
+	 * @see WIP step 7; BUILD_PLAN §7
+	 */
+	editorHref(note: { courseId: CourseId; noteId: NoteId; type: NoteType }): string | null {
+		switch (note.type) {
+			case 'occlusion':
+				return `/course/${note.courseId}/image/${note.noteId}`;
+			case 'diagram':
+				return `/course/${note.courseId}/diagram/${note.noteId}`;
+			default:
+				return null;
 		}
-		const deviceId = await this.store.getDeviceId();
-		let changed: { note: Note; cards: Card[] };
-		try {
-			const patch = { payload: content.payload, check: false } as NotePatch;
-			changed = {
-				note: this.store.notes.draftChange(note, patch, deviceId),
-				cards: this.draftCards(note, existing, plan, deviceId)
-			};
-		} catch (error) {
-			this.logger.warn(LOG_AREA, 'note edit rejected', { noteId, error: String(error), trace });
-			return { ok: false, error: 'Some fields of this note are missing or wrong.' };
-		}
-		await this.store.putBatch({ notes: [changed.note], cards: changed.cards });
-		const replayIds = plan.keep.filter((k) => k.pathChanged).map((k) => k.cardId);
-		if (replayIds.length > 0) await this.replay.rebuildCards(replayIds);
-		this.logger.info(LOG_AREA, 'note edited', { noteId, trace });
-		return { ok: true, value: undefined };
 	}
 
 	/** Deletes a note and its cards (tombstones, one transaction). Review events stay. */
@@ -111,34 +109,5 @@ export class CardListService {
 				.map((card) => this.store.cards.draftChange(card, { suspended: flagged }, deviceId))
 		});
 		this.logger.info(LOG_AREA, flagged ? 'note flagged' : 'note unflagged', { noteId });
-	}
-
-	/** Kept cards that change (new path or un-paused), new cards, and tombstones of lost ones. */
-	private draftCards(
-		note: Note,
-		existing: readonly Card[],
-		plan: CardRegenPlan,
-		deviceId: DeviceId
-	): Card[] {
-		const byId = new Map(existing.map((card) => [card.id, card]));
-		// Saving an edit clears the flag, so it un-pauses only when the note was flagged.
-		const unpause = note.check === true;
-		const kept = plan.keep.flatMap((k) => {
-			const card = byId.get(k.cardId);
-			if (!card || (!k.pathChanged && !(unpause && card.suspended))) return [];
-			const suspended = unpause ? false : card.suspended;
-			return [this.store.cards.draftChange(card, { path: k.path, suspended }, deviceId)];
-		});
-		const added = plan.add.map((spec) =>
-			this.store.cards.draft(
-				{ noteId: note.id, courseId: note.courseId, ...spec, suspended: false },
-				deviceId
-			)
-		);
-		const removed = plan.remove.flatMap((id) => {
-			const card = byId.get(id);
-			return card ? [this.store.cards.draftDelete(card, deviceId)] : [];
-		});
-		return [...kept, ...added, ...removed];
 	}
 }

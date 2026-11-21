@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
 	CardRepo,
+	MediaRepo,
 	ChunkRepo,
 	CourseRepo,
 	NoteRepo,
@@ -63,7 +64,8 @@ async function setup(text = COURSE_TEXT, shares?: () => Promise<number[] | null>
 		topics: new TopicRepo(db, context),
 		chunks: new ChunkRepo(db, context),
 		notes: new NoteRepo(db, context),
-		cards: new CardRepo(db, context)
+		cards: new CardRepo(db, context),
+		media: new MediaRepo(db, context)
 	};
 	const events = new EventRepo(db, { clock, newId: randomUUID, device });
 	const kv = new KvRepo(db);
