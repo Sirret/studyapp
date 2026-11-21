@@ -17,11 +17,15 @@ import {
 	type ReplyStatus,
 	type ResumePoint
 } from './completeness.ts';
-import { fileKey } from './zip.ts';
+import { imageKey } from './zip.ts';
 
-/** A note's content before its image exists in `media`: occlusion names the file instead. */
+/**
+ * A note's content before its image exists in `media`: occlusion names the file instead, with
+ * the labels of its `box:` lines (no boxes and no cards until they are placed).
+ */
 export type PlannedContent =
-	Exclude<NoteContent, { type: 'occlusion' }> | { type: 'occlusion'; file: string };
+	| Exclude<NoteContent, { type: 'occlusion' }>
+	| { type: 'occlusion'; file: string; unplaced?: string[] };
 
 /** A section (chunk) about to be written. @see DATA_MODEL §3.3 */
 export interface PlannedChunk extends Pick<
@@ -75,7 +79,7 @@ export interface ImportPlan {
 
 /** What the builder needs from outside. */
 export interface BuildContext {
-	/** Attached images, as `fileKey()` values. */
+	/** Attached images, as `imageKey()` values. */
 	files: ReadonlySet<string>;
 	newId: () => string;
 }
@@ -90,8 +94,9 @@ function hasRequiredImage(state: BuildState, block: NoteBlock): boolean {
 			: block.kind === 'diagramStack' || block.kind === 'diagramFlow'
 				? block.sourceFile
 				: undefined;
-	if (file === undefined || state.context.files.has(fileKey(file))) return true;
+	if (file === undefined || state.context.files.has(imageKey(file))) return true;
 	state.errors.push({ line: block.line, message: `Image "${file}" is not attached.` });
+	if (!state.missingImages.includes(file)) state.missingImages.push(file);
 	return false;
 }
 
@@ -184,12 +189,13 @@ function applyBlock(state: BuildState, block: Block, blocks: Block[], index: num
 export function buildPlan(
 	document: ImportDocument,
 	context: BuildContext
-): { plan: ImportPlan; errors: ImportError[] } {
+): { plan: ImportPlan; errors: ImportError[]; missingImages: string[] } {
 	const state: BuildState = {
 		context,
 		topics: new Map(),
 		coverage: [],
 		errors: [],
+		missingImages: [],
 		sectionOpen: false,
 		priority: 'normal'
 	};
@@ -206,6 +212,7 @@ export function buildPlan(
 			status: done.status,
 			...(done.resume ? { resume: done.resume } : {})
 		},
-		errors: [...state.errors, ...mapErrors].sort((a, b) => a.line - b.line)
+		errors: [...state.errors, ...mapErrors].sort((a, b) => a.line - b.line),
+		missingImages: state.missingImages
 	};
 }

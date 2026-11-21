@@ -65,7 +65,12 @@ async function makePng(page: Page, width: number, height: number): Promise<Buffe
 			if (context) context.fillRect(0, 0, w ?? 1, h ?? 1);
 			const blob = await canvas.convertToBlob({ type: 'image/png' });
 			const bytes = new Uint8Array(await blob.arrayBuffer());
-			return btoa(String.fromCharCode(...bytes));
+			// In chunks: spreading a large image's bytes into one call overflows the stack.
+			let binary = '';
+			for (let at = 0; at < bytes.length; at += 0x8000) {
+				binary += String.fromCharCode(...bytes.subarray(at, at + 0x8000));
+			}
+			return btoa(binary);
 		},
 		[width, height]
 	);
@@ -216,7 +221,11 @@ test.describe('import images', () => {
 			{ name: 'copy.png', mimeType: 'image/png', buffer: png }
 		]);
 		await expect(page.getByText('Attached: slide.png, copy.png')).toBeVisible();
-		await pasteArea(page).fill('@deck A\n@occlusion slide.png\n@occlusion copy.png');
+		// A second occlusion note on the same picture is skipped (Decisions "Phase 6 Q10–Q13"), so
+		// the copy is a diagram's source: two notes, one stored image.
+		await pasteArea(page).fill(
+			'@deck A\n@occlusion slide.png\n@diagram stack S\nsource: copy.png\nA\nB'
+		);
 		await page.getByRole('button', { name: 'Check' }).click();
 		await page.getByRole('button', { name: 'Add to course' }).click();
 		await expect(page.getByRole('status')).toContainText('Added 2 notes');

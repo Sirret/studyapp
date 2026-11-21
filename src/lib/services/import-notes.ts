@@ -4,7 +4,7 @@ import type { DistributiveOmit } from '#lib/db/schemas/event.ts';
 import type { Note } from '#lib/db/schemas/note.ts';
 import type { PlannedContent, PlannedNote } from '#lib/import/build.ts';
 import type { NoteContent } from '#lib/engine/cardgen.ts';
-import { fileKey } from '#lib/import/zip.ts';
+import { imageKey } from '#lib/import/zip.ts';
 
 /** Where a planned note goes. */
 export interface NotePlace {
@@ -15,7 +15,7 @@ export interface NotePlace {
 }
 
 function requireMedia(mediaIds: ReadonlyMap<string, MediaId>, file: string): MediaId {
-	const mediaId = mediaIds.get(fileKey(file));
+	const mediaId = mediaIds.get(imageKey(file));
 	if (!mediaId) throw new Error(`No stored image for ${file}`);
 	return mediaId;
 }
@@ -29,7 +29,11 @@ function resolveContent(
 	if (content.type === 'occlusion') {
 		return {
 			type: 'occlusion',
-			payload: { mediaId: requireMedia(mediaIds, content.file), boxes: [] }
+			payload: {
+				mediaId: requireMedia(mediaIds, content.file),
+				boxes: [],
+				...(content.unplaced?.length ? { unplaced: content.unplaced } : {})
+			}
 		};
 	}
 	if (content.type === 'diagram' && sourceFile) {

@@ -130,6 +130,20 @@ describe('parseImport', () => {
 				file: 'a.png',
 				isChecked: true
 			});
+			expect(blockOf('@occlusion a.png\nbox: Disk [CHECK]', 'occlusion').isChecked).toBe(true);
+		});
+
+		/** @see Decisions log "Phase 6 step 6" */
+		it('reads box: lines under @occlusion and reports any other line', () => {
+			expect(blockOf('@occlusion a.png\nbox: Disk\nbox:  Buffer ', 'occlusion').labels).toEqual([
+				'Disk',
+				'Buffer'
+			]);
+			const { document, errors } = parseImport('@occlusion a.png\nDisk\nbox: CPU');
+			expect(errors).toEqual([
+				{ line: 2, message: 'Under @occlusion, write only "box: <label>" lines.' }
+			]);
+			expect(document.blocks[0]).toMatchObject({ kind: 'occlusion', labels: ['CPU'] });
 		});
 
 		it('strips the marker from a cloze', () => {

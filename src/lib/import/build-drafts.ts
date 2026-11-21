@@ -105,7 +105,9 @@ function singleContent(
 		case 'compare':
 			return { type: 'compare', payload: { items: block.items, rows: block.rows } };
 		case 'occlusion':
-			return { type: 'occlusion', file: block.file };
+			return block.labels.length > 0
+				? { type: 'occlusion', file: block.file, unplaced: block.labels }
+				: { type: 'occlusion', file: block.file };
 		case 'diagramStack':
 		case 'diagramFlow':
 			return diagramContent(block, newId);

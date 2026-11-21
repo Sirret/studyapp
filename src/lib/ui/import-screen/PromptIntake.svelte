@@ -4,6 +4,7 @@
 	import {
 		buildPrompt,
 		GIVING_LABELS,
+		IMAGES_TIP,
 		PDF_TIP,
 		type Giving,
 		type Intake
@@ -63,6 +64,7 @@
 		rows={3}
 	/>
 	<p>{PDF_TIP}</p>
+	<p>{IMAGES_TIP}</p>
 	<Button variant="secondary" full onclick={copy}>Copy the chatbot prompt</Button>
 	<Disclosure summary="Show the prompt" preformatted>{prompt}</Disclosure>
 </Stack>

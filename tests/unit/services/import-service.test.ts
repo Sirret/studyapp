@@ -468,14 +468,17 @@ describe('ImportService', () => {
 			const twin = await service.prepareImages([
 				{ name: 'copy.png', blob: new Blob(['s.png'], { type: 'image/png' }) }
 			]);
-			await commit('@deck A\n@occlusion copy.png', twin.images);
+			// A second occlusion note on the same picture is skipped (Phase 6 Q10–Q13), so the
+			// second import names the copy as a diagram's source instead.
+			await commit('@deck A\n@diagram stack S\nsource: copy.png\nA\nB', twin.images);
 			const media = await store.media.list();
 			expect(media).toHaveLength(1);
 			const notes = await store.notes.list();
-			expect(notes.map((note) => note.type === 'occlusion' && note.payload.mediaId)).toEqual([
-				media[0]?.id,
-				media[0]?.id
-			]);
+			const imageOf = (note: Note) =>
+				note.type === 'occlusion'
+					? note.payload.mediaId
+					: note.type === 'diagram' && note.payload.sourceMediaId;
+			expect(notes.map(imageOf)).toEqual([media[0]?.id, media[0]?.id]);
 		});
 
 		it('counts only new images in its summary', async () => {

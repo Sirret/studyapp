@@ -10,11 +10,30 @@ export interface SkippedDuplicate {
 	topic: string;
 }
 
+/** A planned diagram named like one the course has, with different arrows or layers: kept. */
+export interface ChangedDiagram extends SkippedDuplicate {
+	name: string;
+}
+
 /** The plan with duplicates removed, and what was removed. */
 export interface DuplicateSplit {
 	topics: PlannedTopic[];
 	skipped: SkippedDuplicate[];
+	/** Diagrams kept next to an older one of the same name ("changed diagram: kept both"). */
+	changed: ChangedDiagram[];
 }
+
+/**
+ * Which stored image an occlusion note shows, so the same picture imported again is found: a
+ * planned note's file and a stored note's media ID both resolve to one key (the stored media ID,
+ * or a key for an image not stored yet). `undefined` when it can't be told; such a note is kept.
+ */
+export interface ImageIdentity {
+	ofFile(file: string): string | undefined;
+	ofMedia(mediaId: string): string | undefined;
+}
+
+const NO_IMAGES: ImageIdentity = { ofFile: () => undefined, ofMedia: () => undefined };
 
 /**
  * Any run of characters that are not letters or digits at either end of a text, which a
@@ -37,16 +56,54 @@ function canonical(value: unknown): unknown {
 	return value;
 }
 
+type DiagramContent = Extract<NoteContent, { type: 'diagram' }>;
+
+function sortedJson(items: unknown[]): string[] {
+	return items.map((item) => JSON.stringify(canonical(item))).sort();
+}
+
+/**
+ * A diagram's structure by labels, never IDs: a stack's layers in order, a flow's nodes and
+ * arrows (from, to, label) in any order. The name and the source image are not part of it.
+ */
+function diagramStructure({ payload }: DiagramContent): unknown {
+	const labelOf = new Map(payload.nodes.map((node) => [node.id, node.label]));
+	if (payload.kind === 'stack') {
+		return ['stack', canonical(payload.nodes.map(({ label, role }) => [label, role ?? '']))];
+	}
+	const edges = payload.edges.map((edge) => [
+		labelOf.get(edge.from) ?? '',
+		labelOf.get(edge.to) ?? '',
+		edge.label ?? ''
+	]);
+	return ['flow', sortedJson(payload.nodes.map((node) => node.label)), sortedJson(edges)];
+}
+
 /**
  * A key that two notes share exactly when they ask the same thing: the note type and its payload
- * with text normalised (case, spacing, punctuation at the ends). `null` for image notes
- * (occlusion, diagram), which are never treated as duplicates.
+ * with text normalised (case, spacing, punctuation at the ends). A diagram's key is its structure
+ * by labels (IDs, name and source image ignored); an occlusion note's is its image, through
+ * `images`. `null` when an image can't be identified: such a note is never a duplicate.
  *
- * @see BUILD_PLAN §10 row 8.5 ("skip duplicate notes on re-import")
+ * @see BUILD_PLAN §10 row 8.5 ("skip duplicate notes on re-import"); Decisions log "Phase 6 Q10–Q13"
  */
-export function noteFingerprint(content: NoteContent | PlannedContent): string | null {
-	if (content.type === 'occlusion' || content.type === 'diagram') return null;
+export function noteFingerprint(
+	content: NoteContent | PlannedContent,
+	images: ImageIdentity = NO_IMAGES
+): string | null {
+	if (content.type === 'occlusion') {
+		const key =
+			'file' in content ? images.ofFile(content.file) : images.ofMedia(content.payload.mediaId);
+		return key === undefined ? null : JSON.stringify(['occlusion', key]);
+	}
+	if (content.type === 'diagram') return JSON.stringify(['diagram', diagramStructure(content)]);
 	return JSON.stringify([content.type, canonical(content.payload)]);
+}
+
+/** A diagram's kind and name, normalised, to tell a changed diagram from a new one. */
+function diagramName(content: NoteContent | PlannedContent): string | null {
+	if (content.type !== 'diagram') return null;
+	return JSON.stringify([content.payload.kind, normaliseText(content.payload.name)]);
 }
 
 /**
@@ -63,36 +120,53 @@ export function sectionFingerprint(chunk: Pick<PlannedChunk, 'title' | 'text'>):
 
 /**
  * Removes planned notes that the course already has (any topic), or that appear earlier in the
- * same paste, so re-importing the same text adds nothing. Topics, sections and the order of the
- * notes that stay are unchanged.
+ * same paste, so re-importing the same text adds nothing: the same text notes, an identical
+ * diagram, or an occlusion note on an image the course already has one for (its boxes stay as
+ * they are). A diagram named like an existing one but with other arrows or layers is kept and
+ * listed in `changed`. Topics, sections and the order of the notes that stay are unchanged.
  *
- * @see BUILD_PLAN §10 row 8.5
+ * @see BUILD_PLAN §10 row 8.5; Decisions log "Phase 6 Q10–Q13"
  */
 export function dropDuplicateNotes(
 	topics: readonly PlannedTopic[],
-	existing: readonly NoteContent[]
+	existing: readonly NoteContent[],
+	images: ImageIdentity = NO_IMAGES
 ): Traced<DuplicateSplit> {
 	const seen = new Set<string>();
-	for (const content of existing) {
-		const print = noteFingerprint(content);
+	const diagramNames = new Set<string>();
+	const remember = (content: NoteContent | PlannedContent, print: string | null): void => {
 		if (print !== null) seen.add(print);
-	}
+		const name = diagramName(content);
+		if (name !== null) diagramNames.add(name);
+	};
+	for (const content of existing) remember(content, noteFingerprint(content, images));
 	const skipped: SkippedDuplicate[] = [];
+	const changed: ChangedDiagram[] = [];
 	const kept = topics.map((topic) => ({
 		...topic,
 		notes: topic.notes.filter((note) => {
-			const print = noteFingerprint(note.content);
-			if (print === null) return true;
-			if (seen.has(print)) {
+			const print = noteFingerprint(note.content, images);
+			if (print !== null && seen.has(print)) {
 				skipped.push({ line: note.line, topic: topic.name });
 				return false;
 			}
-			seen.add(print);
+			const name = diagramName(note.content);
+			if (name !== null && diagramNames.has(name) && note.content.type === 'diagram') {
+				changed.push({ line: note.line, topic: topic.name, name: note.content.payload.name });
+			}
+			remember(note.content, print);
 			return true;
 		})
 	}));
 	return {
-		result: { topics: kept, skipped },
-		trace: [{ rule: 'skip-duplicate-notes', existing: existing.length, skipped: skipped.length }]
+		result: { topics: kept, skipped, changed },
+		trace: [
+			{
+				rule: 'skip-duplicate-notes',
+				existing: existing.length,
+				skipped: skipped.length,
+				changed: changed.length
+			}
+		]
 	};
 }

@@ -19,6 +19,7 @@
 	import Card from '../primitives/Card.svelte';
 	import Segmented from '../primitives/Segmented.svelte';
 	import ImportChecklist from './ImportChecklist.svelte';
+	import ImportImageNotes from './ImportImageNotes.svelte';
 
 	interface Props {
 		preview: ImportPreview;
@@ -167,6 +168,12 @@
 				</Stack>
 			{/if}
 		{/if}
+
+		<ImportImageNotes
+			missingImages={preview.missingImages}
+			changedDiagrams={preview.changedDiagrams}
+			{onJumpToLine}
+		/>
 
 		{#if preview.duplicates.length > 0}
 			<Disclosure

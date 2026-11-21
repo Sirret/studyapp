@@ -3,7 +3,13 @@ import { describe, expect, it } from 'vitest';
 import type { CourseMap } from '#lib/db/schemas/course.ts';
 import { readKeyWords } from '#lib/import/key-words.ts';
 import { normalizeFrom, sharesLecture } from '#lib/import/lectures.ts';
-import { BASE_PROMPT, GOAL_BLOCKS, buildPrompt, resumePrompt } from '#lib/import/prompt-v2.ts';
+import {
+	BASE_PROMPT,
+	GOAL_BLOCKS,
+	IMAGES_TIP,
+	buildPrompt,
+	resumePrompt
+} from '#lib/import/prompt-v2.ts';
 
 /** @see docs/PROMPTS.md §3 FORMAT, §7 */
 describe('normalizeFrom', () => {
@@ -89,6 +95,25 @@ describe('prompt-v2', () => {
 		expect(BASE_PROMPT).toContain(
 			'a @sequence when the items\n  have an order, or else one card per item'
 		);
+	});
+
+	/** Decisions log "Phase 6 step 6" (prompt gaps from the Phase 5 row). */
+	it('tells the chatbot the diagram and image lines, with the exact file names', () => {
+		for (const line of [
+			'@diagram stack <name>',
+			'@diagram flow <name>',
+			'source: <image file name>',
+			'@occlusion <image file name>',
+			'box: <a label you can see in the picture, one per line>',
+			'Use those exact names in\n  @occlusion and source: lines; never invent an image.',
+			'"image <file name>: not placed"'
+		]) {
+			expect(BASE_PROMPT).toContain(line);
+		}
+	});
+
+	it('shows the images tip from PROMPTS §2 on the intake screen', () => {
+		expect(readFileSync('docs/PROMPTS.md', 'utf8')).toContain(IMAGES_TIP);
 	});
 
 	it('has each GOAL block word for word from PROMPTS §4', () => {

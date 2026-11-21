@@ -15,6 +15,10 @@ export interface Intake {
 export const PDF_TIP =
 	'Upload slides as PDF if you can (diagrams in .pptx files are often invisible to chatbots).';
 
+/** Shown on the intake screen: how pictures reach the chatbot and the import. @see docs/PROMPTS.md §2 */
+export const IMAGES_TIP =
+	'Got pictures to learn from (a labelled diagram, a slide image)? Attach them in the chat and type their file names. To import, save the reply as a .txt file and zip it with the same pictures, or attach the pictures here next to the pasted reply.';
+
 /** PROMPTS §3, word for word. */
 export const BASE_PROMPT = `You turn my course material into a study pack for an offline study app. The app
 reads your reply with a strict line format, so follow the FORMAT exactly.
@@ -86,6 +90,16 @@ CARD RULES
   numbers (don't restate the formula as a step).
 - Each fact appears once, in the one format that fits best.
 
+DIAGRAMS AND IMAGES
+- A layered model is a @diagram stack (at least 2 layers); a process, pipeline
+  or state chart is a @diagram flow, one arrow per line. Name things as the
+  cards do.
+- I may attach pictures and list their file names. Use those exact names in
+  @occlusion and source: lines; never invent an image. Use @occlusion for a
+  picture whose labels I should learn, with one box: line per label.
+- If you can't place a picture I listed, add it under @missing as
+  "image <file name>: not placed" with the reason.
+
 PRIORITY
 - high: core definitions, models, processes, exam traps, a point a takeaway slide
   singles out (a slide that repeats the whole lecture doesn't make everything
@@ -134,6 +148,13 @@ step
 situation :: concept
 @example <name>
 step label :: step
+@diagram stack <name>
+layer, top to bottom :: what it does (optional)
+@diagram flow <name>
+A -> B : arrow label (optional)
+source: <image file name>   (optional, under a @diagram: the picture it shows)
+@occlusion <image file name>
+box: <a label you can see in the picture, one per line>
 @link <topic id>
 question that needs both topics :: short answer
 (repeat @topic ... for every topic; NO @end between topics)

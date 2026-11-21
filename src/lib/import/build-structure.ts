@@ -41,6 +41,8 @@ export interface BuildState {
 	topics: Map<string, PlannedTopic>;
 	coverage: string[];
 	errors: ImportError[];
+	/** Image files named by skipped blocks, in order, each once. */
+	missingImages: string[];
 	topic?: PlannedTopic;
 	chunkIndex?: number;
 	/** The current section came from `@section` and has no `@read` yet. */

@@ -1,0 +1,189 @@
+{
+	"errors": [
+		{
+			"line": 16,
+			"message": "Image \"b-tree-node.png\" is not attached."
+		}
+	],
+	"missingImages": [
+		"b-tree-node.png"
+	],
+	"unusedImages": [
+		"spare.png"
+	],
+	"notes": [
+		{
+			"type": "diagram",
+			"payload": {
+				"kind": "stack",
+				"name": "DBMS layers",
+				"nodes": [
+					{
+						"id": "id1",
+						"label": "Query processor",
+						"role": "parses and optimises queries"
+					},
+					{
+						"id": "id2",
+						"label": "Storage manager",
+						"role": "moves data between disk and memory"
+					},
+					{
+						"id": "id3",
+						"label": "Disk storage"
+					}
+				],
+				"edges": []
+			},
+			"check": false,
+			"cards": [
+				{
+					"variant": "layer:id1",
+					"path": [
+						"nodeCloze"
+					]
+				},
+				{
+					"variant": "layer:id2",
+					"path": [
+						"nodeCloze"
+					]
+				},
+				{
+					"variant": "layer:id3",
+					"path": [
+						"nodeCloze"
+					]
+				},
+				{
+					"variant": "layers",
+					"path": [
+						"layerOrder"
+					]
+				}
+			]
+		},
+		{
+			"type": "diagram",
+			"payload": {
+				"kind": "flow",
+				"name": "Query processing",
+				"nodes": [
+					{
+						"id": "id1",
+						"label": "SQL query"
+					},
+					{
+						"id": "id2",
+						"label": "Parser"
+					},
+					{
+						"id": "id3",
+						"label": "Optimizer"
+					},
+					{
+						"id": "id4",
+						"label": "Evaluation engine"
+					}
+				],
+				"edges": [
+					{
+						"id": "id5",
+						"from": "id1",
+						"to": "id2",
+						"label": "parsed into"
+					},
+					{
+						"id": "id6",
+						"from": "id2",
+						"to": "id3",
+						"label": "relational algebra"
+					},
+					{
+						"id": "id7",
+						"from": "id3",
+						"to": "id4",
+						"label": "query plan"
+					},
+					{
+						"id": "id8",
+						"from": "id4",
+						"to": "id3"
+					}
+				],
+				"sourceMediaId": "media:query_plan.jpg"
+			},
+			"check": false,
+			"cards": [
+				{
+					"variant": "edge:id5",
+					"path": [
+						"edgeCloze"
+					]
+				},
+				{
+					"variant": "edge:id6",
+					"path": [
+						"edgeCloze"
+					]
+				},
+				{
+					"variant": "edge:id7",
+					"path": [
+						"edgeCloze"
+					]
+				},
+				{
+					"variant": "edge:id8",
+					"path": [
+						"edgeCloze"
+					]
+				},
+				{
+					"variant": "node:id1",
+					"path": [
+						"nodeCloze"
+					]
+				},
+				{
+					"variant": "node:id2",
+					"path": [
+						"nodeCloze"
+					]
+				},
+				{
+					"variant": "node:id3",
+					"path": [
+						"nodeCloze"
+					]
+				},
+				{
+					"variant": "node:id4",
+					"path": [
+						"nodeCloze"
+					]
+				},
+				{
+					"variant": "rebuild",
+					"path": [
+						"structureRebuild"
+					]
+				}
+			]
+		},
+		{
+			"type": "occlusion",
+			"payload": {
+				"mediaId": "media:Buffer Manager.PNG",
+				"boxes": [],
+				"unplaced": [
+					"Buffer pool",
+					"Disk",
+					"Page table"
+				]
+			},
+			"check": true,
+			"cards": []
+		}
+	]
+}

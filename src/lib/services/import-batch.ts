@@ -10,7 +10,7 @@ import type {
 import type { Topic, TopicBeforeImport } from '#lib/db/schemas/course.ts';
 import type { PlannedTopic } from '#lib/import/build.ts';
 import { sectionFingerprint } from '#lib/import/duplicates.ts';
-import { fileKey } from '#lib/import/zip.ts';
+import { imageKey } from '#lib/import/zip.ts';
 import { matchTopic } from './import-map.ts';
 import { toNoteFields } from './import-notes.ts';
 import type { PreparedImage } from './import-service.ts';
@@ -153,7 +153,7 @@ export class ImportBatchDrafter {
 				this.deviceId
 			);
 		if (!stored && !this.batch.media.includes(media)) this.batch.media.push(media);
-		this.mediaIds.set(fileKey(fileName), media.id);
+		this.mediaIds.set(imageKey(fileName), media.id);
 	}
 
 	private draftNewTopic(input: ImportDraftInput, planned: PlannedTopic, order: number): TopicId {

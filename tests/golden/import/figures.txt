@@ -1,0 +1,18 @@
+@deck Database storage
+@diagram stack DBMS layers
+Query processor :: parses and optimises queries
+Storage manager :: moves data between disk and memory
+Disk storage
+@diagram flow Query processing
+source: query-plan.png
+SQL query -> Parser : parsed into
+Parser -> Optimizer : relational algebra
+Optimizer -> Evaluation engine : query plan
+Evaluation engine -> Optimizer
+@occlusion buffer_manager.png
+box: Buffer pool
+box: Disk
+box: Page table [CHECK]
+@occlusion b-tree-node.png
+box: Key
+@end

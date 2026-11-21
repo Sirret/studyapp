@@ -29,6 +29,7 @@ export const SAMPLE_IMPORT_PREVIEW = {
 	generatedChunkCount: 0,
 	checked: [{ line: 30, text: 'Basic operations :: select, project, union' }],
 	unusedImages: [],
+	missingImages: [],
 	ended: false,
 	status: 'cut',
 	warnings: [],
@@ -36,7 +37,8 @@ export const SAMPLE_IMPORT_PREVIEW = {
 	missing: [],
 	resumePrompt: null,
 	starredGaps: [],
-	duplicates: []
+	duplicates: [],
+	changedDiagrams: []
 } satisfies ImportPreview;
 
 /** The resume state: a reply that stopped at a topic break, with a checklist, a missing part and a warning. */

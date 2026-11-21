@@ -195,14 +195,37 @@ const parseExample: BlockParser = (raw) => {
 	});
 };
 
+const BOX_LINE = /^box:\s*(.*)$/;
+
+/**
+ * `@occlusion <file>`, with optional `box: <label>` lines: labels seen in the picture, placed by
+ * the student in the editor. Another line under it is an error; the block is still kept.
+ *
+ * @see BUILD_PLAN §4.1, §7.1; Decisions log "Phase 6 step 6"
+ */
 const parseOcclusion: BlockParser = (raw) => {
-	const errors = strayLineErrors(raw);
+	const errors: ImportError[] = [];
+	const labels: string[] = [];
+	for (const { line, text } of raw.lines) {
+		const label = BOX_LINE.exec(text)?.[1]?.trim();
+		if (label) {
+			if (!labels.includes(label)) labels.push(label);
+		} else {
+			errors.push({ line, message: 'Under @occlusion, write only "box: <label>" lines.' });
+		}
+	}
 	if (raw.argument === '') {
 		return { errors: [{ line: raw.line, message: '@occlusion needs a file name.' }, ...errors] };
 	}
 	return finishBlock(
 		raw,
-		{ kind: 'occlusion', line: raw.line, isChecked: raw.isChecked, file: raw.argument },
+		{
+			kind: 'occlusion',
+			line: raw.line,
+			isChecked: isBlockChecked(raw),
+			file: raw.argument,
+			labels
+		},
 		errors
 	);
 };

@@ -113,7 +113,13 @@ export const BlockSchema = z.discriminatedUnion('kind', [
 			.array(z.object({ from: TextSchema, to: TextSchema, label: TextSchema.optional() }))
 			.min(1, '@diagram flow needs at least one arrow.')
 	}),
-	z.object({ kind: z.literal('occlusion'), ...blockBase, file: TextSchema }),
+	z.object({
+		kind: z.literal('occlusion'),
+		...blockBase,
+		file: TextSchema,
+		/** Labels from `box: <label>` lines, to place in the editor (Decisions log "Phase 6 step 6"). */
+		labels: z.array(TextSchema)
+	}),
 	z.object({
 		kind: z.literal('coverage'),
 		line: LineSchema,

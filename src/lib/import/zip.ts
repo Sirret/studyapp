@@ -79,14 +79,8 @@ export function readImportZip(bytes: Uint8Array): Result<ImportZip, string> {
 	return { ok: true, value: { text: text.value, images } };
 }
 
-/** How a file name is matched against `@occlusion` and diagram `source:` lines. @see BUILD_PLAN §4.2 */
-export function fileKey(name: string): string {
-	return baseName(name).toLowerCase();
-}
-
 /**
- * How an image file name is matched against `@occlusion` and diagram `source:` lines (replaces
- * `fileKey` in step 6): the base name (folders dropped), lowercased, without its extension, with
+ * How an image file name is matched against `@occlusion` and diagram `source:` lines: the base name (folders dropped), lowercased, without its extension, with
  * spaces, underscores and hyphens removed, so `Slide 12.PNG`, `slide_12.jpg` and `slide-12.webp`
  * all match. Two files of one zip with the same key are an import error naming both.
  *

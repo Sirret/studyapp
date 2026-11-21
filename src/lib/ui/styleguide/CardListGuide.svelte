@@ -17,7 +17,9 @@
 	const [first] = SAMPLE_CARD_ROWS;
 	const withFixes = {
 		...SAMPLE_IMPORT_PREVIEW,
-		duplicates: [{ line: 8, topic: 'Lecture 1: Introduction' }]
+		duplicates: [{ line: 8, topic: 'Lecture 1: Introduction' }],
+		missingImages: ['slide 12.png', 'osi.jpg'],
+		changedDiagrams: [{ line: 30, topic: 'Lecture 2: Layers', name: 'OSI' }]
 	};
 	const fixPrompt =
 		'My study app could not import these parts of your last reply:\n\n- Line 12: Expected "A -> B".';
@@ -49,7 +51,7 @@
 	<GuideRow label="Import step">
 		<ImportStep step={1} title="Choose a course"><span>Course picker goes here.</span></ImportStep>
 	</GuideRow>
-	<GuideRow label="Preview with duplicates and a fix-it prompt">
+	<GuideRow label="Preview with duplicates, missing images, a changed diagram and a fix-it prompt">
 		<ImportPreviewPanel
 			preview={withFixes}
 			{placements}

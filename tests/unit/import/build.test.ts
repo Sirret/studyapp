@@ -6,12 +6,12 @@ import { collectMap } from '#lib/import/build-map.ts';
 import { checkCompleteness } from '#lib/import/completeness.ts';
 import { parseImport } from '#lib/import/parser.ts';
 import { starredGaps } from '#lib/import/validate.ts';
-import { fileKey } from '#lib/import/zip.ts';
+import { imageKey } from '#lib/import/zip.ts';
 
 function build(text: string, files: string[] = []) {
 	const { document, errors } = parseImport(text);
 	expect(errors).toEqual([]);
-	return buildPlan(document, { files: new Set(files.map(fileKey)), newId: randomUUID });
+	return buildPlan(document, { files: new Set(files.map(imageKey)), newId: randomUUID });
 }
 
 function plan(text: string, files: string[] = []): ImportPlan {
@@ -213,6 +213,34 @@ describe('buildPlan', () => {
 			expect(output.errors).toEqual([{ line: 2, message: 'Image "gone.png" is not attached.' }]);
 			expect(output.plan.topics[0]?.notes).toEqual([]);
 		});
+
+		/** @see Decisions log "Phase 6 Q9" */
+		it('matches image names ignoring case, spaces, _ and - and the extension', () => {
+			const { notes } = plan('@deck A\n@occlusion Slide 12.PNG', ['slide_12.jpg']).topics[0] ?? {};
+			expect(notes?.[0]?.content).toMatchObject({ type: 'occlusion', file: 'Slide 12.PNG' });
+		});
+
+		/** @see Decisions log "Phase 6 Q9" ("N images not found") */
+		it('lists each missing image once, in order', () => {
+			const output = build(
+				'@deck A\n@occlusion b.png\n@diagram stack S\nsource: a.png\nX\nY\n@occlusion b.png',
+				['other.png']
+			);
+			expect(output.missingImages).toEqual(['b.png', 'a.png']);
+			expect(output.errors).toHaveLength(3);
+		});
+
+		/** @see Decisions log "Phase 6 step 6" */
+		it('carries box: labels as unplaced, with no boxes and no cards', () => {
+			const text = '@deck A\n@occlusion s.png\nbox: Disk\nbox: Buffer\nbox: Disk';
+			const { notes } = plan(text, ['s.png']).topics[0] ?? {};
+			expect(notes?.[0]?.content).toEqual({
+				type: 'occlusion',
+				file: 's.png',
+				unplaced: ['Disk', 'Buffer']
+			});
+			expect(notes?.[0]?.cards).toEqual([]);
+		});
 	});
 
 	describe('diagrams', () => {
@@ -239,14 +267,6 @@ describe('buildPlan', () => {
 			};
 			expect(buildOnce()).toEqual(buildOnce());
 		});
-	});
-});
-
-describe('fileKey', () => {
-	it('matches on the base name, ignoring case and folders', () => {
-		expect(fileKey('images/Slide 12.PNG')).toBe('slide 12.png');
-		expect(fileKey('images\\Slide.png')).toBe('slide.png');
-		expect(fileKey('slide.png')).toBe('slide.png');
 	});
 });
 

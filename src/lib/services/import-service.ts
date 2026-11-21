@@ -5,10 +5,14 @@ import type { Note, NoteType } from '#lib/db/schemas/note.ts';
 import type { ImportError } from '#lib/import/ast.ts';
 import { buildPlan, type ImportPlan } from '#lib/import/build.ts';
 import type { ReplyStatus } from '#lib/import/completeness.ts';
-import { dropDuplicateNotes, type SkippedDuplicate } from '#lib/import/duplicates.ts';
+import {
+	dropDuplicateNotes,
+	type ChangedDiagram,
+	type SkippedDuplicate
+} from '#lib/import/duplicates.ts';
 import { starredGaps, type StarredGap } from '#lib/import/validate.ts';
 import { parseImport } from '#lib/import/parser.ts';
-import { fileKey, readImportZip } from '#lib/import/zip.ts';
+import { imageKey, readImportZip } from '#lib/import/zip.ts';
 import type { Logger } from '#lib/log/logger.ts';
 import type { Result } from '#lib/util/result.ts';
 import type { EncodedImage, StoredImageMime } from './image-encode.ts';
@@ -19,8 +23,10 @@ import {
 	checkedItems,
 	countNoteTypes,
 	flagGaps,
+	imageIdentity,
 	referencedFiles,
 	sha256Hex,
+	topicPreview,
 	type CheckedItem
 } from './import-preview-parts.ts';
 import {
@@ -50,7 +56,7 @@ export interface PreparedImage {
 	blob: Blob;
 }
 
-export type { EncodedImage };
+export type { ChangedDiagram, EncodedImage };
 
 /** Decodes and re-encodes images. The browser version lives in `web-image-encoder.ts`. */
 export interface ImageEncoder {
@@ -80,6 +86,8 @@ export interface ImportPreview {
 	checked: CheckedItem[];
 	/** Attached images no block names; they are not stored. */
 	unusedImages: string[];
+	/** Image files that blocks name but weren't attached ("N images not found"); those blocks are left out. */
+	missingImages: string[];
 	/** The reply was finished (`@end`, or `@coverage` from older prompts); false: it may be cut off. */
 	ended: boolean;
 	/** Import v2: complete, stopped at `@next`, or cut off (its half-written last section dropped). */
@@ -96,6 +104,8 @@ export interface ImportPreview {
 	starredGaps: StarredGap[];
 	/** Notes left out because the course (or an earlier line of the paste) already has them. */
 	duplicates: SkippedDuplicate[];
+	/** Diagrams named like one the course has but drawn differently: both are kept. */
+	changedDiagrams: ChangedDiagram[];
 }
 
 /** What a commit wrote. */
@@ -175,11 +185,12 @@ export class ImportService {
 	async preview(courseId: CourseId, text: string, images: PreparedImage[]): Promise<ImportPreview> {
 		const parsed = parseImport(text);
 		const built = buildPlan(parsed.document, {
-			files: new Set(images.map((image) => fileKey(image.fileName))),
+			files: new Set(images.map((image) => imageKey(image.fileName))),
 			newId: this.newId
 		});
 		const { plan } = built;
-		const deduped = dropDuplicateNotes(plan.topics, await this.courseNotes(courseId));
+		const identity = await imageIdentity(this.store.media, images);
+		const deduped = dropDuplicateNotes(plan.topics, await this.courseNotes(courseId), identity);
 		plan.topics = deduped.result.topics;
 		const gaps = starredGaps(plan);
 		flagGaps(plan, gaps);
@@ -188,18 +199,12 @@ export class ImportService {
 		const map = course ? nextCourseMap(course, plan) : undefined;
 		const checklist = mapChecklist(map, plan, existing);
 		const referenced = referencedFiles(plan);
-		const isUsed = (image: PreparedImage) => referenced.has(fileKey(image.fileName));
+		const isUsed = (image: PreparedImage) => referenced.has(imageKey(image.fileName));
 		return {
 			plan,
 			images: images.filter(isUsed),
 			errors: [...parsed.errors, ...built.errors].sort((a, b) => a.line - b.line),
-			topics: plan.topics.map((topic) => ({
-				name: topic.name,
-				existing: matchTopic(existing, topic),
-				chunks: topic.chunks.length,
-				notes: topic.notes.length,
-				cards: topic.notes.reduce((sum, note) => sum + note.cards.length, 0)
-			})),
+			topics: plan.topics.map((topic) => topicPreview(topic, matchTopic(existing, topic))),
 			noteCounts: countNoteTypes(plan),
 			cardCount: plan.topics.flatMap((topic) => topic.notes).flatMap((note) => note.cards).length,
 			chunkCount: plan.topics.flatMap((topic) => topic.chunks).length,
@@ -208,6 +213,7 @@ export class ImportService {
 				.filter((chunk) => chunk.source === 'generated').length,
 			checked: checkedItems(plan, text),
 			unusedImages: images.filter((image) => !isUsed(image)).map((image) => image.fileName),
+			missingImages: built.missingImages,
 			ended:
 				plan.status === 'complete' ||
 				parsed.document.blocks.some((block) => block.kind === 'coverage'),
@@ -217,7 +223,8 @@ export class ImportService {
 			missing: map?.missing ?? [],
 			resumePrompt: resumeFor(map, checklist, plan),
 			starredGaps: gaps,
-			duplicates: deduped.result.skipped
+			duplicates: deduped.result.skipped,
+			changedDiagrams: deduped.result.changed
 		};
 	}
 

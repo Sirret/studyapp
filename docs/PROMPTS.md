@@ -34,6 +34,8 @@ Replaces the single import prompt. Built from the import test (security lectures
 
 **Tip on the intake screen:** "Upload slides as PDF if you can. Diagrams in PowerPoint files (SmartArt) are often invisible to chatbots." In testing, 40-75% of the words in these lectures were inside SmartArt, so a plain text extraction loses them.
 
+**Images tip on the intake screen (Phase 6):** "Got pictures to learn from (a labelled diagram, a slide image)? Attach them in the chat and type their file names. To import, save the reply as a .txt file and zip it with the same pictures, or attach the pictures here next to the pasted reply." Image names match ignoring case, spaces, `_`, `-` and the extension.
+
 ## 3. BASE prompt (always included)
 
 ```
@@ -107,6 +109,16 @@ CARD RULES
   numbers (don't restate the formula as a step).
 - Each fact appears once, in the one format that fits best.
 
+DIAGRAMS AND IMAGES
+- A layered model is a @diagram stack (at least 2 layers); a process, pipeline
+  or state chart is a @diagram flow, one arrow per line. Name things as the
+  cards do.
+- I may attach pictures and list their file names. Use those exact names in
+  @occlusion and source: lines; never invent an image. Use @occlusion for a
+  picture whose labels I should learn, with one box: line per label.
+- If you can't place a picture I listed, add it under @missing as
+  "image <file name>: not placed" with the reason.
+
 PRIORITY
 - high: core definitions, models, processes, exam traps, a point a takeaway slide
   singles out (a slide that repeats the whole lecture doesn't make everything
@@ -155,6 +167,13 @@ step
 situation :: concept
 @example <name>
 step label :: step
+@diagram stack <name>
+layer, top to bottom :: what it does (optional)
+@diagram flow <name>
+A -> B : arrow label (optional)
+source: <image file name>   (optional, under a @diagram: the picture it shows)
+@occlusion <image file name>
+box: <a label you can see in the picture, one per line>
 @link <topic id>
 question that needs both topics :: short answer
 (repeat @topic ... for every topic; NO @end between topics)

@@ -110,18 +110,66 @@ describe('noteFingerprint', () => {
 		expect(noteFingerprint(seq(['a', 'b']))).not.toBe(noteFingerprint(seq(['b', 'a'])));
 	});
 
-	it('is null for an occlusion note (stored shape)', () => {
+	it('is null for an occlusion note whose image is not identified (stored shape)', () => {
 		expect(
 			noteFingerprint({ type: 'occlusion', payload: { mediaId: MEDIA, boxes: [] } })
 		).toBeNull();
 	});
 
-	it('is null for a planned occlusion note (names a file)', () => {
+	it('is null for a planned occlusion note whose file is not identified', () => {
 		expect(noteFingerprint({ type: 'occlusion', file: 'a.png' })).toBeNull();
 	});
 
-	it('is null for a diagram note', () => {
-		expect(noteFingerprint(stackDiagram())).toBeNull();
+	/** Decisions log "Phase 6 Q10–Q13": an image already in the course is found by source hash. */
+	it('is equal for a planned and a stored occlusion note on the same image', () => {
+		const images = { ofFile: () => MEDIA, ofMedia: (id: string) => id };
+		const stored = noteFingerprint(
+			{ type: 'occlusion', payload: { mediaId: MEDIA, boxes: [] } },
+			images
+		);
+		expect(stored).not.toBeNull();
+		expect(noteFingerprint({ type: 'occlusion', file: 'a.png' }, images)).toBe(stored);
+	});
+
+	it('is equal for diagrams with the same structure and different IDs, case or source', () => {
+		const other: Plain = {
+			type: 'diagram',
+			payload: {
+				kind: 'stack',
+				name: 'osi model',
+				nodes: [{ id: '33333333-3333-4333-8333-333333333333', label: 'l1 ' }],
+				edges: [],
+				sourceMediaId: MEDIA
+			}
+		};
+		expect(noteFingerprint(stackDiagram())).toBe(noteFingerprint(other));
+	});
+
+	it('is equal for flows with the same arrows in another order, and differs on a label', () => {
+		const [a, b, c] = [
+			NODE,
+			'44444444-4444-4444-8444-444444444444',
+			'55555555-5555-4555-8555-555555555555'
+		];
+		const flow = (edges: { from: string; to: string; label?: string }[]): Plain => ({
+			type: 'diagram',
+			payload: {
+				kind: 'flow',
+				name: 'F',
+				nodes: [
+					{ id: a, label: 'A' },
+					{ id: b, label: 'B' },
+					{ id: c, label: 'C' }
+				],
+				edges: edges.map((edge, i) => ({ id: `6666666${i}-6666-4666-8666-666666666666`, ...edge }))
+			}
+		});
+		const ab = { from: a, to: b, label: 'x' };
+		const bc = { from: b, to: c };
+		expect(noteFingerprint(flow([ab, bc]))).toBe(noteFingerprint(flow([bc, ab])));
+		expect(noteFingerprint(flow([ab, bc]))).not.toBe(
+			noteFingerprint(flow([{ ...ab, label: 'y' }, bc]))
+		);
 	});
 
 	it('gives the same fingerprint for NoteContent and PlannedContent of the same note', () => {
@@ -201,15 +249,49 @@ describe('dropDuplicateNotes', () => {
 		expect(result.skipped).toEqual([{ line: 9, topic: 'Second' }]);
 	});
 
-	it('never drops image notes, even when identical to each other or to existing ones', () => {
+	it('keeps occlusion notes whose image is not identified', () => {
 		const occ = (line: number): PlannedNote => note(line, { type: 'occlusion', file: 'a.png' });
-		const diagram = (line: number): PlannedNote => note(line, stackDiagram());
 		const { result } = dropDuplicateNotes(
-			[topic('T', [occ(1), occ(2), diagram(3), diagram(4)])],
-			[stackDiagram(), { type: 'occlusion', payload: { mediaId: MEDIA, boxes: [] } }]
+			[topic('T', [occ(1), occ(2)])],
+			[{ type: 'occlusion', payload: { mediaId: MEDIA, boxes: [] } }]
 		);
-		expect(result.topics[0]?.notes).toHaveLength(4);
+		expect(result.topics[0]?.notes).toHaveLength(2);
 		expect(result.skipped).toEqual([]);
+	});
+
+	/** Decisions log "Phase 6 Q10–Q13" */
+	it('drops an occlusion note on an image the course already has, and a repeat in the paste', () => {
+		const images = {
+			ofFile: (file: string) => (file === 'a.png' ? MEDIA : 'new:other'),
+			ofMedia: (id: string) => id
+		};
+		const occ = (line: number, file: string): PlannedNote =>
+			note(line, { type: 'occlusion', file });
+		const { result } = dropDuplicateNotes(
+			[topic('T', [occ(1, 'a.png'), occ(2, 'b.png'), occ(3, 'b.png')])],
+			[{ type: 'occlusion', payload: { mediaId: MEDIA, boxes: [] } }],
+			images
+		);
+		expect(result.topics[0]?.notes.map((n) => n.line)).toEqual([2]);
+		expect(result.skipped).toEqual([
+			{ line: 1, topic: 'T' },
+			{ line: 3, topic: 'T' }
+		]);
+	});
+
+	/** Decisions log "Phase 6 Q10–Q13" ("changed diagram: kept both") */
+	it('drops an identical diagram and keeps a changed one with the same name, listing it', () => {
+		const changed: Plain = {
+			type: 'diagram',
+			payload: { kind: 'stack', name: 'OSI', nodes: [{ id: NODE, label: 'L2' }], edges: [] }
+		};
+		const { result } = dropDuplicateNotes(
+			[topic('T', [note(1, stackDiagram()), note(2, changed)])],
+			[stackDiagram()]
+		);
+		expect(result.topics[0]?.notes.map((n) => n.line)).toEqual([2]);
+		expect(result.skipped).toEqual([{ line: 1, topic: 'T' }]);
+		expect(result.changed).toEqual([{ line: 2, topic: 'T', name: 'OSI' }]);
 	});
 
 	it('keeps the order of the notes that stay, and the topics and sections unchanged', () => {
@@ -280,7 +362,7 @@ describe('dropDuplicateNotes', () => {
 	});
 
 	it('handles empty topics and empty existing', () => {
-		expect(dropDuplicateNotes([], []).result).toEqual({ topics: [], skipped: [] });
+		expect(dropDuplicateNotes([], []).result).toEqual({ topics: [], skipped: [], changed: [] });
 	});
 
 	it('does not treat notes of different types with the same text as duplicates', () => {
