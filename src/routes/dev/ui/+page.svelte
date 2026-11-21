@@ -3,6 +3,7 @@
 	import ComponentsGuide from '#lib/ui/styleguide/ComponentsGuide.svelte';
 	import CozyComponentsGuide from '#lib/ui/styleguide/CozyComponentsGuide.svelte';
 	import DelightGuide from '#lib/ui/styleguide/DelightGuide.svelte';
+	import FiguresGuide from '#lib/ui/styleguide/FiguresGuide.svelte';
 	import LayoutGuide from '#lib/ui/styleguide/LayoutGuide.svelte';
 	import PrimitivesGuide from '#lib/ui/styleguide/PrimitivesGuide.svelte';
 	import StudyFlowGuide from '#lib/ui/styleguide/StudyFlowGuide.svelte';
@@ -19,6 +20,7 @@
 	<CozyComponentsGuide />
 	<StudyFlowGuide />
 	<CardListGuide />
+	<FiguresGuide />
 	<YukiGuide />
 	<DelightGuide />
 	<LayoutGuide />

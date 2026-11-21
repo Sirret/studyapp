@@ -11,14 +11,7 @@ import { KvRepo } from '#lib/db/repos/kv-repo.ts';
 import { StorageGuard } from './storage-guard.ts';
 import { WebImageEncoder } from './web-image-encoder.ts';
 
-export {
-	addBox,
-	clampBox,
-	moveBox,
-	placeLabel,
-	removeBox,
-	resizeBox
-} from '#lib/engine/occlusion-edit.ts';
+export { addBox, clampBox, moveBox, placeLabel, removeBox, resizeBox } from './figure-edit.ts';
 export type { DiagramDoc, DiagramPreview, DiagramSaveError } from './diagram-service.ts';
 export type { OcclusionBox, OcclusionDoc, OcclusionEdit } from './occlusion-service.ts';
 

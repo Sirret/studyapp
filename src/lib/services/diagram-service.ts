@@ -2,7 +2,7 @@ import type { ContentStore } from '#lib/db/repos/content-store.ts';
 import type { ChunkId, CourseId, MediaId, NoteId, TopicId } from '#lib/db/schemas/common.ts';
 import type { Note } from '#lib/db/schemas/note.ts';
 import { mergeDiagram, renameNode, type DiagramStructure } from '#lib/engine/diagram-edit.ts';
-import { layoutDiagram, type DiagramLayout } from '#lib/engine/diagram-layout.ts';
+import type { DiagramLayout } from '#lib/engine/diagram-layout.ts';
 import { generateCards } from '#lib/engine/cardgen.ts';
 import {
 	formatDiagram,
@@ -11,6 +11,7 @@ import {
 } from '#lib/import/diagram-parser.ts';
 import type { Logger } from '#lib/log/logger.ts';
 import type { Result } from '#lib/util/result.ts';
+import { previewDiagram, type DiagramPreview } from './figure-edit.ts';
 import { draftNewNote, type NoteRegenWriter } from './note-regen.ts';
 import { saveErrorMessage } from './storage-guard.ts';
 
@@ -19,20 +20,12 @@ const LOG_AREA = 'diagram';
 type DiagramNote = Extract<Note, { type: 'diagram' }>;
 type DiagramKind = DiagramStructure['kind'];
 
-export type { DiagramLayout, DiagramTextError };
+export type { DiagramLayout, DiagramPreview, DiagramTextError };
 
 /** Why a diagram save failed: a message, and the text lines that couldn't be read (if any). */
 export interface DiagramSaveError {
 	message: string;
 	lines: DiagramTextError[];
-}
-
-/** The diagram as the editor draws it: structure and layout (null = too big to draw). */
-export interface DiagramPreview {
-	errors: DiagramTextError[];
-	nodes: { id: string; label: string; role?: string }[];
-	edges: { id: string; from: string; to: string; label?: string }[];
-	layout: DiagramLayout | null;
 }
 
 /** A diagram note as the editor opens it. */
@@ -88,16 +81,7 @@ export class DiagramService {
 
 	/** What `text` would draw, writing nothing; preview IDs are throwaway. */
 	preview(kind: DiagramKind, text: string): DiagramPreview {
-		const { parsed, errors } = parseDiagramText(kind, text);
-		if (!parsed) return { errors, nodes: [], edges: [], layout: null };
-		let next = 0;
-		const { result } = mergeDiagram(null, parsed, '', () => `p${(next += 1)}`);
-		return {
-			errors,
-			nodes: result.nodes,
-			edges: result.edges,
-			layout: layoutDiagram(result).result
-		};
+		return previewDiagram(kind, text);
 	}
 
 	/** Saves edited text; any unreadable line saves nothing. */

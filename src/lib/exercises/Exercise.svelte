@@ -3,6 +3,9 @@
 	Every exercise kind shares this interface — `{ spec, verdict, response, onsubmit }` — and is
 	built only from layers 5–8 (DESIGN §13.2), with no visual styles of its own. `hint` is the micro
 	hint the student asked for (shown by HintLink); a choice uses it to drop the removed option.
+	A type, choose or order exercise with a figure shows it above the answer area; `media` reads
+	the figure's image (BUILD_PLAN §7). After checking, a diagram made from a picture offers
+	"Show original".
 -->
 <script lang="ts">
 	import type {
@@ -11,12 +14,18 @@
 		ExerciseVerdict,
 		MicroHint
 	} from '#lib/services/study-types.ts';
+	import { originalOf, staticFigure } from '#lib/ui/figures/figure-geometry.ts';
+	import FigureView, { noMedia } from '#lib/ui/figures/FigureView.svelte';
+	import type { MediaLoader } from '#lib/ui/figures/media-url.ts';
+	import ShowOriginal from '#lib/ui/figures/ShowOriginal.svelte';
 	import ChooseExercise from './ChooseExercise.svelte';
+	import ConnectExercise from './ConnectExercise.svelte';
 	import ChooseManyExercise from './ChooseManyExercise.svelte';
 	import IdeaUnitExercise from './IdeaUnitExercise.svelte';
 	import ListExercise from './ListExercise.svelte';
 	import OrderExercise from './OrderExercise.svelte';
 	import PairExercise from './PairExercise.svelte';
+	import PlaceExercise from './PlaceExercise.svelte';
 	import SelfRateExercise from './SelfRateExercise.svelte';
 	import SortExercise from './SortExercise.svelte';
 	import StudyExercise from './StudyExercise.svelte';
@@ -27,17 +36,25 @@
 		verdict,
 		response = $bindable(null),
 		hint = null,
+		media = noMedia,
 		onsubmit
 	}: {
 		spec: ExerciseSpec;
 		verdict: ExerciseVerdict | null;
 		response?: ExerciseResponse | null;
 		hint?: MicroHint | null;
+		media?: MediaLoader;
 		onsubmit: () => void;
 	} = $props();
+
+	const figure = $derived(staticFigure(spec));
+	const original = $derived(verdict === null ? null : originalOf(spec));
 </script>
 
 <div data-exercise-shape={spec.shape} data-exercise-kind={spec.kind} style:display="contents">
+	{#if figure}
+		<FigureView {figure} {media} reveal={verdict?.reveal[0]} />
+	{/if}
 	{#if spec.shape === 'type'}
 		<TypeExercise {spec} {verdict} bind:response {onsubmit} />
 	{:else if spec.shape === 'choose'}
@@ -58,5 +75,12 @@
 		<IdeaUnitExercise {spec} {verdict} bind:response {onsubmit} />
 	{:else if spec.shape === 'list'}
 		<ListExercise {spec} {verdict} bind:response {onsubmit} />
+	{:else if spec.shape === 'place'}
+		<PlaceExercise {spec} {verdict} {media} bind:response {onsubmit} />
+	{:else if spec.shape === 'connect'}
+		<ConnectExercise {spec} {verdict} bind:response {onsubmit} />
+	{/if}
+	{#if original}
+		<ShowOriginal mediaId={original.mediaId} title={original.title} {media} />
 	{/if}
 </div>

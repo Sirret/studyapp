@@ -269,6 +269,7 @@
 							spec={shown.exercise}
 							verdict={answer?.verdict ?? null}
 							{hint}
+							media={(id) => (service as Service).media(id)}
 							bind:response
 							onsubmit={submit}
 						/>

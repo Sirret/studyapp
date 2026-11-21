@@ -17,6 +17,7 @@ const SECTIONS = [
 	'cozy-components',
 	'study-flow',
 	'card-list',
+	'figures',
 	'yuki',
 	'delight',
 	'layout'

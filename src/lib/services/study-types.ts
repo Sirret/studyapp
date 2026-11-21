@@ -4,7 +4,14 @@
  *
  * @see BUILD_PLAN §5.1 and §15.1
  */
-import type { CardId, CourseColor, EventId, Mode, SessionId } from '#lib/db/schemas/common.ts';
+import type {
+	CardId,
+	CourseColor,
+	EventId,
+	MediaId,
+	Mode,
+	SessionId
+} from '#lib/db/schemas/common.ts';
 import type { SessionPhase } from '#lib/db/schemas/session.ts';
 import type { ExerciseResponse, ExerciseVerdict } from '#lib/engine/exercise-check.ts';
 import type { ExerciseSpec } from '#lib/engine/exercise-spec.ts';
@@ -13,12 +20,17 @@ import type { RoundSummary } from '#lib/engine/round.ts';
 export type {
 	ChooseManySpec,
 	ChooseSpec,
+	ConnectSpec,
+	DiagramFigure,
 	ExerciseShape,
 	ExerciseSpec,
 	IdeaUnitSpec,
+	Figure,
 	ListSpec,
+	OcclusionFigure,
 	OrderSpec,
 	PairSpec,
+	PlaceSpec,
 	SelfRateSpec,
 	SortSpec,
 	SpecOption,
@@ -28,7 +40,7 @@ export type {
 export type { ExerciseResponse, ExerciseVerdict } from '#lib/engine/exercise-check.ts';
 export type { RoundSummary } from '#lib/engine/round.ts';
 export type { MicroHint } from '#lib/engine/hint.ts';
-export type { SessionPhase };
+export type { MediaId, SessionPhase };
 
 /** The card on screen and the exercise built for it. */
 export interface StudyItem {
