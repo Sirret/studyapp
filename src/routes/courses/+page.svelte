@@ -5,7 +5,6 @@
 	import { logger } from '#lib/services/app.ts';
 	import type { ShelfCourseView } from '#lib/services/home-service.ts';
 	import type { TodayCourseView } from '#lib/services/planner-types.ts';
-	import ConfirmDialog from '#lib/ui/components/ConfirmDialog.svelte';
 	import EmptyState from '#lib/ui/components/EmptyState.svelte';
 	import ReadinessMeter from '#lib/ui/components/ReadinessMeter.svelte';
 	import SectionHeading from '#lib/ui/components/SectionHeading.svelte';
@@ -23,8 +22,6 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Card from '#lib/ui/primitives/Card.svelte';
 	import Chip from '#lib/ui/primitives/Chip.svelte';
-	import Icon from '#lib/ui/primitives/Icon.svelte';
-	import { X } from '@lucide/svelte';
 
 	/**
 	 * The Shelf (DESIGN §12 "Courses", SESSION_NOTES A11): every course with today's planned minutes,
@@ -60,29 +57,6 @@
 	$effect(() => {
 		void refresh();
 	});
-
-	let trashTarget = $state<TodayCourseView | null>(null);
-	let confirmOpen = $state(false);
-	let trashing = $state(false);
-
-	function askTrash(course: TodayCourseView): void {
-		trashTarget = course;
-		confirmOpen = true;
-	}
-
-	/** Trashes the course after the popup is confirmed, then reloads the shelf. */
-	async function trash(): Promise<void> {
-		const target = trashTarget;
-		if (!target) return;
-		trashing = true;
-		try {
-			await (await wiring()).courseService.trash(target.id);
-			confirmOpen = false;
-			await refresh();
-		} finally {
-			trashing = false;
-		}
-	}
 
 	/** Starts today's review for a course and comes back here when it ends. */
 	async function start(course: TodayCourseView): Promise<void> {
@@ -130,15 +104,6 @@
 				<Stack gap="md">
 					<Row justify="between">
 						<Chip color={course.color}>{course.name}</Chip>
-						<Button
-							variant="ghost"
-							size="icon"
-							aria-label="Delete {course.name}"
-							onclick={() => askTrash(course)}
-							data-trash={course.name}
-						>
-							<Icon icon={X} />
-						</Button>
 					</Row>
 					<Stack gap="xs">
 						<strong data-planned={course.name}>
@@ -180,14 +145,5 @@
 			<Button variant="secondary" href={resolve('/planner')}>Plan and availability</Button>
 		</Row>
 	{/if}
-	<ConfirmDialog
-		bind:open={confirmOpen}
-		title="Delete {trashTarget?.name ?? 'this course'}?"
-		confirmLabel="Delete course"
-		busy={trashing}
-		onconfirm={trash}
-	>
-		This deletes the course and all its topics and cards. This can't be undone.
-	</ConfirmDialog>
 	<BottomNav active="shelf" hrefs={navHrefs} />
 </Screen>

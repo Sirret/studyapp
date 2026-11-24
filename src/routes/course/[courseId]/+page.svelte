@@ -27,6 +27,8 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Icon from '#lib/ui/primitives/Icon.svelte';
 	import { countOf } from '#lib/util/plural.ts';
+	import { goto } from '$app/navigation';
+	import DeleteCourse from './DeleteCourse.svelte';
 	import ScopeSheet from './ScopeSheet.svelte';
 	import TopicList from './TopicList.svelte';
 	import type { PageProps } from './$types';
@@ -93,6 +95,13 @@
 	}
 
 	const sections = $derived(topics.reduce((sum, topic) => sum + topic.sections, 0));
+
+	/** Deletes the course (tombstones, one transaction) and goes back to the shelf. */
+	async function deleteCourse(): Promise<void> {
+		const wiring = await import('#lib/services/study-wiring.ts');
+		await wiring.courseService.trash(courseId);
+		await goto(resolve('/courses'));
+	}
 </script>
 
 <svelte:head><title>{today?.course.name ?? 'Course'}</title></svelte:head>
@@ -161,6 +170,11 @@
 		{#if today.map}
 			<CourseMapPanel map={today.map} id="cheat-sheet" />
 		{/if}
+		<DeleteCourse
+			name={today.course.name}
+			cards={Object.values(today.counts).reduce((sum, n) => sum + (n ?? 0), 0)}
+			ondelete={deleteCourse}
+		/>
 	{/if}
 	<BottomNav active="shelf" hrefs={navHrefs} />
 </Screen>
