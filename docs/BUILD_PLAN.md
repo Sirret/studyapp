@@ -12,7 +12,7 @@ This is the **how**. The look and feel is in `docs/DESIGN.md`. The **what and wh
 4. **Deterministic.** FSRS fuzz off. Ties broken by ID. Any shuffle (option order, distractors) uses a seeded RNG keyed by `(cardId, sessionId, attempt)`. Replaying the same events always gives the same state.
 5. **Every tunable number lives in `src/lib/config/defaults.ts`** (§13). No magic numbers in code.
 6. **Offline-first.** Nothing in a study session waits on the network.
-7. **Fast on 3G.** App shell is small; heavy libraries (OCR, ELK, Svelte Flow) are lazy-loaded on the routes that need them, and OCR + layout run in Web Workers.
+7. **Fast on 3G.** App shell is small; heavy libraries are lazy-loaded on the routes that need them, and heavy work (image encoding) runs in a Web Worker. Phase 6 needed none: diagram layout is our own small engine module, and OCR, pdf.js, ELK and Svelte Flow were dropped (§7).
 8. **Tests run continuously and leave a trail.** Tests run on save, on commit, on push and in CI; every run writes reports to `test-results/`; the app keeps its own local log so behaviour can be explained after the fact (§11).
 
 ---
@@ -28,10 +28,10 @@ This is the **how**. The look and feel is in `docs/DESIGN.md`. The **what and wh
 | FSRS personal optimisation | **fsrs-rs via WASM** (`fsrs-browser`)                             | Verify package availability at setup; fall back to default params if absent     |
 | Validation                 | **zod**                                                           | Import text AST, export/import files                                            |
 | Zip                        | **fflate**                                                        | Export/import `.zip`                                                            |
-| Structured diagrams        | **@xyflow/svelte** (Svelte Flow) + **elkjs**                      | ELK runs in a Web Worker                                                        |
-| OCR                        | **tesseract.js**                                                  | Web Worker; English data cached by the service worker                           |
+| Structured diagrams        | Own layout (`engine/diagram-layout.ts`) + SVG                     | No elkjs, no Svelte Flow (Phase 6 Q4–Q5); ELK stays the fallback if layouts look bad |
+| OCR                        | none (tesseract.js tried and dropped: `docs/spikes/OCR_SPIKE.md`) | Boxes are placed by hand                                                        |
 | Drag & drop                | Own small pointer-events module (preferred)                       | Must work with touch; `svelte-dnd-action` only if confirmed Svelte 5 compatible |
-| PWA                        | **@vite-pwa/sveltekit** (Workbox)                                 | Precache shell, runtime-cache lazy chunks + OCR data                            |
+| PWA                        | **@vite-pwa/sveltekit** (Workbox)                                 | Precache every client file (no runtime caching, Phase 6 step 12)                            |
 | IDs                        | `crypto.randomUUID()`                                             | Globally unique from day one                                                    |
 | Tests                      | **Vitest** (unit + sim), **Playwright** (e2e, mobile viewport)    | Coverage via `@vitest/coverage-v8`                                              |
 | Continuous testing         | **GitHub Actions** CI + **simple-git-hooks** with **lint-staged** | Hooks on commit/push; CI on every push and PR                                   |
@@ -84,8 +84,8 @@ src/
     transfer/
       export.ts import.ts     # scoped zip export/import, replace/merge
     diagrams/
-      occlusion/              # editor, overlay, ocr.worker.ts
-      structured/             # model, elk.worker.ts, Svelte Flow views
+      # as built (Phase 6): engine diagram-layout.ts, diagram-edit.ts, occlusion-edit.ts,
+      # exercise-build-figure.ts; UI ui/figures/; services figure-wiring.ts
     exercises/                # one Svelte component per exercise kind
     pwa/                      # persistence, storage estimate, update prompt
     log/                      # app logger, IndexedDB ring buffer, error capture
@@ -288,7 +288,7 @@ Plain UTF-8 text, line-based. Blank lines ignored. A line starting with `@` open
 | `@example <name>`        | Worked example                                                                      | `subgoal label :: step`                                            |
 | `@diagram stack <name>`  | Layered diagram                                                                     | `layer :: role`, top to bottom                                     |
 | `@diagram flow <name>`   | Box-and-arrow diagram                                                               | `A -> B : label` (label optional)                                  |
-| `@occlusion <file>`      | Occlusion card from an attached image                                               | — (boxes from OCR/editor)                                          |
+| `@occlusion <file>`      | Occlusion card from an attached image                                               | `box: <label>` lines → `unplaced` labels, placed in the editor     |
 | `@coverage`              | Section list from the chatbot (older prompts)                                       | comma-separated; shown in preview, not stored as cards             |
 | `@end`                   | The chatbot finished its reply                                                      | no argument, no lines; without it (or `@coverage`) the preview warns the reply may be cut off |
 
@@ -692,24 +692,27 @@ Candidates in order: same `compare` column / same tag siblings → same topic �
 
 ## 7. Diagrams — concept §13
 
+As built in Phase 6 (2026-11-24). The original plan (OCR in the editor, ELK in a worker, a Svelte Flow canvas, PDF import) was replaced by the user's scope and two spikes: Decisions log rows "Phase 6 scope", "Phase 6 Q1–Q13", "Phase 6 step 1 result" (PDF no-go, `docs/spikes/PDF_SPIKE.md`) and "Phase 6 step 10 result" (OCR no-go, `docs/spikes/OCR_SPIKE.md`).
+
 ### 7.1 Image occlusion
 
-- **Editor:** add image (file / paste / camera) → compress (§4.2) → run OCR in `ocr.worker.ts` (tesseract.js, English) → word boxes with confidence ≥ `OCR_MIN_CONFIDENCE` merged into label boxes (adjacent words on one line become one box) → student confirms, adjusts, deletes, or draws boxes → each box gets a label (prefilled from OCR text).
-- **Storage:** boxes as fractions of image width/height: `{id, x, y, w, h, label}`.
-- **Rendering:** `<img>` plus an absolutely positioned SVG overlay using `viewBox="0 0 1 1"` with `preserveAspectRatio="none"`.
-- **Modes:** hide-one / hide-all (setting).
-- **Answering:** `occlusionType` (fuzzy), `occlusionDrag` (hit test) = full weight; `occlusionBank` = recognition.
-- Without OCR (handwriting, or OCR not yet downloaded) the student draws boxes manually; the editor must be fully usable that way.
+- **Getting the image in:** upload, paste a screenshot or take a photo (Manual mode "Image (hide parts)"), or an import zip of the `.txt` plus its images (`@occlusion <file>`, optional `box: <label>` lines). File names match by `imageKey`: case, spaces, underscores, hyphens and the final extension are ignored; two images in one zip with the same key are an error. Missing images skip the block and show "N images not found: …". No PDF or pptx import.
+- **Storage:** re-encoded in a Web Worker (`services/image-encode.worker.ts`, page fallback with progress): EXIF orientation baked in, long side `IMAGE_MAX_PX` (2000), WebP, else JPEG (Safari/iPhone). `media.sourceHash` (original bytes) de-duplicates re-imports; the first image save asks for persistent storage; a full disk gives `OUT_OF_SPACE_MESSAGE` (`services/storage-guard.ts`). Boxes are fractions of image width/height: `{id, x, y, w, h, label}`; `box:` labels not yet placed are `unplaced` (no cards).
+- **Editor** (`/course/<id>/image/<noteId>`, `OcclusionEditor`): draw a box by drag or tap-to-place a default-size box; move/resize by drag or step buttons; label input; tray of `unplaced` labels to tap-place; per-image hide mode. Boxes are placed by hand (no OCR). An unlabelled box makes no card.
+- **Rendering:** `<img>` with HTML boxes placed by percentage (real buttons with names), the same scaling as a `viewBox 0 0 1 1` overlay.
+- **Modes:** hide one (default) / hide all, set **per image** in the editor (`payload.hide`), not app-wide.
+- **Answering:** path `occlusionBank → occlusionDrag → occlusionType`. Bank options come only from the same image's boxes (below `OCCLUSION_BANK_MIN_OPTIONS` it falls back to type) and count as recognition. Drag (`place` shape) shows every box covered, is graded by `hitTest` or tap-a-box, and falls back to type with one box. Type uses `gradeTyped` with the collision guard among the image's labels.
 
 ### 7.2 Structured diagrams
 
-- **Model:** `{kind: 'stack' | 'flow', nodes: {id, label, role?}[], edges: {id, from, to, label?}[], sourceMediaId?}`. Node IDs are generated; labels are display text.
-- **Layout:** `elk.worker.ts` runs elkjs (`layered` algorithm, direction DOWN for flows; a fixed vertical stack for `stack`). Layout positions are cached on the note and recomputed only when the structure changes.
-- **Rendering & editing:** Svelte Flow — drag nodes, drag-to-connect handles, rename, delete, zoom/pan. Editing a structure bumps `updatedAt` and regenerates affected cards (keeping card IDs for unchanged nodes/edges so history survives).
-- **Exercises:** `nodeCloze`, `edgeCloze`, `structureRebuild` (edges removed, student reconnects; graded by set comparison), `layerOrder`.
-- **"Show original"** button after answering if `sourceMediaId` is set.
+- **Model:** `{kind: 'stack' | 'flow', name, nodes: {id, label, role?}[], edges: {id, from, to, label?}[], layout?, sourceMediaId?}`. Node IDs are generated; labels are display text.
+- **Layout:** `engine/diagram-layout.ts`, our own pure layered layout (longest-path layers + barycentric ordering, `DIAGRAM_LAYOUT_SWEEPS`; stacks vertical). Above `DIAGRAM_MAX_NODES` / `DIAGRAM_MAX_EDGES` the figure says "too big to draw, edit as text". No elkjs (it stays the fallback if real diagrams look bad).
+- **Editing:** text first (`/course/<id>/diagram/<noteId>`, `DiagramTextEditor`): the import arrow grammar, a live read-only drawing, per-line errors, and a rename list. `mergeDiagram` keeps node IDs by `nodeKey` (normalised label) and edge IDs by (from, to); a rename through `renameNode` keeps the ID, so cards keep their history (rule 7). No Svelte Flow canvas (a later option).
+- **Exercises:** `nodeCloze`, `edgeCloze` (asks for the label, or the target node when the arrow has none), `structureRebuild` (`connect` shape: tap source then target; graded on from→to with `gradeEdgeSet`; a wrong rebuild shows missing/extra and redo-till-right repeats it; no peel-off cards), `layerOrder` (`gradeSequence`).
+- **"Show original"** after answering when `sourceMediaId` is set.
+- **Re-import:** an identical diagram, or an occlusion note on an image already in the course, is skipped; a changed diagram with the same name is imported as a new note and listed ("changed diagram: kept both").
 
-Both editors are lazy-loaded routes; OCR and ELK never load on the Today or study screens unless a diagram card is shown.
+Not built: `hotspot` and `redraw` still fall back; trees, ER diagrams and tables use image occlusion for now; sequences as stacks (SESSION_NOTES D6) are out of scope. Both editors are lazy routes (`services/figure-wiring.ts`); every client file stays precached so they work offline.
 
 ---
 
@@ -740,7 +743,7 @@ Validated with zod on both sides.
 - Settings shows `navigator.storage.estimate()` usage.
 - **Archive course:** export that course (with progress) → delete it locally → keep a stub course record `{name, status:'archived'}` for the list.
 - **Backup reminder:** if `now − lastExportAt > BACKUP_REMINDER_DAYS` (7), show a non-blocking reminder.
-- **Service worker:** precache the app shell; runtime-cache lazy route chunks and the OCR language data; on a new version, show "Update available — reload".
+- **Service worker:** precache the app shell; precache every client file so the editors work offline (no runtime caching since Phase 6); on a new version, show "Update available — reload".
 
 ---
 
@@ -781,8 +784,8 @@ Rows are in build order. Order and status are maintained here. The table below i
 | 8.5 | Cards & import fixes | Done | BUILD_PLAN §10 row 8.5 + SESSION_NOTES |
 | — | Design reskin | Done | DESIGN.md |
 | 8.6 | Learn & Practice | Done | SESSION_NOTES §C, §D, §J, §K + Decisions log "Phase 8.6" |
-| 6 | Diagrams | Next | BUILD_PLAN §7 |
-| 9 | Transfer & offline | Not started | BUILD_PLAN §8 |
+| 6 | Diagrams | Done | BUILD_PLAN §7 + Decisions log "Phase 6" |
+| 9 | Transfer & offline | Next | BUILD_PLAN §8 |
 | 10 | Polish & ship | Not started | BUILD_PLAN §10 + §11 |
 | 11 | Play | Not started | GAMES.md |
 
@@ -796,7 +799,7 @@ Rows are in build order. Order and status are maintained here. The table below i
 | 3   | **Cards & grading**              | `cardgen`, `grading`, `distractors`, seeded RNG                                                                                                                                                                                                                                                | Unit tests for every note type, fuzzy thresholds, collision guard, first-letter bank, hit test, set diff                                                                                            |
 | 4   | **Engine core**                  | `fsrs`, `criterion`, `queue`, `session`, `status`, full `replay`                                                                                                                                                                                                                               | Simulated sessions reproduce documented lag/criterion/status behaviour; replay determinism test                                                                                                     |
 | 5   | **Design system & exercises UI** | Tokens (light/dark/auto-night) + contrast test, fonts, `src/lib/ui` components, `Yuki` with all states, `/dev/ui` style guide; then every exercise component (§3.3) with a shared `{card, seed, onAnswer}` interface; feedback, redo-till-right, phases, interstitials                         | Contrast test passes in both themes; style guide shows every component and Yuki state; Playwright: complete a session on a mobile viewport using each exercise kind, with reduced motion on and off |
-| 6   | **Diagrams**                     | Occlusion editor + OCR worker; structured model, ELK worker, Svelte Flow editor + exercises                                                                                                                                                                                                    | Import an OSI stack, a flow diagram and an occlusion image; study each                                                                                                                              |
+| 6   | **Diagrams**                     | Occlusion editor (manual boxes); structured model, own layout, text editor + exercises (as built: §7)                                                                                                                                                                                          | Import an OSI stack, a flow diagram and an occlusion image; study each                                                                                                                              |
 | 7   | **Modes**                        | Long-term, cram (incl. fragile), acquisition (full/quick, pretest, chunk quiz, handoff, split flag), one-night                                                                                                                                                                                 | Simulation tests for D = 1…7; acquisition handoff produces next-day retests; statuses correct                                                                                                       |
 | 8   | **Planner**                      | Availability calendar, estimator, processor-demand check, cuts, least-laxity split, daily re-plan, shortfall UI                                                                                                                                                                                | §6.9 tests; 4-exams-in-one-week simulation gives a feasible-or-flagged, deterministic plan                                                                                                          |
 | —   | **Fix pass (SESSION_NOTES A+B)** | The tech-check fixes (`docs/SESSION_NOTES.md` §A) and the bugs found using the live app (§B) | Every item in §A and §B is fixed, with a test where the item is engine logic |
@@ -817,7 +820,7 @@ Rows are in build order. Order and status are maintained here. The table below i
 - **Simulation harness (`tests/sim`):** a simulated learner whose recall follows a known forgetting curve answers sessions produced by the real engine. Named scenarios (e.g. _cold start, exam in 3 days_; _four exams in one week_; _one night_; _missed two days_) check feasibility flags, determinism (same seed → same plan), no work in the sleep window, no course starved, and statuses as specified.
 - **Golden files (`tests/golden`):** import text → expected notes/cards; export → expected zip manifest and data. Changing a golden file requires a note in the commit message.
 - **E2E (Playwright):** import → acquisition → next-day retest (clock mocked) → cram → export/import, at 360 × 740, plus an offline test (network disabled after first load). Functional tests run on the `mobile` project only; tests tagged `@both` (layout: no sideways scroll, main actions on screen and not cut off, every screen plus `/dev/ui`, in `tests/e2e/layout.spec.ts`) also run on `laptop` (Decisions log: e2e viewport split). A new screen gets a `@both` layout test.
-- **Performance:** `scripts/bundle-check.ts` fails if the shell chunk exceeds `SHELL_JS_BUDGET_KB` or contains tesseract.js, elkjs or Svelte Flow.
+- **Performance:** `scripts/bundle-check.ts` fails if the shell chunk exceeds `SHELL_JS_BUDGET_KB` or contains a heavy library (tesseract.js, pdfjs-dist, elkjs, Svelte Flow; none is installed, the guard stays).
 
 ### 11.2 When tests run (continuously)
 
@@ -919,8 +922,7 @@ Every default in §13 marked _tunable_ comes from the research (concept §14–1
 | `p0` (new-card first-attempt accuracy)   | fact 0.5, concept 0.4, procedure 0.35, diagram 0.45, comparison 0.4                                                                               | Guesses until calibrated                               |
 | `secPerAttempt` defaults (s)             | mc 8, cloze 12, sequence 25, parsons 30, occlusion 10, structureRebuild 60, categorize 20, scenario 15, tableRow 25, fadeStep 30, newInstance 120 | Replaced by rolling median                             |
 | `FSRS_OPTIMISE_MIN_REVIEWS`              | 1000                                                                                                                                              |                                                        |
-| `OCR_MIN_CONFIDENCE`                     | 60                                                                                                                                                | Tesseract word confidence (0–100)                      |
-| `IMAGE_MAX_PX`                           | 1600                                                                                                                                              | WebP re-encode                                         |
+| `IMAGE_MAX_PX`                           | 2000                                                                                                                                              | WebP re-encode                                         |
 | `BACKUP_REMINDER_DAYS`                   | 7                                                                                                                                                 |                                                        |
 | `SHELL_JS_BUDGET_KB`                     | 150                                                                                                                                               | Gzipped app shell                                      |
 | `COVERAGE_ENGINE_MIN`                    | 90                                                                                                                                                | % lines and branches for `src/lib/engine`              |
@@ -932,8 +934,8 @@ Every default in §13 marked _tunable_ comes from the research (concept §14–1
 
 - ts-fsrs: exact names of `enable_fuzz`, `enable_short_term`, `maximum_interval`, and the retrievability function in the installed version.
 - `fsrs-browser` (fsrs-rs WASM) availability and API for optimisation.
-- `@xyflow/svelte` and the chosen drag-and-drop approach work with Svelte 5 runes and touch input.
-- tesseract.js worker setup under Vite and the size of the English data file to precache.
+- Drag and drop: own pointer-events code with a tap alternative everywhere (Phase 6); `@xyflow/svelte` was not adopted.
+- tesseract.js: tried in Phase 6 and dropped (`docs/spikes/OCR_SPIKE.md`).
 - `@vite-pwa/sveltekit` configuration for an SPA fallback with adapter-static.
 
 ## 15. Code architecture & conventions
@@ -1262,3 +1264,4 @@ Choices this plan makes where the concept was silent. Add new ones here.
 | Phase 6 step 10 result (2026-11-23, user): **OCR no-go.** tesseract.js 7.0.0 (self-hosted worker/core/`best_int` English data) on the six pasted-picture slides: best 29/89 labels (33%, PSM 11, fuzzy match; table borders read as characters, subscripted symbols missed), ≈ 4.3 MB gzipped, 2–6 s per page on desktop (phone est. 8–23 s; CDP CPU throttling does not reach the Web Worker), offline OK once runtime-cached. Fails the 70% and 8 s bars, so tesseract.js is removed and step 11 (OCR box suggestions) is dropped. Labels on pasted pictures are placed by hand (tap-to-place from the `box:` list). BUILD_PLAN §7.1 / rule 9 mentions of tesseract.js are updated in the step-14 doc pass. Report: `docs/spikes/OCR_SPIKE.md`; script in git history at f96c339 | Decisions row "Phase 6 step 1 result"; WIP step 10 bar |
 | Phase 6 step 12 (2026-11-24): **no runtime caching, everything stays precached.** With pdf.js and tesseract.js both dropped, no lazy chunk is heavy (largest 35 KB gzipped; whole client 1.4 MB raw), and the image/diagram editors must work offline, so `vite.config.ts` keeps one `globPatterns` with no `globIgnores` and no `runtimeCaching`. `bundle-check`'s heavy list gains `pdfjs-dist` (markers `pdfjs-dist`, `pdf.worker`) so neither spike library can slip back into the shell unnoticed; `tesseract.js` was already on it. Shell 96.7 KB | WIP step 12 (runtime caching for heavy chunks) |
 | Phase 6 step 13 review (2026-11-24): verdict CHANGES REQUIRED, no blockers. **Fixed:** `encodeImage` catches canvas throws (RangeError/out of memory → `NOT_AN_IMAGE`; always closes the bitmap) and returns `CANNOT_ENCODE` instead of a blank image when there is no 2D context; the encode worker always replies (`.catch`), so `WebImageEncoder` can no longer wait forever; `import-service.ts`/`study-service.ts` back under 300 lines (`summarize` → `import-preview-parts.ts`, `StudyServiceDeps` → `study-deps.ts`, re-exported); repeated stack layers are found by `nodeKey` ("Cache"/"cache" no longer merge into one layer), in import and the editor; `mergeDiagram` keeps `layout` only for surviving nodes. **Accepted as is:** (1) no per-request worker timeout: with the worker always replying, only a crash leaves a request open, and that fires `error` → `failAll`; (2) pre-Phase-6 occlusion cards on path `[bank, type]`: none exist (import made `boxes: []`; test "no stored occlusion card"); (3) clearing a box label tombstones its card and naming it again makes a new card (history restarts) — consistent with "an unlabelled box makes no card"; revisit if users complain | Reviewer (Sonnet), Phase 6 |
+| Phase 6 step 14 doc pass (2026-11-24): §7 rewritten "as built" (manual boxes, per-image hide mode, own layout, text editor, no PDF/OCR import); §1 stack, §2 structure, §4 `@occlusion` row, §8 service worker, §11 bundle guard, §13 (`IMAGE_MAX_PX` 2000; `OCR_MIN_CONFIDENCE` removed from the table and from `defaults.ts`, it had no use) and §14 updated; CONCEPT §11 table and §13 updated to match; CLAUDE.md rule 9 no longer names tesseract.js/elkjs/Svelte Flow as in use; DESIGN §7 gains the figure components. Phase status: 6 Done, 9 Next | WIP "Where the docs disagree" 1–9 |

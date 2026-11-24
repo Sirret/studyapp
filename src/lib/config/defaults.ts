@@ -160,8 +160,6 @@ export const SEC_PER_ATTEMPT = {
 export const SEC_PER_ATTEMPT_DEFAULT = 15;
 
 export const FSRS_OPTIMISE_MIN_REVIEWS = 1000;
-/** Tesseract word confidence (0–100). */
-export const OCR_MIN_CONFIDENCE = 60;
 /** Long side of an imported image, in pixels (Decisions log "Phase 6 Q6–Q7"). */
 export const IMAGE_MAX_PX = 2000;
 /** WebP quality of an imported image, from 0 to 1. */

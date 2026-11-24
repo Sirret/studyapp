@@ -182,6 +182,12 @@ Primary button in lamp-light: fill `--l-text`, label `--l-bg`, lip `--l-lip`.
 | **Toggle** | 52×32 track; on = ink with a paw on the knob |
 | **Sheet / Dialog** | `--surface`, 2 px outline, radius 14 at the top, a knit band at the top edge |
 | **EmptyState** | Yuki (napping, waiting or curious), one line in Literata, one action. From the "Empty & error states" mockup |
+| **OcclusionFigure** (Phase 6, `ui/figures/`) | The image as-is (`alt` = the note's title, else file name) with HTML boxes placed by percentage over it. Covered box: `--surface-sunk` fill, `--outline` border, `--r-xs`, a "?" in `--type-small-size`; the asked box is `--frost` with a `--line-strong` border. Tappable boxes are real buttons with names (focus ring `--accent`). After checking: `--correct` / `--wrong` on the answered box. Hide one (others visible) or hide all, per image |
+| **DiagramFigure** | SVG from the engine's layout: nodes as `--surface` boxes with an `--outline` stroke, arrows and arrowheads in `--line-strong`, labels in `--type-small-size`. The hidden or asked node is `--frost` with a "?"; focus ring `--accent`. Tappable nodes get transparent buttons over them. A visually hidden text list of every layer/arrow for screen readers. Too big: a one-line "too big to draw, edit as text" |
+| **PlaceExercise** / **ConnectExercise** | Place: the label chip over an OcclusionFigure with every box covered; drag the chip onto a box, or tap a box (same verdict). Connect: tap the start node, then the end node, to add an arrow; arrows are removed from a Chip list under the drawing; after checking, missing arrows show dashed and extra ones `--wrong` (✕) |
+| **ShowOriginal** | A link button after checking a diagram with a source image; opens a Sheet with the picture |
+| **OcclusionEditor** | The figure with draggable boxes, plus `OcclusionBoxControls`: step buttons (←↑↓→, bigger/smaller, 44 px), label Input, delete; a tray of unplaced labels as Chips (tap a chip, then tap the picture); a Segmented "Hide one / Hide all". Every drag has a button alternative |
+| **DiagramTextEditor** | A monospace textarea in the import arrow grammar, a live read-only DiagramFigure, unreadable lines listed under it, and a rename list (one Input per node) that keeps IDs |
 | **Yuki** | §9 |
 
 ---

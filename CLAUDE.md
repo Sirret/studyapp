@@ -44,7 +44,7 @@ The docs, for reference:
 6. **Content writes go through the repository classes in `db/repos/`**, which sets `updatedAt`, `deviceId` and tombstones (`deleted: true`) instead of hard deletes (except archive/replace import, which are explicit).
 7. **IDs are `crypto.randomUUID()`.** Keep card IDs stable when regenerating cards from an edited note, so history survives.
 8. **No AI at runtime.** Don't add AI SDKs or network calls to scoring, scheduling or planning. The only optional "AI" is the user's own chatbot, outside the app.
-9. **Keep the shell small.** tesseract.js, elkjs and Svelte Flow are only imported from lazy-loaded diagram code; OCR and ELK run in Web Workers. Check the shell stays under `SHELL_JS_BUDGET_KB`.
+9. **Keep the shell small.** A heavy library is only imported from lazy-loaded code, and heavy work (image encoding) runs in a Web Worker. Phase 6 uses none: diagram layout is `engine/diagram-layout.ts`; tesseract.js (OCR) and pdf.js were tried and dropped (`docs/spikes/`), elkjs and Svelte Flow were not adopted; `bundle-check` still rejects all four in the shell. Check the shell stays under `SHELL_JS_BUDGET_KB`.
 10. **Mobile first.** Every interaction works by touch at 360 px wide; every drag has a tap alternative.
 11. **Never lock the user out** (sleep is a reminder, not a block), and **never add an "I know this" skip**.
 12. **Verify library APIs** listed in `BUILD_PLAN.md` §14 against the installed versions instead of assuming.

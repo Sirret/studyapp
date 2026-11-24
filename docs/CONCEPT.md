@@ -276,7 +276,7 @@ No new research was needed here: round one found that no study app publishes a p
 | Spelling                        | Damerau–Levenshtein edit distance                                                   | Counts swapped letters as one typo; tolerance scales with word length          |
 | Distractors                     | Same-tag/column siblings, first-letter + length filter, ranked by logged confusions | Plausible, and ones you’ve actually mixed up                                   |
 | Concept-map / diagram check     | Set difference on nodes and edges                                                   | Shows exactly which links you missed                                           |
-| Suggesting hide-boxes           | OCR (Tesseract.js, on-device)                                                       | Finds label positions on any printed image; free and offline                   |
+| Placing hide-boxes              | By hand: tap-to-place from the label list, drag or step buttons                     | OCR (Tesseract.js) was tried and dropped: 33% of labels on real slides (`docs/spikes/OCR_SPIKE.md`) |
 | Diagram layout                  | ELK.js layered layout                                                               | Places boxes and arrows automatically for flowcharts, plans and state machines |
 | Drag-label check                | Point-in-box hit test                                                               | Was the label dropped inside the right box?                                    |
 | Phone ↔ laptop sync             | Append-only event log, merged by event ID, replayed                                 | No conflicts: history is only added, never overwritten                         |
@@ -303,25 +303,25 @@ Diagrams are all different — an ER diagram, the OSI stack and a SQL-to-relatio
 
 ## 1. Image occlusion — for any picture
 
-- **Getting the image in.** Through the app: upload a file, paste a screenshot, or take a photo. The import screen also accepts images alongside the AI’s text, which can refer to them by file name (“@occlusion slide12.png”), and accepts a .zip of a text file plus its images. The chatbot is never asked to produce images or zips; the images are already on your device.
+- **Getting the image in.** Through the app: upload a file, paste a screenshot, or take a photo. The import screen also accepts images alongside the AI’s text, which can refer to them by file name (“@occlusion slide12.png”), and accepts a .zip of a text file plus its images (file names match ignoring case, spaces, underscores, hyphens and the extension). PDF slides can't be imported: diagrams pasted into slides are pictures, so their labels can't be read (`docs/spikes/PDF_SPIKE.md`). The chatbot is never asked to produce images or zips; the images are already on your device.
 
-- **Hide-boxes suggested automatically (OCR).** Tesseract.js reads the text on the image inside the browser and returns where each word sits; the app turns those into suggested hide-boxes, which you confirm or adjust. It runs on the device, is free, and works offline once its language file (a few MB) is downloaded. It only helps you make the card — scoring stays deterministic. Good on printed text, poor on handwriting (place those boxes yourself).
+- **Placing the hide-boxes.** The chatbot can list the labels it sees (`box:` lines under `@occlusion`); in the image editor you tap a label, then tap where it goes, and adjust the box by dragging or with step buttons. You can also draw boxes yourself. Automatic suggestions (OCR) were tried and dropped: they found only a third of the labels on real lecture slides.
 
 - **Rendering.** The image is shown as-is, with the boxes drawn on top as an SVG overlay. Each box is stored as a fraction of the image’s width and height, so it lines up on any screen size.
 
-- **Review modes.** Hide one (one box covered, the others visible as context) or hide all (everything covered, revealed one at a time).
+- **Review modes.** Hide one (one box covered, the others visible as context) or hide all (everything covered, revealed one at a time), chosen per image in its editor.
 
-- **Answering, and how it counts.** Typing the label (fuzzy spelling) or dragging it onto the box is recall, so it counts fully and can be the final correct; the drop is checked by whether it lands inside the box. Tapping it from a word bank is recognition and counts exactly like multiple choice: it helps a card climb but can’t be the final correct.
+- **Answering, and how it counts.** A card climbs from picking the label from a word bank, to placing it on the picture (drag, or tap the box), to typing it. Typing the label (fuzzy spelling) or placing it on the box is recall, so it counts fully and can be the final correct; the drop is checked by whether it lands inside the box. Tapping it from a word bank is recognition and counts exactly like multiple choice: it helps a card climb but can’t be the final correct.
 
 ## 2. Structured diagrams — for box-and-arrow concepts
 
 - **Stored as data, shown as a picture.** The diagram is kept as nodes and labelled arrows, which is what lets the app quiz its structure. On screen it is always a drawn diagram, never text.
 
-- **Made by AI from a screenshot.** Paste the lecture diagram into your own chatbot with the import prompt; it writes a @diagram block with one arrow per line (“Parser -\> Optimizer : relational algebra”). The app lays it out automatically and draws it, and you check and fix it in the editor (drag, rename, add a missing arrow).
+- **Made by AI from a screenshot.** Paste the lecture diagram into your own chatbot with the import prompt; it writes a @diagram block with one arrow per line (“Parser -\> Optimizer : relational algebra”). The app lays it out automatically and draws it, and you check and fix it in the editor: the same arrow text, with a live drawing beside it, line-by-line errors and a rename list that keeps each box's study history.
 
-- **Layout and drawing.** ELK.js computes the layout (the standard layered method for flowcharts, query plans and state machines; a simple vertical stack for layered models like OSI). Svelte Flow draws it as SVG with draggable nodes, drag-to-connect arrows, zoom and pan.
+- **Layout and drawing.** The app's own small layered layout (the standard method for flowcharts, query plans and state machines; a vertical stack for layered models like OSI) draws it as SVG. It is deterministic and adds no download. Very large diagrams say "too big to draw, edit as text". A drag-and-drop canvas may come later.
 
-- **Exercises.** Hide a node’s label, hide an arrow’s label, remove arrows and reconnect them, or reorder layers. Rebuilds are marked by comparing your arrows with the reference as sets, so it shows exactly which you missed or added.
+- **Exercises.** Hide a node’s label, hide an arrow’s label, remove arrows and reconnect them (tap the start box, then the end box), or reorder layers. Rebuilds are marked by comparing your arrows with the reference as sets, so it shows exactly which you missed or added.
 
 - **Keeps the original.** Each structured diagram stores the source screenshot, with a “show original” button after you answer, so you still see the lecture’s picture.
 
@@ -528,7 +528,7 @@ Everything is meant to be tuned by the student, per deck:
 
 **One-night mode and the multi-exam planner.** The morning check as a delayed retest is inferred from sleep research, and the planner’s daily split and value-per-minute cuts are sensible heuristics, not tested study designs. The minutes-per-card estimates start as defaults and improve as the app measures you.
 
-**Diagram generation.** AI transcription of a diagram can miss or flip arrows on dense or messy images, and OCR struggles with handwriting — both are authoring aids, always checked by the student before studying.
+**Diagram generation.** AI transcription of a diagram can miss or flip arrows on dense or messy images, and the labels listed for a picture can be wrong or incomplete — both are authoring aids, always checked by the student before studying.
 
 **The self-rated lane.** Conceptual “explain it” is deliberately walled off from scoring for now; whether and how to let it influence scheduling is left open.
 
