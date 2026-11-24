@@ -266,3 +266,19 @@ export const DIAGRAM_GAP = { x: 32, y: 56 } as const;
 export const DIAGRAM_LAYOUT_SWEEPS = 4;
 /** Space between a stack's rows, in layout units (a stack reads as one column of layers). */
 export const DIAGRAM_STACK_GAP = 8;
+
+// Dev seed — `/dev/seed`, test and dev builds only (Decisions log "Pre-review step: /dev/seed").
+/** Seed for the synthetic study history, so every seeded run is the same. */
+export const DEV_SEED_RNG_SEED = 20261124;
+/** Days of synthetic answers before today in the "Rich" seed. */
+export const DEV_SEED_HISTORY_DAYS = 4;
+/** Answers per course per day of synthetic history. */
+export const DEV_SEED_ANSWERS_PER_DAY = 12;
+/** Seconds between two synthetic answers (one session's wall time). */
+export const DEV_SEED_ANSWER_GAP_SEC = 25;
+/** Share of synthetic answers that are correct. */
+export const DEV_SEED_CORRECT_RATE = 0.75;
+/** Courses in the "Shelf stress" seed. */
+export const DEV_SEED_SHELF_COURSES = 50;
+/** Size of a generated seed picture, px. */
+export const DEV_SEED_IMAGE = { width: 800, height: 500 } as const;

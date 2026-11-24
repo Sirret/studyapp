@@ -25,6 +25,7 @@ Then print start commands + URL and CHECKPOINT.
 - [x] 2 playwright workers=1 via E2E_VERIFY, e2e-verify.json, summary lists partial run apart, CI timeout 35
 - [x] 3 occlusion revive + tests (card-regen.test.ts tombstones block; figure-services.test.ts relabel test)
 - Decisions rows written (3 "Pre-review step" rows at the end of BUILD_PLAN); HANDOFF 6-review line updated
-- [ ] 4 /dev/seed + e2e
+- [x] 4 /dev/seed + e2e: `services/dev-seed-plan.ts` (pure, `tests/unit/services/dev-seed-plan.test.ts`), `services/dev-seed.ts`, `routes/dev/seed/`, `tests/e2e/seed.spec.ts` (2 passed, 45 s, 1 worker); deploy build checked: no seed module or golden text in `build/`. Decisions row + HANDOFF line written.
+- [ ] full `npm run verify` (1 worker) running; its results = the 1-worker rerun of UNVERIFIED rows
 - [ ] rerun UNVERIFIED rows at 1 worker, prune
 - [ ] commit, checkpoint
