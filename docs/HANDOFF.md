@@ -70,7 +70,7 @@ The working notes passed from one phase to the next. Unlike `PROGRESS.md` (a his
 
 **Import direction:** UI → services → engine and repos → schemas and config. `src/lib/import` is pure like the engine (it may use the engine, schemas and config), and only services call it. Lint fails on violations. A UI import path with a segment named exactly `import` trips that rule, which is why the components live in `ui/import-screen/`.
 
-**Slow-machine e2e timeouts:** if `verify` fails only because a test ran out of time (and it passes alone), log it in `docs/UNVERIFIED_TESTS.md` per its rule and carry on; wrong values or app errors are bugs to fix. Local e2e runs with 2 workers and no video.
+**Slow-machine e2e timeouts:** if `verify` fails only because a test ran out of time (and it passes alone), log it in `docs/UNVERIFIED_TESTS.md` per its rule and carry on; wrong values or app errors are bugs to fix. Ad-hoc local e2e runs with 2 workers and no video; `npm run verify` (and CI) runs it on 1 worker (`E2E_VERIFY`) and writes `test-results/e2e-verify.json`, which `summary.md` reports apart from any later partial run (`e2e.json`).
 
 **E2E viewports:** functional e2e tests run on `mobile` only; the `laptop` project runs only tests tagged `@both` (layout checks in `tests/e2e/layout.spec.ts`). A new screen gets a `@both` layout test there; don't tag functional tests `@both`. While iterating, run only the spec you're changing, after `npm run build:test` (Playwright serves `build/`).
 

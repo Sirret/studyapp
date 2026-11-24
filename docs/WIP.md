@@ -28,6 +28,7 @@ Then print start commands + URL and CHECKPOINT.
 - Decisions rows written (3 "Pre-review step" rows at the end of BUILD_PLAN); HANDOFF 6-review line updated
 - [x] 4 /dev/seed + e2e: `services/dev-seed-plan.ts` (pure, `tests/unit/services/dev-seed-plan.test.ts`), `services/dev-seed.ts`, `routes/dev/seed/`, `tests/e2e/seed.spec.ts` (2 passed, 45 s, 1 worker); deploy build checked: no seed module or golden text in `build/`. Decisions row + HANDOFF line written.
 - verify run 1 (after 25a7ade) stopped at unit: diagram-text stack property drew ["a","A"] → generator distinct by nodeKey (Decisions row); scope-service timeout → UNVERIFIED row
-- [ ] full `npm run verify` run 2 (1 worker) (log: scratchpad verify.log; if lost, just rerun `npm run verify`); its results = the 1-worker rerun of UNVERIFIED rows
-- [ ] rerun UNVERIFIED rows at 1 worker, prune
-- [ ] commit, checkpoint
+- [x] full `npm run verify` run 2 (1 worker): unit 2593/0, e2e 91/94; 3 failures passed alone twice → UNVERIFIED row; 30 passing rows pruned (8 left); PROGRESS entry written (log: scratchpad verify.log; if lost, just rerun `npm run verify`); its results = the 1-worker rerun of UNVERIFIED rows
+- [x] rerun UNVERIFIED rows at 1 worker, prune
+- [x] commit, checkpoint
+- [ ] **push only after the user confirms**; then delete this file (HANDOFF already has the seed + verify notes)

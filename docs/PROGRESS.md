@@ -156,3 +156,10 @@ Numbers come from `test-results/summary.md` after `npm run verify`.
 - **Review:** `reviewer` (Sonnet, diff since 72f365b): CHANGES REQUIRED, no blockers (no rerun). Fixed: encoder hang on canvas throw/no context (worker always replies), two files over 300 lines split, repeated stack layers matched by `nodeKey`, stale layout pruned. Nits left: no per-request worker timeout; pre-Phase-6 occlusion path (none stored); clearing a box label restarts its card's history.
 - **Decisions:** Decisions log rows "Phase 6 scope", "Phase 6 Q1–Q13", "Phase 6 step 1 result" (PDF no-go), "step 10 result" (OCR no-go), "step 2–13", "step 14 doc pass". `DATA_MODEL` §3.8, §4.2, §7 (Phase 9 media note).
 - **Known issues / next:** `hotspot`/`redraw` still fall back; trees, ER diagrams and tables via occlusion only; no Svelte Flow canvas or peel-off cards (later options). Many e2e load timeouts logged in UNVERIFIED_TESTS.md for review after Phase 10. Next: Phase 9 (Transfer & offline): export must carry media blobs and restore by `sourceHash`.
+
+### 2026-11-24 — Pre-review step (before the UX review)
+- **Built:** `/dev/seed` (test builds only): Rich (6 courses from the golden texts with occlusion, stack and flow figures, exams +1 to +21 days and one long-term, 4 days of seeded history), Shelf stress (50 courses, long/odd titles, mixed or no exams), Wipe. Occlusion relabel revives the box's old card (same ID, replayed). Verify runs e2e on 1 worker with its own `e2e-verify.json`. Docs: Android install in Phase 10's done-when, GitHub Pages, SESSION_NOTES A11/D2/D3 shipped.
+- **Tests:** unit 2593 passed / 0 failed (incl. sim) · sim 4/4 · e2e 91/94 on 1 worker at verify; the 3 failing (course-map Welcome, visual components/cozy-components: 5 s waits) passed alone twice (UNVERIFIED_TESTS, pruned from 37 to 8 rows) · coverage engine 99.5% lines, 90.8% branches
+- **Bundle:** shell 96.8 KB gzipped (budget 150); the deploy build has no seed module or golden text
+- **Review:** none (not a phase). **Decisions:** 5 rows "Pre-review step" in the Decisions log.
+- **Known issues / next:** the user's UX review, then Phase 9. Not pushed yet (waiting for the user's OK).
