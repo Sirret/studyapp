@@ -44,7 +44,7 @@ export type ParsedDiagram =
  *   (kept) nodes in the same direction; its label may change. If several previous arrows join
  *   the same pair, they are matched in their previous order.
  * - Line order never changes an ID; only a stack's layer order is taken from the text.
- * - `name`, `layout` and `sourceMediaId` are kept from `previous`; with no previous diagram
+ * - `name`, `layout` (only for nodes still present) and `sourceMediaId` are kept from `previous`; with no previous diagram
  *   every ID is new and `name` is the given one.
  * - A flow's nodes are listed in first-mention order. A stack has no edges.
  *
@@ -87,14 +87,35 @@ export function mergeDiagram(
 		}));
 		edges = matchEdges(previous?.edges ?? [], arrows, newId, trace);
 	}
-	const kept = previous
-		? {
-				name: previous.name,
-				...(previous.layout ? { layout: previous.layout } : {}),
-				...(previous.sourceMediaId ? { sourceMediaId: previous.sourceMediaId } : {})
-			}
-		: { name };
+	const kept = keptFields(previous, name, nodes.values());
 	return { result: { kind: parsed.kind, ...kept, nodes: [...nodes.values()], edges }, trace };
+}
+
+/** `name`, `layout` and `sourceMediaId` carried over from the previous diagram. */
+function keptFields(
+	previous: DiagramStructure | null,
+	name: string,
+	nodes: Iterable<DiagramNode>
+): Pick<DiagramStructure, 'name' | 'layout' | 'sourceMediaId'> {
+	if (!previous) return { name };
+	const layout = previous.layout ? keepLayout(previous.layout, nodes) : undefined;
+	return {
+		name: previous.name,
+		...(layout ? { layout } : {}),
+		...(previous.sourceMediaId ? { sourceMediaId: previous.sourceMediaId } : {})
+	};
+}
+
+/** The saved positions of the nodes that are still in the diagram; `undefined` when none are. */
+function keepLayout(
+	layout: Record<string, { x: number; y: number }>,
+	nodes: Iterable<DiagramNode>
+): Record<string, { x: number; y: number }> | undefined {
+	const entries = [...nodes].flatMap((node) => {
+		const at = layout[node.id];
+		return at ? [[node.id, at] as const] : [];
+	});
+	return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 }
 
 /** Gives each arrow the ID of the first unused previous arrow with the same (from, to). */

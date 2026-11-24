@@ -498,3 +498,22 @@ describe('renameNode (BUILD_PLAN §7.2, Decisions "Phase 6 Q5")', () => {
 		]);
 	});
 });
+
+describe('mergeDiagram drops saved positions of removed nodes (Phase 6 review)', () => {
+	it('keeps the layout only for nodes still present', () => {
+		const previous: DiagramStructure = {
+			...storedFlow([['A', 'B']]),
+			layout: { [uuid(0x100)]: { x: 1, y: 2 }, [uuid(0x101)]: { x: 3, y: 4 } }
+		};
+		const parsed: ParsedDiagram = { kind: 'flow', edges: [{ from: 'A', to: 'C' }] };
+		const { result } = mergeDiagram(previous, parsed, 'x', idSource().newId);
+		expect(result.layout).toEqual({ [uuid(0x100)]: { x: 1, y: 2 } });
+	});
+
+	it('leaves out the layout when no saved node remains', () => {
+		const previous = storedFlow([['A', 'B']]);
+		const parsed: ParsedDiagram = { kind: 'flow', edges: [{ from: 'C', to: 'D' }] };
+		const { result } = mergeDiagram(previous, parsed, 'x', idSource().newId);
+		expect(result.layout).toBeUndefined();
+	});
+});

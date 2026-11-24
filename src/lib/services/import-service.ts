@@ -1,4 +1,4 @@
-import type { ContentBatch, ContentStore } from '#lib/db/repos/content-store.ts';
+import type { ContentStore } from '#lib/db/repos/content-store.ts';
 import type { CourseId, ImportId, Placement } from '#lib/db/schemas/common.ts';
 import type { Course, ImportGoal, LastImport, Topic } from '#lib/db/schemas/course.ts';
 import type { Note, NoteType } from '#lib/db/schemas/note.ts';
@@ -24,9 +24,9 @@ import {
 	countNoteTypes,
 	flagGaps,
 	imageIdentity,
-	labelsToPlace,
 	referencedFiles,
 	sha256Hex,
+	summarize,
 	topicPreview,
 	type CheckedItem,
 	type LabelsToPlace
@@ -290,21 +290,4 @@ export class ImportService {
 			};
 		}
 	}
-}
-
-/** What a written batch added, with the image notes whose labels still need a place. */
-function summarize(
-	topics: number,
-	batch: Pick<ContentBatch, 'chunks' | 'notes' | 'cards' | 'media'>
-): ImportSummary {
-	const { chunks, notes, cards, media } = batch;
-	const counts = {
-		topics,
-		chunks: chunks.length,
-		notes: notes.length,
-		cards: cards.length,
-		images: media.length
-	};
-	const toPlace = labelsToPlace(notes, media);
-	return toPlace.length > 0 ? { ...counts, toPlace } : counts;
 }

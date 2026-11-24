@@ -1,9 +1,12 @@
 import {
 	canEncodeOffscreen,
 	encodeImage,
+	NOT_AN_IMAGE,
+	type EncodedImage,
 	type EncodeReply,
 	type EncodeRequest
 } from './image-encode.ts';
+import type { Result } from '#lib/util/result.ts';
 
 /**
  * The image encode worker: a 2000 px WebP encode takes seconds on a phone, so it never runs on
@@ -18,5 +21,8 @@ addEventListener('message', (event: MessageEvent<EncodeRequest>) => {
 		send({ id, kind: 'unsupported' });
 		return;
 	}
-	void encodeImage(source).then((result) => send({ id, kind: 'done', result }));
+	// Always reply, even on an unexpected throw: the page waits for this id.
+	void encodeImage(source)
+		.catch((): Result<EncodedImage, string> => ({ ok: false, error: NOT_AN_IMAGE }))
+		.then((result) => send({ id, kind: 'done', result }));
 });

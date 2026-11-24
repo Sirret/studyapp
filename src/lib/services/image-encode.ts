@@ -47,9 +47,26 @@ export async function encodeImage(source: Blob): Promise<Result<EncodedImage, st
 		return { ok: false, error: NOT_AN_IMAGE };
 	}
 	const { width, height } = fitWithin(bitmap.width, bitmap.height, IMAGE_MAX_PX);
+	try {
+		return await drawAndEncode(bitmap, width, height);
+	} catch {
+		// An oversized or odd image can make the canvas throw (RangeError, out of memory).
+		return { ok: false, error: NOT_AN_IMAGE };
+	} finally {
+		bitmap.close();
+	}
+}
+
+/** Draws the bitmap at the given size and writes WebP, else JPEG; never stores a blank image. */
+async function drawAndEncode(
+	bitmap: ImageBitmap,
+	width: number,
+	height: number
+): Promise<Result<EncodedImage, string>> {
 	const canvas = new OffscreenCanvas(width, height);
-	canvas.getContext('2d')?.drawImage(bitmap, 0, 0, width, height);
-	bitmap.close();
+	const context = canvas.getContext('2d');
+	if (!context) return { ok: false, error: CANNOT_ENCODE };
+	context.drawImage(bitmap, 0, 0, width, height);
 	const webp = await canvas.convertToBlob({ type: 'image/webp', quality: IMAGE_WEBP_QUALITY });
 	if (webp.type === 'image/webp')
 		return { ok: true, value: { blob: webp, width, height, mime: 'image/webp' } };

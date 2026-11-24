@@ -1,4 +1,4 @@
-import type { DiagramStructure, ParsedDiagram } from '#lib/engine/diagram-edit.ts';
+import { nodeKey, type DiagramStructure, type ParsedDiagram } from '#lib/engine/diagram-edit.ts';
 import { MIN_STACK_LAYERS, type ImportError } from './ast.ts';
 import {
 	failBlock,
@@ -36,10 +36,10 @@ function parseStack(raw: RawBlock, name: string): BlockOutput {
 	const layers = lines.map(({ line, text }) => {
 		const pair = splitPair(text);
 		const label = pair?.left ?? text;
-		if (seen.has(label)) {
+		if (seen.has(nodeKey(label))) {
 			errors.push({ line, message: `Layer "${label}" is listed twice.${SKIPPED}` });
 		}
-		seen.add(label);
+		seen.add(nodeKey(label)); // the merge key: "Cache" and "cache" are one layer
 		return pair ? { label, role: pair.right } : { label };
 	});
 	if (errors.length > 0) return { errors };
@@ -141,8 +141,10 @@ function readStackText(lines: TextLine[], errors: DiagramTextError[]): ParsedDia
 	const layers = lines.map(({ line, text }) => {
 		const pair = splitPair(text);
 		const label = pair?.left ?? text;
-		if (seen.has(label)) errors.push({ line, message: `Layer "${label}" is listed twice.` });
-		seen.add(label);
+		if (seen.has(nodeKey(label))) {
+			errors.push({ line, message: `Layer "${label}" is listed twice.` });
+		}
+		seen.add(nodeKey(label)); // the merge key: "Cache" and "cache" are one layer
 		return pair ? { label, role: pair.right } : { label };
 	});
 	if (layers.length < MIN_STACK_LAYERS) {

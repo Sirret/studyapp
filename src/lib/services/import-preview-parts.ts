@@ -1,4 +1,5 @@
 import type { MediaRepo } from '#lib/db/repos/content-repos.ts';
+import type { ContentBatch } from '#lib/db/repos/content-store.ts';
 import type { NoteId } from '#lib/db/schemas/common.ts';
 import type { Media, Topic } from '#lib/db/schemas/course.ts';
 import type { Note, NoteType } from '#lib/db/schemas/note.ts';
@@ -7,7 +8,7 @@ import type { ImportPlan, PlannedTopic } from '#lib/import/build.ts';
 import { readLine, splitLines } from '#lib/import/lexer.ts';
 import type { StarredGap } from '#lib/import/validate.ts';
 import { imageKey } from '#lib/import/zip.ts';
-import type { PreparedImage, TopicPreview } from './import-service.ts';
+import type { ImportSummary, PreparedImage, TopicPreview } from './import-service.ts';
 
 /** A line the chatbot marked `[CHECK]`. */
 export interface CheckedItem {
@@ -116,4 +117,21 @@ export function labelsToPlace(notes: readonly Note[], media: readonly Media[]): 
 		const name = note.payload.title ?? names.get(note.payload.mediaId) ?? 'An image';
 		return [{ noteId: note.id, name, count }];
 	});
+}
+
+/** What a written batch added, with the image notes whose labels still need a place. */
+export function summarize(
+	topics: number,
+	batch: Pick<ContentBatch, 'chunks' | 'notes' | 'cards' | 'media'>
+): ImportSummary {
+	const { chunks, notes, cards, media } = batch;
+	const counts = {
+		topics,
+		chunks: chunks.length,
+		notes: notes.length,
+		cards: cards.length,
+		images: media.length
+	};
+	const toPlace = labelsToPlace(notes, media);
+	return toPlace.length > 0 ? { ...counts, toPlace } : counts;
 }

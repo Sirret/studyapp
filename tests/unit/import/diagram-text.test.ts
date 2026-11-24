@@ -287,3 +287,18 @@ describe('formatDiagram and parseDiagramText round-trip', () => {
 		expect(result.edges.map((e) => e.id)).toEqual(diagram.edges.map((e) => e.id));
 	});
 });
+
+describe('repeated layers by the merge key (Phase 6 review)', () => {
+	it('rejects layers that differ only by case or spacing, in the editor text', () => {
+		const { parsed, errors } = parse('stack', 'Cache', 'Disk', 'cache');
+		expect(parsed).toBeNull();
+		expect(errors[0]?.line).toBe(3);
+		expect(errors[0]?.message).toContain('Layer "cache" is listed twice.');
+	});
+
+	it('skips an imported stack whose layers differ only by case or spacing', async () => {
+		const { parseImport } = await import('#lib/import/parser.ts');
+		const { errors } = parseImport('@deck A\n@diagram stack Memory\nCache\nDisk\nCa che\n');
+		expect(errors.some((e) => e.message.includes('Layer "Ca che" is listed twice.'))).toBe(true);
+	});
+});

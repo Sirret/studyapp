@@ -1,13 +1,4 @@
 import type {
-	CardRepo,
-	CourseRepo,
-	MediaRepo,
-	NoteRepo,
-	TopicRepo
-} from '#lib/db/repos/content-repos.ts';
-import type { EventRepo } from '#lib/db/repos/event-repo.ts';
-import type { KvRepo } from '#lib/db/repos/kv-repo.ts';
-import type {
 	CardId,
 	CourseId,
 	EventId,
@@ -22,33 +13,16 @@ import { checkAccept } from '#lib/engine/grading.ts';
 import { microHint, type MicroHint } from '#lib/engine/hint.ts';
 import { rngFor } from '#lib/engine/rng.ts';
 import { toPlanCard } from '#lib/engine/session.ts';
-import type { Logger } from '#lib/log/logger.ts';
-import type { ReplayService } from './replay-service.ts';
-import type { SessionService, SessionView } from './session-service.ts';
+import type { SessionView } from './session-service.ts';
 import { answerOf, creditedIn, isReview, selfRatedOf, type Shown } from './study-answer.ts';
 import { loadCourse, practiceCards, type CourseMaterial } from './study-course.ts';
 import { cardExercise } from './study-item.ts';
 import type { PlannedSession, StartOptions } from './study-plan-types.ts';
+import type { StudyServiceDeps } from './study-deps.ts';
 import type { StudyAnswer, StudyItem, StudyView } from './study-types.ts';
 
 export type { PlannedCard, PlannedSession, StartOptions } from './study-plan-types.ts';
-
-/** What `StudyService` needs; injected so tests can pass real repos on a fake database. */
-export interface StudyServiceDeps {
-	sessions: SessionService;
-	repos: {
-		courses: CourseRepo;
-		topics: TopicRepo;
-		notes: NoteRepo;
-		cards: CardRepo;
-		media: MediaRepo;
-	};
-	events: EventRepo;
-	kv: KvRepo;
-	replay: ReplayService;
-	clock: () => number;
-	logger: Logger;
-}
+export type { StudyServiceDeps } from './study-deps.ts';
 
 /**
  * The study screen's service: starts practice sessions, builds the exercise for the current card
