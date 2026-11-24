@@ -47,6 +47,43 @@ const fullExams = (courses: readonly PlanCourse[]) =>
 	}));
 
 describe('planDays', () => {
+	describe('afterCuts (Decisions "UX fix: one plan verdict")', () => {
+		const one = [course(1, 1, [newItem(1)])];
+		const full = newClozeWork(FULL_KNOBS);
+
+		it('fits: nothing cut, and the check after cuts equals the check before', () => {
+			const { result } = planDays(cutsInput(one, [full + 5]));
+			expect(result.checks[0]?.fits).toBe(true);
+			expect(result.afterCuts).toEqual(result.checks);
+			expect(result.cuts[0]?.degradations).toEqual([]);
+		});
+
+		it('exactly fits: work equal to the time is a fit with no shortfall and no cuts', () => {
+			const { result } = planDays(cutsInput(one, [full]));
+			expect(result.checks[0]).toMatchObject({ fits: true, shortfallMinutes: 0 });
+			expect(result.afterCuts[0]).toMatchObject({ fits: true, shortfallMinutes: 0 });
+			expect(result.cuts[0]?.degradations).toEqual([]);
+		});
+
+		it('short before cuts but fits after them: the check after cuts uses the cut work', () => {
+			const { result } = planDays(cutsInput(one, [newClozeWork(CRITERION_KNOBS)]));
+			expect(result.checks[0]?.fits).toBe(false);
+			expect(result.cuts[0]?.degradations).toEqual(['criterion']);
+			expect(result.afterCuts[0]).toMatchObject({
+				fits: true,
+				shortfallMinutes: 0,
+				demandMinutes: result.cuts[0]?.workMinutes
+			});
+		});
+
+		it('far too little time: the plan cuts work until the exam fits, and says what it cut', () => {
+			const { result } = planDays(cutsInput(one, [1]));
+			expect(result.checks[0]?.fits).toBe(false);
+			expect(result.cuts[0]?.cutIds.length).toBeGreaterThan(0);
+			expect(result.afterCuts[0]).toMatchObject({ fits: true, shortfallMinutes: 0 });
+		});
+	});
+
 	it('checks feasibility at full work, before any cuts', () => {
 		const courses = [course(1, 1, [newItem(1)]), course(2, 2, [newItem(2)])];
 		const input = cutsInput(courses, DAYS);

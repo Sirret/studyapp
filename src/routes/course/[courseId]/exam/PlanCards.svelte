@@ -7,6 +7,7 @@
 	import Stack from '#lib/ui/layout/Stack.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Card from '#lib/ui/primitives/Card.svelte';
+	import { fitText } from '#lib/ui/plan/fit-text.ts';
 	import { countOf } from '#lib/util/plural.ts';
 
 	/** Today's review and learning for a course, each with its cost and a start button. @see BUILD_PLAN §6.6–§6.8 */
@@ -30,20 +31,14 @@
 				: 'Long-term review'
 	);
 
-	const cuts: Record<string, string> = {
-		criterion: 'New cards need 2 correct instead of 3.',
-		relearning: 'Fewer review sessions per card.',
-		deferNew: 'Some new cards are left out.'
-	};
-
 	function dayLabel(day: CramDayView): string {
 		if (day.slot === 'morning') return 'Exam morning';
 		if (day.slot === 'finalPass') return day.day === 0 ? 'Tonight · final pass' : 'Final pass';
 		return day.day === 0 ? 'Tonight' : `In ${day.day} days`;
 	}
 
-	const hours = (minutes: number): string =>
-		minutes < 60 ? `${minutes} min` : `${Math.round((minutes / 60) * 10) / 10} h`;
+	/** The planner's verdict for this exam: the same words and numbers Home shows. */
+	const fit = $derived(today.fit ? fitText(today.fit) : null);
 </script>
 
 <Card label={reviewTitle}>
@@ -57,26 +52,23 @@
 					? ` · ~${today.review.minutes} min`
 					: ''}{/if}
 		</p>
+		{#if fit}
+			<Banner tone={fit.tone}><span data-plan-fit>{fit.body}</span></Banner>
+		{/if}
 		{#if today.review.cram}
 			{@const cram = today.review.cram}
-			{#if !cram.feasible}
-				<Banner tone="warning">
-					This plan is {hours(cram.shortfallMinutes)} short of the time you have. Study what you can;
-					the weakest cards come first.
-				</Banner>
-			{/if}
-			{#if cram.degradations.length > 0}
-				<Banner tone="info">
-					To fit your time: {cram.degradations.map((step) => cuts[step]).join(' ')}
-					{#if cram.deferred > 0}({cram.deferred} new cards wait until after the exam.){/if}
-				</Banner>
-			{/if}
 			<Disclosure summary="The plan up to the exam">
 				<ul>
 					{#each cram.days as day (`${day.day}-${day.slot}`)}
-						<li>{dayLabel(day)}: {day.cards} cards, ~{day.minutes} min</li>
+						<li>{dayLabel(day)}: {countOf(day.cards, 'card')}, ~{day.minutes} min</li>
 					{/each}
 				</ul>
+				{#if cram.deferred > 0}
+					<p>
+						The evenings are full, so {countOf(cram.deferred, 'new card')}
+						{cram.deferred === 1 ? 'waits' : 'wait'} until after the exam.
+					</p>
+				{/if}
 			</Disclosure>
 		{/if}
 		{#if today.review.cards > 0}

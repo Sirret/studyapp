@@ -25,13 +25,31 @@ export interface TodayCourseView {
 	readiness: number;
 }
 
-/** The first exam that doesn't fit, in words the shortfall note can use. */
-export interface ShortfallView {
+/** One planner run's numbers for a course page (`PlannerService.courseShares`). */
+export interface CoursePlanShares {
+	share: number[] | null;
+	cramShare: number[] | null;
+	fit: PlanFitView | null;
+}
+
+/**
+ * Whether an exam's work fits the time before it: the planner's processor-demand check before and
+ * after its suggested degrading and cuts. Home's note and Exam prep's banner both show this one
+ * view (`PlannerService.fitOf`), so their numbers agree (Decisions "UX fix: one plan verdict").
+ */
+export interface PlanFitView {
 	courseId: CourseId;
 	courseName: string;
 	examDate: string;
+	/** Fits with nothing lowered or cut. */
+	fits: boolean;
+	/** Fits once the degradations and cuts below are made. */
+	fitsAfterCuts: boolean;
+	/** Minutes still short after the degradations and cuts (0 when `fitsAfterCuts`). */
 	shortfallMinutes: number;
-	/** Pieces of work the planner suggests leaving out, across the exams due by then. */
+	/** What the plan lowers, across the courses with an exam by then, each once, in order. */
+	degradations: ('criterion' | 'relearning' | 'cut')[];
+	/** Pieces of work left out across those courses. */
 	cutCount: number;
 }
 
@@ -39,7 +57,8 @@ export interface TodayPlanView {
 	courses: TodayCourseView[];
 	/** Minutes studied today (logged answers). */
 	studiedMinutes: number;
-	shortfall: ShortfallView | null;
+	/** The first exam that doesn't fit before cuts, with its verdict after them; null when all fit. */
+	shortfall: PlanFitView | null;
 	/** Something was studied today and the planned minutes are used up. */
 	done: boolean;
 }

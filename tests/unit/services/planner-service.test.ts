@@ -92,7 +92,8 @@ async function setup() {
 		replayConfig,
 		clock,
 		logger,
-		shares: (id, events) => planner.shareOf(id, events)
+		shares: (id, events) => planner.shareOf(id, events),
+		planFor: (id, events) => planner.courseShares(id, events)
 	});
 	const importer = new ImportService(new ContentStore(db, context), encoder, randomUUID, logger);
 	const addCourse = async (name: string, read = false): Promise<CourseId> => {
@@ -146,6 +147,24 @@ const minutesEvery = (minutes: number): Availability => ({
 });
 
 describe('PlannerService (BUILD_PLAN §6.9)', { timeout: 30_000 }, () => {
+	it('Home and Exam prep agree: an exam that fits says fits, with nothing cut', async () => {
+		const env = await setup();
+		const a = await env.addCourse('Networks');
+		await env.examIn(a, 3);
+		await env.planner.setAvailability(minutesEvery(240));
+		const today = await env.planner.today();
+		expect(today.shortfall).toBeNull();
+		const fit = (await env.plans.today(a)).fit;
+		expect(fit).toMatchObject({
+			fits: true,
+			fitsAfterCuts: true,
+			shortfallMinutes: 0,
+			cutCount: 0
+		});
+		expect(fit?.degradations).toEqual([]);
+		expect(await env.planner.fitOf(a)).toStrictEqual(fit);
+	});
+
 	it('with no exams: nothing is planned, Today lists the courses, the week shows availability', async () => {
 		const env = await setup();
 		await env.addCourse('Networks');
@@ -191,9 +210,18 @@ describe('PlannerService (BUILD_PLAN §6.9)', { timeout: 30_000 }, () => {
 		await env.examIn(b, 3);
 		await env.planner.setAvailability({ ...minutesEvery(0), examMorningMinutes: 0 });
 		const today = await env.planner.today();
-		expect(today.shortfall).toMatchObject({ courseId: a, examDate: localDateOf(env.today + 1) });
-		expect(today.shortfall?.shortfallMinutes).toBeGreaterThan(0);
+		// The note names the first exam short before cuts and gives its verdict after them: the
+		// cuts make it fit, so nothing is left short (Decisions "UX fix: one plan verdict").
+		expect(today.shortfall).toMatchObject({
+			courseId: a,
+			examDate: localDateOf(env.today + 1),
+			fits: false,
+			fitsAfterCuts: true,
+			shortfallMinutes: 0
+		});
 		expect(today.shortfall?.cutCount).toBeGreaterThan(0);
+		// Home and Exam prep show the same verdict, numbers included.
+		expect((await env.plans.today(a)).fit).toStrictEqual(today.shortfall);
 		const week = await env.planner.week();
 		expect(week.feasible).toBe(false);
 		const first = week.exams[0];

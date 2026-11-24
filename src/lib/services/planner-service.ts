@@ -22,7 +22,8 @@ import type {
 	PlanDayView,
 	PlanExamView,
 	PlanView,
-	ShortfallView,
+	CoursePlanShares,
+	PlanFitView,
 	TodayCourseView,
 	TodayPlanView
 } from './planner-types.ts';
@@ -114,14 +115,24 @@ export class PlannerService {
 	 * `events` lets a caller that already read the log skip a second read.
 	 */
 	async shareOf(courseId: CourseId, events?: StudyEvent[]): Promise<number[] | null> {
-		const run = await this.run(events);
+		return this.share(await this.run(events), courseId, 'split');
+	}
+
+	/**
+	 * A course's minutes per day: its split plus free minutes, either an even part of them
+	 * (`split`, for long-term new cards and the learning path) or all of them (`all`, for the cram
+	 * plan: cram sessions are tied to their evening, so a heavy evening with free time left must
+	 * not read as short; Decisions "UX fix: one plan verdict").
+	 */
+	private share(run: Planned, courseId: CourseId, free: 'split' | 'all'): number[] | null {
 		const course = run.planned.find((c) => c.courseId === courseId);
 		if (!course) return null;
 		return Array.from({ length: course.examDay - run.today }, (_, i) => {
 			const split = run.plan.days[i];
-			const sharing = run.planned.filter((c) => c.examDay > run.today + i).length;
-			const free = Math.floor((split?.freeMinutes ?? 0) / Math.max(1, sharing));
-			return (split?.minutes[courseId] ?? 0) + free;
+			const sharing =
+				free === 'all' ? 1 : run.planned.filter((c) => c.examDay > run.today + i).length;
+			const spare = Math.floor((split?.freeMinutes ?? 0) / Math.max(1, sharing));
+			return (split?.minutes[courseId] ?? 0) + spare;
 		});
 	}
 
@@ -182,23 +193,51 @@ export class PlannerService {
 		return run.data.get(courseId)?.material.course;
 	}
 
-	private shortfall(run: Planned): ShortfallView | null {
+	private shortfall(run: Planned): PlanFitView | null {
 		const short = run.plan.firstShort;
-		const course = short && this.courseOf(run, short.courseId);
-		if (!short || !course) return null;
-		const cutCount = run.plan.cuts
-			.filter(
-				(cut) =>
-					(run.planned.find((c) => c.courseId === cut.courseId)?.examDay ?? Infinity) <=
-					short.examDay
-			)
-			.reduce((sum, cut) => sum + cut.cutIds.length, 0);
+		return short ? this.fitView(run, short.courseId) : null;
+	}
+
+	/**
+	 * An exam's verdict before and after the planner's degrading and cuts, counting every course
+	 * with an exam on or before that day (the check is cumulative). Null when not planned.
+	 */
+	private fitView(run: Planned, courseId: CourseId): PlanFitView | null {
+		const before = run.plan.checks.find((c) => c.courseId === courseId);
+		const after = run.plan.afterCuts.find((c) => c.courseId === courseId);
+		const course = this.courseOf(run, courseId);
+		if (!before || !after || !course) return null;
+		const examDay = (id: CourseId) => run.planned.find((c) => c.courseId === id)?.examDay;
+		const due = run.plan.cuts.filter(
+			(cut) => (examDay(cut.courseId) ?? Infinity) <= before.examDay
+		);
+		const steps = (['criterion', 'relearning', 'cut'] as const).filter((step) =>
+			due.some((cut) => cut.degradations.includes(step))
+		);
 		return {
-			courseId: course.id,
+			courseId,
 			courseName: course.name,
-			examDate: localDateOf(short.examDay),
-			shortfallMinutes: short.shortfallMinutes,
-			cutCount
+			examDate: localDateOf(before.examDay),
+			fits: before.fits,
+			fitsAfterCuts: after.fits,
+			shortfallMinutes: after.shortfallMinutes,
+			degradations: before.fits ? [] : steps,
+			cutCount: before.fits ? 0 : due.reduce((sum, cut) => sum + cut.cutIds.length, 0)
+		};
+	}
+
+	/** One exam's verdict, for Exam prep (the same view Home's note shows). */
+	async fitOf(courseId: CourseId, events?: StudyEvent[]): Promise<PlanFitView | null> {
+		return this.fitView(await this.run(events), courseId);
+	}
+
+	/** A course page's share, cram minutes and exam verdict from one planner run. */
+	async courseShares(courseId: CourseId, events?: StudyEvent[]): Promise<CoursePlanShares> {
+		const run = await this.run(events);
+		return {
+			share: this.share(run, courseId, 'split'),
+			cramShare: this.share(run, courseId, 'all'),
+			fit: this.fitView(run, courseId)
 		};
 	}
 

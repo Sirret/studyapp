@@ -2,7 +2,13 @@ import { CRITERION_FIRST, RELEARN_SESSIONS_MAX } from '#lib/config/defaults.ts';
 import type { CourseId } from '#lib/db/schemas/common.ts';
 import { planCuts, type CourseCuts, type PlanCutsInput } from './planner-cuts.ts';
 import { dailySplit, type DaySplit } from './planner-split.ts';
-import { courseWork, demandCheck, type ExamCheck, type PlanKnobs } from './planner-work.ts';
+import {
+	courseWork,
+	demandCheck,
+	type ExamCheck,
+	type PlanCourse,
+	type PlanKnobs
+} from './planner-work.ts';
 import type { Traced } from './trace.ts';
 
 export * from './planner-cuts.ts';
@@ -21,6 +27,11 @@ export type PlannerInput = PlanCutsInput;
 export interface PlannerResult {
 	/** The processor-demand check before any cuts, in exam order. */
 	checks: ExamCheck[];
+	/**
+	 * The same check on the work after degrading and cuts, in exam order: what is still short once
+	 * the suggested cuts are made (Decisions "UX fix: one plan verdict").
+	 */
+	afterCuts: ExamCheck[];
 	/** Every exam fits without cuts. */
 	feasible: boolean;
 	/** The first exam that doesn't fit, or `null`. */
@@ -31,23 +42,33 @@ export interface PlannerResult {
 	days: DaySplit[];
 }
 
-/** Runs `demandCheck` at full work, `planCuts`, then `dailySplit` on the work after cuts. */
-export function planDays(input: PlannerInput): Traced<PlannerResult> {
-	const full: PlanKnobs = { criterion: CRITERION_FIRST, relearn: RELEARN_SESSIONS_MAX };
-	const base = {
+/** `demandCheck` over every course with each course's work from `workOf`. */
+function checkWith(
+	input: PlannerInput,
+	workOf: (course: PlanCourse) => number
+): Traced<ExamCheck[]> {
+	return demandCheck({
 		today: input.today,
 		dayMinutes: input.dayMinutes,
-		examMorningMinutes: input.examMorningMinutes
-	};
-	const checked = demandCheck({
-		...base,
+		examMorningMinutes: input.examMorningMinutes,
 		exams: input.courses.map((course) => ({
 			courseId: course.courseId,
 			examDay: course.examDay,
-			workMinutes: courseWork(course, full, input)
+			workMinutes: workOf(course)
 		}))
 	});
+}
+
+/**
+ * Runs `demandCheck` at full work, `planCuts`, `demandCheck` again on the work after cuts
+ * (`afterCuts`), then `dailySplit` on the work after cuts.
+ */
+export function planDays(input: PlannerInput): Traced<PlannerResult> {
+	const full: PlanKnobs = { criterion: CRITERION_FIRST, relearn: RELEARN_SESSIONS_MAX };
+	const checked = checkWith(input, (course) => courseWork(course, full, input));
 	const cuts = planCuts(input);
+	const cutWork = new Map(cuts.result.map((cut) => [cut.courseId, cut.workMinutes]));
+	const afterCuts = checkWith(input, (course) => cutWork.get(course.courseId) ?? 0).result;
 	const examDays = new Map(input.courses.map((course) => [course.courseId, course.examDay]));
 	const split = dailySplit({
 		today: input.today,
@@ -61,6 +82,7 @@ export function planDays(input: PlannerInput): Traced<PlannerResult> {
 	const short = checked.result.find((check) => !check.fits);
 	const result: PlannerResult = {
 		checks: checked.result,
+		afterCuts,
 		feasible: short === undefined,
 		firstShort: short
 			? {

@@ -125,7 +125,7 @@ export const coursePlanService = new CoursePlanService({
 	replayConfig,
 	clock,
 	logger,
-	shares: (courseId, events) => plannerService.shareOf(courseId, events)
+	planFor: (courseId, events) => plannerService.courseShares(courseId, events)
 });
 
 /** The course page's "Studying N of M topics · change" and the scope picker (Phase 8.6 Q12). */

@@ -91,8 +91,9 @@ test.describe('planner', () => {
 		await expect(page.locator('[data-short="Networks"]')).toBeVisible();
 
 		await page.getByRole('link', { name: 'Back to Today' }).last().click();
-		await expect(page.getByRole('note')).toContainText(
-			"Not everything fits before Networks's exam"
-		);
+		// The note names the first exam short before cuts and says what the plan cuts so it fits
+		// (Decisions "UX fix: one plan verdict").
+		await expect(page.getByRole('note')).toContainText('To fit everything before Networks');
+		await expect(page.locator('[data-plan-fit]')).toContainText(/until after the exam/);
 	});
 });

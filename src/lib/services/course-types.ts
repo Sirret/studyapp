@@ -7,6 +7,7 @@ import type {
 	ExerciseKind
 } from '#lib/db/schemas/common.ts';
 import type { CourseMap } from '#lib/db/schemas/course.ts';
+import type { PlanFitView } from './planner-types.ts';
 
 /**
  * What the course page and the learn screen show. Plain types, so UI code needn't import the
@@ -85,6 +86,8 @@ export interface CourseToday {
 	splitPrompts: { chunkId: ChunkId; title: string }[];
 	/** The course map from the chatbot import (big picture, habit, cheat table), or `null`. */
 	map: CourseMap | null;
+	/** The planner's verdict for this exam (the one Home shows too); null without an exam plan. */
+	fit: PlanFitView | null;
 }
 
 /** One step of a unit, as the learn screen runs it. */

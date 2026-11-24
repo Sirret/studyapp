@@ -13,6 +13,7 @@
 	import SpeechBubble from '#lib/ui/components/SpeechBubble.svelte';
 	import Stamp from '#lib/ui/components/Stamp.svelte';
 	import StickyNote from '#lib/ui/components/StickyNote.svelte';
+	import { fitText } from '#lib/ui/plan/fit-text.ts';
 	import Yuki from '#lib/ui/components/yuki/Yuki.svelte';
 	import PawLoader from '#lib/ui/delight/PawLoader.svelte';
 	import { effectOn } from '#lib/ui/delight/delight.ts';
@@ -159,10 +160,9 @@
 			</Row>
 		{/if}
 		{#if plan.shortfall}
-			<StickyNote title="Not everything fits before {plan.shortfall.courseName}'s exam">
-				It's about {Math.ceil(plan.shortfall.shortfallMinutes / 60)} h short ({plan.shortfall
-					.shortfallMinutes} min). The plan shows what I'd cut: {plan.shortfall.cutCount}
-				{plan.shortfall.cutCount === 1 ? 'piece' : 'pieces'} of work.
+			{@const fit = fitText(plan.shortfall)}
+			<StickyNote title={fit.title}>
+				<span data-plan-fit>{fit.body}</span>
 				{#snippet actions()}
 					<Button variant="secondary" href={resolve('/planner')}>See the plan</Button>
 				{/snippet}

@@ -22,6 +22,7 @@ import type { CourseToday, LearnUnitView } from './course-types.ts';
 import type { ReplayConfigSource } from './replay-service.ts';
 import { loadCourseData, loadPlanEnv } from './planner-inputs.ts';
 import type { StudyService } from './study-service.ts';
+import type { CoursePlanShares } from './planner-types.ts';
 import type { PlannedCard } from './study-plan-types.ts';
 import type { StudyView } from './study-types.ts';
 
@@ -41,6 +42,11 @@ export interface CoursePlanDeps {
 	logger: Logger;
 	/** The planner's minutes per day for a course (`PlannerService.shareOf`); none → whole days. */
 	shares?: (courseId: CourseId, events: StudyEvent[]) => Promise<number[] | null>;
+	/**
+	 * One planner run for the course (`PlannerService.courseShares`): its share, the cram plan's
+	 * minutes (share + all free minutes) and the exam verdict Home shows too. Wins over `shares`.
+	 */
+	planFor?: (courseId: CourseId, events: StudyEvent[]) => Promise<CoursePlanShares>;
 }
 
 /**
@@ -80,7 +86,8 @@ export class CoursePlanService {
 			},
 			learn: this.learnPlan(loaded),
 			splitPrompts: splitPrompts(data, env),
-			map: course.map ?? null
+			map: course.map ?? null,
+			fit: loaded.fit ?? null
 		};
 	}
 
@@ -176,6 +183,10 @@ export class CoursePlanService {
 		const hasUnread = openUnits(data, env, false).units.length > 0;
 		const examDay = examDayOf(data.material.course);
 		const modes = todayModes({ today, examDay, hasUnread }).result;
+		if (this.deps.planFor) {
+			const planned = await this.deps.planFor(courseId, events);
+			return { data, env, modes, today, ...planned };
+		}
 		const share = (await this.deps.shares?.(courseId, events)) ?? null;
 		return { data, env, modes, today, share };
 	}

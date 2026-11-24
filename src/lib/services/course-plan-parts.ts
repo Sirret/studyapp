@@ -14,6 +14,7 @@ import {
 	type PlanEnv
 } from './course-plan.ts';
 import type { CramView, LearnStepView } from './course-types.ts';
+import type { PlanFitView } from './planner-types.ts';
 import type { PlannedCard } from './study-plan-types.ts';
 
 /**
@@ -31,6 +32,10 @@ export interface Loaded {
 	today: number;
 	/** The planner's minutes per day from today, or `null` when the course isn't planned. */
 	share: number[] | null;
+	/** The minutes per day the cram plan may use (share + all free minutes); defaults to `share`. */
+	cramShare?: number[] | null;
+	/** The planner's verdict for this exam. */
+	fit?: PlanFitView | null;
 }
 
 export function cramView(plan: CramPlan): CramView {
@@ -75,7 +80,7 @@ export function reviewPlan(loaded: Loaded) {
 		};
 	}
 	if (modes.review === 'cram' && modes.daysToExam !== null) {
-		const share = loaded.share ?? undefined;
+		const share = loaded.cramShare ?? loaded.share ?? undefined;
 		const plan = planCram(cramInput(data, env, modes.daysToExam, share)).result;
 		return { kind: 'cram' as const, ...cramToday(plan), cram: plan };
 	}

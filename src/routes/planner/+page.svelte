@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { durationText } from '#lib/util/duration.ts';
 	import { ArrowLeft } from '@lucide/svelte';
 	import { resolve } from '$app/paths';
 	import type { Availability } from '#lib/db/schemas/kv.ts';
@@ -71,9 +72,8 @@
 		cut: 'leave out the lowest-value work'
 	};
 
-	function hours(minutes: number): string {
-		return minutes >= 60 ? `${Math.round((minutes / 60) * 10) / 10} h` : `${minutes} min`;
-	}
+	/** The same duration words as Home and Exam prep. */
+	const hours = durationText;
 </script>
 
 <svelte:head><title>Plan</title></svelte:head>
