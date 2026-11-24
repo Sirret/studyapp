@@ -163,3 +163,11 @@ Numbers come from `test-results/summary.md` after `npm run verify`.
 - **Bundle:** shell 96.8 KB gzipped (budget 150); the deploy build has no seed module or golden text
 - **Review:** none (not a phase). **Decisions:** 5 rows "Pre-review step" in the Decisions log.
 - **Known issues / next:** the user's UX review, then Phase 9. Not pushed yet (waiting for the user's OK).
+
+### 2026-11-24 — UX bug-fix step (from the UX review on build:test + /dev/seed)
+- **Fixed:** (1) figure cards reach Exam prep, Learn and Practice (root cause: the pre-Phase-6 `isStudyable` filter); Learn `figures` step; flashcards show the figure; door counts. (2) One plan verdict: Home and Exam prep render the planner's check after cuts (`PlanFitView`, `ui/plan/fit-text.ts`); cram gets the day's free minutes; "1 h 8 min" durations; plurals. (3) Course delete moved from the Shelf to the course page behind a Sheet. (4) Import picker defaults to "New course", picks the course you came from, most recent first. (5) Reader key terms from key words and cloze answers ("In <subject>," stripped); desktop reader gets its columns. (6) "Your exam" heading; Yuki's zz not voiced; door accessible names; Play stamp wraps.
+- **Tests:** unit 2621 passed / 0 failed (incl. sim) · e2e touched specs on 1 worker: 30/33 from the project folder; the 3 failing (course-map Welcome, import image, import offline) passed twice from a non-OneDrive copy of the same commit (UNVERIFIED_TESTS row) · layout (both viewports) + visual + practice + learn 38/38 · coverage not rerun (no verify this step)
+- **Bundle:** not rerun this step (no shell changes beyond small UI files)
+- **Review:** none (not a phase). **Decisions:** 6 rows "UX fix: …" in the Decisions log. Spec-adjacent test changes: `exercise-edges` flip for `layers` (null → layers), `planner-service` shortfall (after cuts), `import.spec` reload (picks the course).
+- **Known issues / next:** the project folder is OneDrive-synced, which alone pushes several e2e tests past their limits; moving the repo out of OneDrive is worth trying. Next: the UX/UI pass. Nothing pushed yet (waiting for the user's OK).
+

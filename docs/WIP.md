@@ -33,4 +33,7 @@ Then: test tiers, `npm run build:test`, e2e for touched screens, PROGRESS entry,
 - [x] 4 import picker: New course default, ?course= from course pages, recentFirst; unit (course-order, repos) + e2e import.spec (not yet run)
 - [x] 5 reader: sectionTerms (prefix strip, keyWords, cloze answers); Learn Screen wide on read; Reader 2 columns from 700px container; reader-terms.test.ts
 - [x] 6 small: "Your exam" heading; Yuki zz as paths + aria-hidden wrapper; door aria-labels; Play stamp wrap (specificity); layout.spec checks
-- [ ] tests, build:test, e2e touched specs, PROGRESS, checkpoint
+- [x] full unit+sim: 2621 passed (after 3075cce)
+- [x] e2e: touched specs 30/33 from project folder; the 3 failing pass twice from a temp (non-OneDrive) copy of 3075cce (UNVERIFIED row); layout @both + visual + practice + learn 38/38
+- [x] PROGRESS entry, HANDOFF rows
+- [ ] **push only after the user confirms** (both steps); then delete this file
