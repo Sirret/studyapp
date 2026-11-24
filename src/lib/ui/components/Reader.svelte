@@ -191,6 +191,26 @@
 	}
 
 	/*
+	 * A 1024 px window minus the sidebar leaves about 730 px: text and the key terms and tip side by
+	 * side; the outline joins from 900 px (Decisions "UX fix: reader key terms").
+	 */
+	@container (min-width: 700px) {
+		.reader {
+			grid-template-columns: minmax(0, var(--measure-max)) minmax(0, 1fr);
+			align-items: start;
+		}
+
+		.terms {
+			display: grid;
+			gap: var(--gap-sm);
+			padding: var(--gap-lg);
+			border: var(--border-width) solid var(--outline);
+			border-radius: var(--r-md);
+			background: var(--surface);
+		}
+	}
+
+	/*
 	 * DESIGN §10 desktop reader: outline · text at 60–70 ch · key terms and tip, once the reader is
 	 * at least 900 px wide (a 1280 px window minus the sidebar leaves about 1020 px).
 	 */

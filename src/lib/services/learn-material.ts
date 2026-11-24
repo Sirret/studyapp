@@ -3,6 +3,7 @@ import type { CardId, ChunkId, NoteId } from '#lib/db/schemas/common.ts';
 import type { Chunk, Topic } from '#lib/db/schemas/course.ts';
 import type { StudyEvent } from '#lib/db/schemas/event.ts';
 import type { Note } from '#lib/db/schemas/note.ts';
+import { clozeAnswers } from '#lib/engine/cardgen.ts';
 import { currentKind } from '#lib/engine/exercise-kinds.ts';
 import { titleOf } from '#lib/engine/exercise-prompts.ts';
 import type { LearnCard, LearnSection, LearnStep, MeetNote } from '#lib/engine/learn-flow.ts';
@@ -123,13 +124,44 @@ function meetTermView(source: ScreenSource, noteId: NoteId, exampleId?: NoteId):
 	return [{ noteId, term: term.term, meaning: term.meaning, example: situation }];
 }
 
+/** A leading "In <subject>, " that prompts often start with ("In security, risk is …"). */
+const SUBJECT_PREFIX = /^in\s+[^,]{1,60},\s*/iu;
+
+/**
+ * The words the reader underlines and lists for a section, from its notes in order: key-term and
+ * fact terms (a leading "In <subject>, " removed), a fact's starred key words, and cloze answers.
+ * Each once, compared without case; `markSection` underlines their first appearance in the text
+ * (whole words, any case).
+ *
+ * @see Decisions log "UX fix: reader key terms"
+ */
+export function sectionTerms(notes: readonly Pick<Note, 'type' | 'payload'>[]): string[] {
+	const found = (notes as Note[]).flatMap((note): string[] => {
+		switch (note.type) {
+			case 'keyterm':
+				return [note.payload.term];
+			case 'fact':
+				return [note.payload.term, ...(note.payload.keyWords ?? [])];
+			case 'cloze':
+				return clozeAnswers(note.payload.text);
+			default:
+				return [];
+		}
+	});
+	const seen = new Set<string>();
+	return found
+		.map((term) => term.replace(SUBJECT_PREFIX, '').trim())
+		.filter((term) => {
+			const key = term.toLowerCase();
+			if (term === '' || seen.has(key)) return false;
+			seen.add(key);
+			return true;
+		});
+}
+
 function readScreen(source: ScreenSource, chunkId: ChunkId): LearnScreen {
 	const chunk = source.chunks.get(chunkId);
-	const terms = [...source.notes.values()].flatMap((note) =>
-		note.chunkId === chunkId && (note.type === 'keyterm' || note.type === 'fact')
-			? [note.payload.term]
-			: []
-	);
+	const terms = sectionTerms([...source.notes.values()].filter((note) => note.chunkId === chunkId));
 	return {
 		step: 'read',
 		chunkId,

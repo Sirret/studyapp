@@ -31,6 +31,6 @@ Then: test tiers, `npm run build:test`, e2e for touched screens, PROGRESS entry,
 - [x] 2 exam plan: planner afterCuts + PlanFitView (fitOf/courseShares) for Home and Exam prep via ui/plan/fit-text.ts; cram share + all free minutes; durationText; tests; e2e planner.spec text updated
 - [x] 3 delete: DeleteCourse.svelte on course page (Sheet), shelf × removed; e2e course-delete.spec.ts (not yet run)
 - [x] 4 import picker: New course default, ?course= from course pages, recentFirst; unit (course-order, repos) + e2e import.spec (not yet run)
-- [ ] 5 reader key terms + desktop columns
+- [x] 5 reader: sectionTerms (prefix strip, keyWords, cloze answers); Learn Screen wide on read; Reader 2 columns from 700px container; reader-terms.test.ts
 - [ ] 6 small a11y/layout fixes
 - [ ] tests, build:test, e2e touched specs, PROGRESS, checkpoint

@@ -97,7 +97,8 @@
 
 <svelte:head><title>Learn{flow ? ` · ${flow.topic.name}` : ''}</title></svelte:head>
 
-<Screen>
+<!-- Reading is wide so the desktop reader can show its columns (Decisions "UX fix: reader key terms"). -->
+<Screen wide={flow?.screens[data.step]?.step === 'read'}>
 	{#snippet top()}
 		<TopBar title={flow ? `Learn · ${flow.topic.name}` : 'Learn'}>
 			{#snippet leading()}
