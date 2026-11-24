@@ -10,7 +10,11 @@
 		LabelsToPlace,
 		PreparedImage
 	} from '#lib/services/import-service.ts';
-	import { buildFixPrompt, importService } from '#lib/services/import-wiring.ts';
+	import {
+		buildFixPrompt,
+		coursesRecentFirst,
+		importService
+	} from '#lib/services/import-wiring.ts';
 	import { DEFAULT_IMPORT_GOAL } from '#lib/config/defaults.ts';
 	import { countOf } from '#lib/util/plural.ts';
 	import { ArrowLeft } from '@lucide/svelte';
@@ -32,7 +36,12 @@
 
 	// `raw`: IndexedDB can't store Svelte's reactive proxies, and these hold Blobs that reach it.
 	let courses = $state.raw<Course[]>([]);
-	let courseId = $state<CourseId | undefined>();
+	/**
+	 * The picked course; '' = "New course" (the default). Coming from a course page
+	 * (`/import?course=<id>`) picks that course (Decisions "UX fix: import course picker").
+	 */
+	let picked = $state('');
+	const courseId = $derived(picked === '' ? undefined : (picked as CourseId));
 	let newCourseName = $state('');
 	let text = $state('');
 	let images = $state.raw<PreparedImage[]>([]);
@@ -56,8 +65,9 @@
 	let textArea: HTMLTextAreaElement | undefined = $state();
 
 	onMount(async () => {
-		courses = await importService.listCourses();
-		courseId = courses[0]?.id;
+		courses = await coursesRecentFirst();
+		const from = new URLSearchParams(location.search).get('course');
+		picked = courses.some((course) => course.id === from) ? (from ?? '') : '';
 	});
 
 	async function createCourse(event: SubmitEvent): Promise<void> {
@@ -65,8 +75,8 @@
 		const name = newCourseName.trim();
 		if (name === '') return;
 		const course = await importService.createCourse(name);
-		courses = [...courses, course];
-		courseId = course.id;
+		courses = [course, ...courses];
+		picked = course.id;
 		newCourseName = '';
 	}
 
@@ -214,8 +224,11 @@
 			{#if courses.length > 0}
 				<Select
 					label="Course"
-					bind:value={courseId}
-					options={courses.map((course) => ({ value: course.id, label: course.name }))}
+					bind:value={picked}
+					options={[
+						{ value: '', label: 'New course' },
+						...courses.map((course) => ({ value: course.id as string, label: course.name }))
+					]}
 					onchange={textChanged}
 				/>
 			{/if}

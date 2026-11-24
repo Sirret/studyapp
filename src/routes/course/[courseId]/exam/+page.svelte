@@ -35,7 +35,7 @@
 	 * @see SESSION_NOTES C, J; Decisions log "Phase 8.6 Q12"
 	 */
 	let { data }: PageProps = $props();
-	const navHrefs = bottomNavHrefs();
+	const navHrefs = $derived(bottomNavHrefs(data.courseId));
 	const courseId = $derived(data.courseId as CourseId);
 	const coursePage = $derived(resolve('/course/[courseId]', { courseId: data.courseId }));
 

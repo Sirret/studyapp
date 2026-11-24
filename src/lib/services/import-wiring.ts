@@ -1,11 +1,14 @@
 import { ContentStore } from '#lib/db/repos/content-store.ts';
 import { DeviceRepo } from '#lib/db/repos/device-repo.ts';
 import { KvRepo } from '#lib/db/repos/kv-repo.ts';
+import { SessionRepo } from '#lib/db/repos/session-repo.ts';
+import type { Course } from '#lib/db/schemas/course.ts';
 import type { CourseId } from '#lib/db/schemas/common.ts';
 export { buildPrompt, GIVING_LABELS, IMAGES_TIP, PDF_TIP } from '#lib/import/prompt-v2.ts';
 export type { Giving, Intake } from '#lib/import/prompt-v2.ts';
 export { buildFixPrompt } from '#lib/import/fix-prompt.ts';
 import { db, logger } from './app.ts';
+import { recentFirst } from './course-order.ts';
 import { ImportService } from './import-service.ts';
 import { seedSampleCourse } from './sample-course.ts';
 import { StorageGuard } from './storage-guard.ts';
@@ -61,4 +64,13 @@ export function addSampleCourse(): Promise<CourseId | null> {
 		}
 	})();
 	return adding;
+}
+
+/** The import screen's course list, most recently used first. */
+export async function coursesRecentFirst(): Promise<Course[]> {
+	const [courses, last] = await Promise.all([
+		importService.listCourses(),
+		new SessionRepo(db).lastStartedByCourse()
+	]);
+	return recentFirst(courses, last);
 }

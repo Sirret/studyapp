@@ -30,7 +30,7 @@ Then: test tiers, `npm run build:test`, e2e for touched screens, PROGRESS entry,
 - [x] 1 figure cards: root cause isStudyable() pre-Phase-6 filter; Learn `figures` step; deck figure; flipAnswer whole-diagram; door counts; tests (learn-flow-topic, doors, practice-service, exercise-edges)
 - [x] 2 exam plan: planner afterCuts + PlanFitView (fitOf/courseShares) for Home and Exam prep via ui/plan/fit-text.ts; cram share + all free minutes; durationText; tests; e2e planner.spec text updated
 - [x] 3 delete: DeleteCourse.svelte on course page (Sheet), shelf × removed; e2e course-delete.spec.ts (not yet run)
-- [ ] 4 import default course + MRU order
+- [x] 4 import picker: New course default, ?course= from course pages, recentFirst; unit (course-order, repos) + e2e import.spec (not yet run)
 - [ ] 5 reader key terms + desktop columns
 - [ ] 6 small a11y/layout fixes
 - [ ] tests, build:test, e2e touched specs, PROGRESS, checkpoint

@@ -377,5 +377,33 @@ describe('repositories', () => {
 
 			expect((await repo.get(session.id))?.snapshot.queue).toEqual([]);
 		});
+
+		it('gives each course the latest start of a session it was in', async () => {
+			const repo = new SessionRepo(db);
+			const [a, b] = [randomUUID() as CourseId, randomUUID() as CourseId];
+			const base = {
+				mode: 'cram' as const,
+				plannedMinutes: 20,
+				phase: 'recall' as const,
+				snapshot: {
+					queue: [],
+					backlog: [],
+					cards: {},
+					clearing: null,
+					cleanup: false,
+					round: { index: 1, startedAt: 0, answers: 0, cards: [], ended: false },
+					studySince: 0
+				}
+			};
+			const save = (courseIds: CourseId[], startedAt: number) =>
+				repo.save({ ...base, id: randomUUID() as SessionId, courseIds, startedAt });
+			await save([a], START + 10);
+			await save([a, b], START + 5);
+			await save([b], START + 1);
+			const latest = await repo.lastStartedByCourse();
+			expect(latest.get(a)).toBe(START + 10);
+			expect(latest.get(b)).toBe(START + 5);
+			expect(latest.size).toBe(2);
+		});
 	});
 });

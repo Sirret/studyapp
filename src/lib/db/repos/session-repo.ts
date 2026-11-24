@@ -1,4 +1,4 @@
-import type { SessionId } from '../schemas/common.ts';
+import type { CourseId, SessionId } from '../schemas/common.ts';
 import { SessionSchema, type Session } from '../schemas/session.ts';
 import type { SnowpackDb } from '../schema.ts';
 
@@ -19,5 +19,16 @@ export class SessionRepo {
 	/** Returns a session, or `undefined` if there is none. */
 	async get(id: SessionId): Promise<Session | undefined> {
 		return this.db.sessions.get(id);
+	}
+
+	/** When each course was last in a session that started: the latest `startedAt` per course. */
+	async lastStartedByCourse(): Promise<Map<CourseId, number>> {
+		const latest = new Map<CourseId, number>();
+		await this.db.sessions.each((session) => {
+			for (const id of session.courseIds) {
+				latest.set(id, Math.max(latest.get(id) ?? 0, session.startedAt));
+			}
+		});
+		return latest;
 	}
 }

@@ -23,6 +23,7 @@
 	import Screen from '#lib/ui/layout/Screen.svelte';
 	import Stack from '#lib/ui/layout/Stack.svelte';
 	import TopBar from '#lib/ui/layout/TopBar.svelte';
+	import { importHref } from '#lib/ui/layout/nav-hrefs.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Icon from '#lib/ui/primitives/Icon.svelte';
 	import Input from '#lib/ui/primitives/Input.svelte';
@@ -128,7 +129,8 @@
 		</EmptyState>
 	{:else if view.total === 0}
 		<EmptyState message="This course has no cards yet.">
-			{#snippet action()}<Button href={resolve('/import')}>Import your notes</Button>{/snippet}
+			{#snippet action()}<Button href={importHref(data.courseId)}>Import your notes</Button
+				>{/snippet}
 		</EmptyState>
 	{:else}
 		<Hero title="All cards" subline="Fix a card in place; its history stays." />

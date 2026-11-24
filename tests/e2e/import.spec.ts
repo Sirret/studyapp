@@ -191,7 +191,12 @@ test.describe('import screen', () => {
 		await expect(page.getByRole('status')).toBeVisible();
 
 		await page.reload();
-		await expect(page.getByRole('combobox', { name: 'Course' })).toHaveValue(/.+/);
+		// The picker starts on "New course"; the course is still there to pick (Decisions
+		// "UX fix: import course picker").
+		const picker = page.getByRole('combobox', { name: 'Course' });
+		await expect(picker).toHaveValue('');
+		await picker.selectOption({ label: 'Networks' });
+		await expect(picker).toHaveValue(/.+/);
 		await pasteArea(page).fill('@deck Networking\n@scenario\nvideo call :: UDP');
 		await page.getByRole('button', { name: 'Check' }).click();
 		await expect(page.getByText('Adds to this topic · 1 card')).toBeVisible();
@@ -326,5 +331,31 @@ test.describe('import offline', () => {
 		await page.getByRole('button', { name: 'Add to course' }).click();
 		await expect(page.getByRole('status')).toContainText('Added 1 note and');
 		await context.setOffline(false);
+	});
+});
+
+test.describe('import course picker (Decisions "UX fix: import course picker")', () => {
+	test('defaults to New course, lists the most recent first, and picks the course it came from', async ({
+		page
+	}) => {
+		await page.goto('/import');
+		for (const name of ['Older', 'Newer']) {
+			await page.getByLabel('New course').fill(name);
+			await page.getByRole('button', { name: 'Create course' }).click();
+		}
+		await page.goto('/import');
+		const picker = page.getByRole('combobox', { name: 'Course' });
+		await expect(picker).toHaveValue('');
+		await expect(picker.locator('option')).toHaveText(['New course', 'Newer', 'Older']);
+
+		await page.goto('/courses');
+		await page
+			.getByRole('article', { name: 'Older' })
+			.getByRole('link', { name: 'Open course' })
+			.click();
+		await page.waitForURL(/\/course\/[0-9a-f-]+$/);
+		await page.getByRole('link', { name: 'Import notes' }).first().click();
+		await page.waitForURL(/\/import\?course=/);
+		await expect(picker.locator('option:checked')).toHaveText('Older');
 	});
 });

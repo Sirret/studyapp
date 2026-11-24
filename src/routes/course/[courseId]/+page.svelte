@@ -39,7 +39,7 @@
 	 * @see SESSION_NOTES C, J; DESIGN §12 Course, Pick what to study
 	 */
 	let { data }: PageProps = $props();
-	const navHrefs = bottomNavHrefs();
+	const navHrefs = $derived(bottomNavHrefs(data.courseId));
 	const courseId = $derived(data.courseId as CourseId);
 
 	let today = $state<CourseToday | null>(null);
