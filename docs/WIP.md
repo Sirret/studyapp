@@ -7,6 +7,7 @@
 | Date | Phase | Step | Model | What was done | Files | Next | Commit |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 2026-11-24 | Pre-review | verify + prune | Opus 5.5 | Pre-review step done (seed, revive, 1-worker verify) | 6 | this bug-fix step | 9ed20b2 |
+| 2026-11-24 | UX bug-fix | items 1–6 + tests | Opus 5.5 | figures in Learn/Practice, one plan verdict, delete on course page, import picker, reader terms, a11y fixes; unit 2621, e2e touched OK | ~45 | user's UX/UI pass; push after OK | 1a75245 |
 
 ## Task (user brief, 2026-11-24; source: UX review on build:test preview + /dev/seed)
 
