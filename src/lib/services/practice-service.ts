@@ -2,7 +2,7 @@ import type { CardRepo, CourseRepo, NoteRepo, TopicRepo } from '#lib/db/repos/co
 import type { EventRepo } from '#lib/db/repos/event-repo.ts';
 import type { KvRepo } from '#lib/db/repos/kv-repo.ts';
 import type { Card } from '#lib/db/schemas/card.ts';
-import type { CardId, CourseId, SessionId } from '#lib/db/schemas/common.ts';
+import type { CardId, CourseId, ExerciseKind, SessionId } from '#lib/db/schemas/common.ts';
 import { currentStep } from '#lib/engine/exercise-kinds.ts';
 import { buildExercise, type ExerciseSpec } from '#lib/engine/exercise-spec.ts';
 import { missesToRetry, nextDeckPass, quickQuiz } from '#lib/engine/practice.ts';
@@ -52,25 +52,32 @@ const DECK_SEED = 'practice-deck';
 export class PracticeService {
 	constructor(private readonly deps: PracticeServiceDeps) {}
 
-	/** The deck: every in-scope card, in course order, as a flip exercise. */
+	/**
+	 * The deck: every in-scope card, in course order, as a flip exercise. A figure card (diagram or
+	 * picture) shows its own figure exercise's picture and question on the front.
+	 */
 	async deck(courseId: CourseId): Promise<DeckCard[]> {
 		const { material, cards } = await this.cards(courseId);
 		const course = exerciseCourse(material);
 		return cards.map((card) => {
-			const { result } = buildExercise({
-				kind: 'flip',
-				card: {
-					id: card.id,
-					noteId: card.noteId,
-					variant: card.variant,
-					path: card.path,
-					step: currentStep(card.path, card.pathStep, card.accuracy)
-				},
-				course,
-				confusions: new Map(),
-				rng: rngFor(card.id, DECK_SEED, 0)
-			});
-			return { cardId: card.id, exercise: result };
+			const step = currentStep(card.path, card.pathStep, card.accuracy);
+			const build = (kind: ExerciseKind) =>
+				buildExercise({
+					kind,
+					card: { id: card.id, noteId: card.noteId, variant: card.variant, path: card.path, step },
+					course,
+					confusions: new Map(),
+					rng: rngFor(card.id, DECK_SEED, 0)
+				}).result;
+			const flip = build('flip');
+			const type = material.notes.get(card.noteId)?.type;
+			if (flip.shape !== 'selfRate' || (type !== 'diagram' && type !== 'occlusion')) {
+				return { cardId: card.id, exercise: flip };
+			}
+			const shown = build(card.path[step] ?? 'flip');
+			const figure = 'figure' in shown ? shown.figure : undefined;
+			if (!figure) return { cardId: card.id, exercise: flip };
+			return { cardId: card.id, exercise: { ...flip, prompt: shown.prompt, figure } };
 		});
 	}
 

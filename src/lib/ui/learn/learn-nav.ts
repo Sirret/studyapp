@@ -46,6 +46,8 @@ export function stepMeta(screen: LearnScreen | undefined): string | undefined {
 	switch (screen?.step) {
 		case 'questions':
 			return countOf(screen.cards, 'question');
+		case 'figures':
+			return countOf(screen.cards, 'question');
 		case 'mixedQuiz':
 			return countOf(screen.cards, 'question');
 		case 'lookBack':
@@ -67,6 +69,8 @@ export function stepLabel(screen: LearnScreen | undefined): string {
 			return 'Quick questions';
 		case 'lookBack':
 			return 'One from earlier';
+		case 'figures':
+			return 'Pictures and diagrams';
 		case 'mixedQuiz':
 			return 'Mixed quiz';
 		case 'meetTerms':

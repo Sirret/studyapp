@@ -37,6 +37,7 @@
 	const INTROS = {
 		questions: 'A couple of questions on what you just read. Nothing here is graded.',
 		lookBack: 'One question from a section you read earlier, so it stays fresh.',
+		figures: 'The topic’s pictures and diagrams: name the hidden parts and rebuild them.',
 		mixedQuiz: 'Questions from the whole topic, mixed. Tomorrow’s retest is what counts.'
 	} as const;
 </script>

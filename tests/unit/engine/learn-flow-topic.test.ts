@@ -218,4 +218,37 @@ describe('topicFlow', () => {
 		expect(topicFlow(input)).toEqual(a);
 		expect(Array.isArray(a.trace)).toBe(true);
 	});
+
+	describe('figures (Decisions "UX fix: figures in Learn and Practice")', () => {
+		it('asks the figure cards in their own step after the sections, before the mixed quiz', () => {
+			const text = [lcard(1, 'mc'), lcard(1, 'mc'), lcard(1, 'mc')];
+			const pics = [
+				lcard(null, 'occlusionBank', { figure: true }),
+				lcard(1, 'nodeCloze', { figure: true })
+			];
+			const steps = run({ sections: [section(1)], cards: [...text, ...pics], hasSummary: false });
+			const names = stepsOf(steps);
+			expect(names.indexOf('figures')).toBeGreaterThan(names.indexOf('questions'));
+			expect(names.indexOf('figures')).toBeLessThan(names.indexOf('mixedQuiz'));
+			const figures = steps.find((s) => s.step === 'figures');
+			expect(figures).toEqual({ step: 'figures', topicId: T1, cardIds: pics.map((c) => c.id) });
+			const others = steps.flatMap((s) =>
+				s.step === 'questions' || s.step === 'mixedQuiz' ? s.cardIds : []
+			);
+			for (const pic of pics) expect(others).not.toContain(pic.id);
+		});
+
+		it('gives a topic with only figures (no sections) a figures step of its own', () => {
+			const pics = [
+				lcard(null, 'layerOrder', { figure: true }),
+				lcard(null, 'edgeCloze', { figure: true })
+			];
+			const steps = run({ sections: [], cards: pics, hasSummary: false });
+			expect(stepsOf(steps)).toEqual(['figures']);
+		});
+
+		it('has no figures step when the topic has no figure cards', () => {
+			expect(stepsOf(run({ sections: [section(1)], cards: [lcard(1)] }))).not.toContain('figures');
+		});
+	});
 });

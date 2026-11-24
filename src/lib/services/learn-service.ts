@@ -58,6 +58,8 @@ export class LearnService {
 		return [...data.topics]
 			.sort((a, b) => a.order - b.order)
 			.map((topic) => {
+				const own = cards.filter((card) => card.topicId === topic.id);
+				const figures = own.filter((card) => card.figure === true);
 				const outline = sections
 					.filter((s) => s.topicId === topic.id)
 					.map((s) => ({
@@ -69,7 +71,9 @@ export class LearnService {
 					id: topic.id,
 					name: topic.name,
 					sections: outline.length,
-					cards: cards.filter((card) => card.topicId === topic.id).length,
+					cards: own.length,
+					figures: figures.length,
+					figuresNew: figures.filter((card) => card.lastSeenAt === null).length,
 					read: outline.filter((s) => s.read).length,
 					outline
 				};
@@ -117,6 +121,7 @@ export class LearnService {
 				return first ? [{ ...once(first.id), kind: 'matching' }] : [];
 			}
 			case 'questions':
+			case 'figures':
 			case 'mixedQuiz':
 				return step.cardIds.map(once);
 			case 'lookBack': {

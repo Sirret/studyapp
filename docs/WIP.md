@@ -1,35 +1,36 @@
-# WIP — Pre-review step (before the UX review; before Phase 9)
+# WIP — UX-review bug-fix step (before the UX/UI pass; before Phase 9)
+
+**Not pushed:** the Pre-review step (commits 0ecff02…9ed20b2) and this step wait for the user's OK to push. Pushing deploys the live site.
 
 ## Checkpoint log
 
 | Date | Phase | Step | Model | What was done | Files | Next | Commit |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 2026-11-24 | Pre-review | 1–4 | Opus 5.5 | docs/memory, 1-worker verify + e2e-verify.json, occlusion revive, /dev/seed | 27 | verify, prune UNVERIFIED rows, checkpoint | 25a7ade |
-| 2026-11-24 | Pre-review | verify + prune | Opus 5.5 | 1-worker verify (unit 2593/0, e2e 91/94), diagram property aligned, UNVERIFIED pruned 37→8, PROGRESS | 6 | user's UX review; push after OK | 8e07701 |
+| 2026-11-24 | Pre-review | verify + prune | Opus 5.5 | Pre-review step done (seed, revive, 1-worker verify) | 6 | this bug-fix step | 9ed20b2 |
 
-## Task (user brief, 2026-11-24)
+## Task (user brief, 2026-11-24; source: UX review on build:test preview + /dev/seed)
 
-A small step before the user's UX review. Checkpoint like any phase step; **push only after the user confirms.**
+Fix only these; no redesign, no new screens, no style changes beyond what a fix needs. Checkpoint like a phase step; push only after the user confirms.
 
-1. **Docs:** Android install IS in Phase 10's done-when (fix the BUILD_PLAN Decisions row ~1039 that says otherwise); BUILD_PLAN §10 row 10 deploy = GitHub Pages; mark SESSION_NOTES §A11 and §B D2/D3 as shipped in 8.6; memory notes (reviewer runs every phase per CLAUDE.md; drop the Phase 6 note).
-2. **Tests:** e2e with 1 worker in verify (and CI). Verify's e2e writes its own results file (`test-results/e2e-verify.json`) so a later partial run (`test-results/e2e.json`) can't overwrite verify counts in summary.md. Re-run the UNVERIFIED_TESTS rows at 1 worker and remove the ones that pass.
-3. **Bug:** clearing an occlusion box label must not restart that card's history (box ID stays, card kept). Test it.
-4. **/dev/seed** (test builds only, `__DEV_ROUTES__`): "Rich" seed (~6 courses from golden texts incl. figures: occlusion with `box:` lines, a stack and a flow diagram; staggered exam dates; a few days of synthetic events from a fixed seed), "Shelf stress" seed (50 small courses, varied/very long titles, varied exam dates, some none), "Wipe local DB" button. Own e2e test.
-Then print start commands + URL and CHECKPOINT.
+1. **Figure cards unreachable.** A topic with only diagram/occlusion notes (seed "Database storage II (final)") shows Learn "Nothing to read", Practice "No cards yet", /practice "No cards to practise yet". Practice must include figure cards (flashcard deck + quick quiz, with their figure exercises). Learn: a topic's figure notes after its sections (or as their own step when no sections). Door counts include them. Tests.
+2. **Exam plan contradicts itself.** "Networks and databases" Exam prep: "19 cards · ~6 min", then "8 min short…", then "Some new cards are left out (1 new cards wait…)"; Home "about 2 h short (68 min) … cut 0 pieces". Root cause (shortfall sign, which number, min vs h rounding). Fits → say so, cut nothing; doesn't fit → shortfall and cuts agree. Plurals. Unit tests fits / doesn't / exactly fits; Home and Exam prep show the same numbers.
+3. **Delete one tap away** on every Shelf card. Move course delete to the course page (or a "…" menu); always confirm naming the course and what is lost (cards, history); existing Sheet, no browser dialog.
+4. **Import pre-selects first course.** Default "New course" unless coming from a course page (then that course). Courses most recently used first. Test.
+5. **Reader key terms empty** on the sample course (no key-term elements). Find why (likely "In <subject>, …" prefix). Strip prefix, case-insensitive, word boundaries; starred key words count. Also: desktop 3-column reader (≥1024 px) shows one column with the tip below — why. Tests for matching.
+6. **Small:** "Exam date" label twice on /course/[id]/exam; Yuki "z z" read as text (hide decorative SVG text); mode doors announce ", has work" (proper accessible name); "Coming soon · Phase 11" stamp overflows the Play door.
+
+Then: test tiers, `npm run build:test`, e2e for touched screens, PROGRESS entry, CHECKPOINT, stop.
 
 ## Decisions taken (to write into the Decisions log)
 
-- Bug 3: card regen revives the tombstoned `box:<id>` card of an occlusion note when that box is named again (same card ID, replayed), instead of a new card. Only occlusion: its variants carry stable box IDs; positional variants (cloze `c2`, …) are not revived.
+(none yet)
 
 ## Checklist
 
-- [x] 1 docs + memory (memory: reviewer note rewritten, phase-order note deleted, Android note updated)
-- [x] 2 playwright workers=1 via E2E_VERIFY, e2e-verify.json, summary lists partial run apart, CI timeout 35
-- [x] 3 occlusion revive + tests (card-regen.test.ts tombstones block; figure-services.test.ts relabel test)
-- Decisions rows written (3 "Pre-review step" rows at the end of BUILD_PLAN); HANDOFF 6-review line updated
-- [x] 4 /dev/seed + e2e: `services/dev-seed-plan.ts` (pure, `tests/unit/services/dev-seed-plan.test.ts`), `services/dev-seed.ts`, `routes/dev/seed/`, `tests/e2e/seed.spec.ts` (2 passed, 45 s, 1 worker); deploy build checked: no seed module or golden text in `build/`. Decisions row + HANDOFF line written.
-- verify run 1 (after 25a7ade) stopped at unit: diagram-text stack property drew ["a","A"] → generator distinct by nodeKey (Decisions row); scope-service timeout → UNVERIFIED row
-- [x] full `npm run verify` run 2 (1 worker): unit 2593/0, e2e 91/94; 3 failures passed alone twice → UNVERIFIED row; 30 passing rows pruned (8 left); PROGRESS entry written (log: scratchpad verify.log; if lost, just rerun `npm run verify`); its results = the 1-worker rerun of UNVERIFIED rows
-- [x] rerun UNVERIFIED rows at 1 worker, prune
-- [x] commit, checkpoint
-- [ ] **push only after the user confirms**; then delete this file (HANDOFF already has the seed + verify notes)
+- [x] 1 figure cards: root cause isStudyable() pre-Phase-6 filter; Learn `figures` step; deck figure; flipAnswer whole-diagram; door counts; tests (learn-flow-topic, doors, practice-service, exercise-edges)
+- [ ] 2 exam plan numbers
+- [ ] 3 shelf delete → course page + Sheet confirm
+- [ ] 4 import default course + MRU order
+- [ ] 5 reader key terms + desktop columns
+- [ ] 6 small a11y/layout fixes
+- [ ] tests, build:test, e2e touched specs, PROGRESS, checkpoint

@@ -134,4 +134,58 @@ describe('PracticeService', () => {
 		]);
 		expect(answers.length).toBeGreaterThan(1);
 	});
+
+	describe('figure cards (Decisions "UX fix: figures in Learn and Practice")', () => {
+		const FIGURES = `@deck Storage
+@diagram stack DBMS layers
+Query processor
+Storage manager
+Disk storage
+@diagram flow Query processing
+SQL query -> Parser : parsed into
+Parser -> Optimizer
+@end`;
+
+		async function figureSetup() {
+			env = await studyStack(FIGURES);
+			const practice = new PracticeService({
+				study: env.study,
+				repos: env.repos,
+				events: env.events,
+				kv: env.kv,
+				logger: env.logger
+			});
+			return { env, practice };
+		}
+
+		it('the deck holds a figure-only course, each card a flip that shows its diagram', async () => {
+			const { env, practice } = await figureSetup();
+			const material = await loadCourse(env.repos, env.courseId);
+			expect(material.cards.length).toBeGreaterThan(0);
+			const deck = await practice.deck(env.courseId);
+			expect(deck.map((c) => c.cardId)).toStrictEqual(material.cards.map((c) => c.id));
+			for (const card of deck) {
+				expect(card.exercise.shape).toBe('selfRate');
+				if (card.exercise.shape !== 'selfRate') continue;
+				expect(card.exercise.figure?.kind).toBe('diagram');
+				expect(card.exercise.answer).not.toBe('');
+			}
+		});
+
+		it('the quick quiz asks every figure card in a figure exercise', async () => {
+			const { env, practice } = await figureSetup();
+			const material = await loadCourse(env.repos, env.courseId);
+			const view = await practice.startQuiz(env.courseId);
+			expect(view.item).not.toBeNull();
+			expect(view.item && 'figure' in view.item.exercise).toBe(true);
+			const ended = await play(env, view);
+			expect(ended.ended).toBe(true);
+			const asked = new Set(
+				(await env.events.listBySession(view.sessionId)).map((e) =>
+					'cardId' in e ? e.cardId : null
+				)
+			);
+			for (const card of material.cards) expect(asked).toContain(card.id);
+		});
+	});
 });

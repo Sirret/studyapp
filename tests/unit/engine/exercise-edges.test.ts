@@ -121,7 +121,30 @@ describe('prompts, titles and flip answers for every note type', () => {
 	it('flip answers: steps for sequences, nothing for a which card', () => {
 		expect(flipAnswer(noteOf(COURSE, 4), 'seq')).toBe('SYN\nSYN-ACK\nACK');
 		expect(flipAnswer(noteOf(COURSE, 6), 'which:0')).toBeNull();
-		expect(flipAnswer(noteOf(COURSE, 8), 'layers')).toBeNull();
+	});
+
+	// Practice flashcards now show figure cards (Decisions "UX fix: figures in Learn and Practice"),
+	// so a whole-diagram card's back lists its parts instead of being empty.
+	it("flip answers for whole-diagram cards: the layers in order, a flow's arrows", () => {
+		expect(flipAnswer(noteOf(COURSE, 8), 'layers')).toBe('Application\nTransport');
+		const flow = buildCourse([
+			{
+				content: {
+					type: 'diagram',
+					payload: {
+						kind: 'flow',
+						name: 'Q',
+						nodes: [
+							{ id: 'a', label: 'Parser' },
+							{ id: 'b', label: 'Optimizer' }
+						],
+						edges: [{ id: 'e', from: 'a', to: 'b' }]
+					}
+				} as NoteContent
+			}
+		]);
+		expect(flipAnswer(noteOf(flow, 1), 'rebuild')).toBe('Parser → Optimizer');
+		expect(flipAnswer(noteOf(flow, 1), 'node:zz')).toBeNull();
 	});
 });
 

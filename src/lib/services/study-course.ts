@@ -7,12 +7,16 @@ import type { Note, NoteType } from '#lib/db/schemas/note.ts';
 import { generateCards } from '#lib/engine/cardgen.ts';
 import type { ExerciseCard, ExerciseNote } from '#lib/engine/exercise-spec.ts';
 
-/** Note types whose exercises need the diagram view (Phase 6); sessions leave them out for now. */
+/** Note types the Phase 5 practice harness (`practiceCards`) leaves out. */
 const DIAGRAM_NOTES: ReadonlySet<NoteType> = new Set(['diagram', 'occlusion']);
 
-/** Whether a note's cards can be studied before Phase 6 (not a diagram or occlusion). */
+/**
+ * Whether a card's note can be studied: every note type since Phase 6 built the figure exercises
+ * (it used to leave diagram and occlusion notes out, which hid them from Exam prep, Learn and
+ * Practice; Decisions "UX fix: figures in Learn and Practice").
+ */
 export function isStudyable(note: Pick<Note, 'type'> | undefined): boolean {
-	return note !== undefined && !DIAGRAM_NOTES.has(note.type);
+	return note !== undefined;
 }
 
 /** A course's live cards and notes, ordered by topic, note and card. */

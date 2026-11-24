@@ -58,7 +58,8 @@ export function learnCards(
 				chunkId: note.chunkId ?? null,
 				kind: currentKind(card.path, card.pathStep, card.accuracy),
 				lastCorrect: last?.correct ?? null,
-				lastSeenAt: last?.ts ?? null
+				lastSeenAt: last?.ts ?? null,
+				figure: note.type === 'diagram' || note.type === 'occlusion'
 			}
 		];
 	});
@@ -179,6 +180,8 @@ export function screenOf(source: ScreenSource, step: LearnStep): LearnScreen {
 			};
 		case 'lookBack':
 			return { step: 'lookBack', chunkId: step.chunkId, session: true };
+		case 'figures':
+			return { step: 'figures', cards: step.cardIds.length, session: true };
 		case 'mixedQuiz':
 			return { step: 'mixedQuiz', cards: step.cardIds.length, session: true };
 		case 'added':

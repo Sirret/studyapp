@@ -29,7 +29,8 @@
 		keyboard = true,
 		ondone,
 		onrate,
-		done
+		done,
+		above
 	}: {
 		cards: DeckCardView[];
 		/** Listen for the deck keys on the window (off where several decks share a page). */
@@ -38,6 +39,8 @@
 		/** A card was rated (Practice plays the paw-tap sound here). */
 		onrate?: (verdict: DeckVerdict) => void;
 		done?: Snippet<[DeckResult]>;
+		/** Shown above the top card, by its key (Practice: a figure card's picture or diagram). */
+		above?: Snippet<[string]>;
 	} = $props();
 
 	// The deck is fixed for one pass; a new pass remounts the component.
@@ -108,6 +111,7 @@
 			</ul>
 		</div>
 		<div class="stage">
+			{@render above?.(top.key)}
 			<CardFly key={deck.index} {fly} onflown={flown}>
 				<Flashcard term={top.term} answer={top.answer} bind:flipped bind:hinted />
 			</CardFly>

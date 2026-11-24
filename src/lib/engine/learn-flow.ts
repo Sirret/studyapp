@@ -44,6 +44,8 @@ export interface LearnCard {
 	lastCorrect: boolean | null;
 	/** When it was last answered (ms), or null. */
 	lastSeenAt: number | null;
+	/** A diagram or occlusion card: Learn asks it in the topic's `figures` step. */
+	figure?: boolean;
 }
 
 /** Meet the terms for one section: the term notes and, per term, a same-section scenario. */
@@ -61,6 +63,8 @@ export type LearnStep =
 	| { step: 'questions'; chunkId: ChunkId; cardIds: CardId[] }
 	/** Picked live by `pickLookBack` (it depends on what has been read and answered); may be empty. */
 	| { step: 'lookBack'; chunkId: ChunkId }
+	/** The topic's diagram and picture cards, after its sections (Decisions "UX fix: figures in Learn"). */
+	| { step: 'figures'; topicId: TopicId; cardIds: CardId[] }
 	| { step: 'mixedQuiz'; topicId: TopicId; cardIds: CardId[] }
 	| { step: 'added'; topicId: TopicId; chunkIds: ChunkId[] };
 
@@ -164,7 +168,8 @@ function sectionSteps(
  * A topic's Learn steps: `summary` start (when the topic has one); then per normal section:
  * `meetTerms` (when `meetTerms` gives one), `read` (when `words > 0`), `questions` (when the
  * section has cards), `lookBack` (when the section's index in `order` is ≥ `LOOKBACK_MIN_DISTANCE`);
- * then `mixedQuiz` with every section's `rest` cards plus the topic's cards with no section,
+ * then `figures` with the topic's figure cards in the given order (none → no step; they are in no
+ * other step); then `mixedQuiz` with every section's `rest` cards plus the topic's cards with no section,
  * interleaved round-robin across sections (none → no step); then `added` with the topic's added
  * sections (none → no step); then `summary` end (when the topic has one).
  *
@@ -180,7 +185,9 @@ export function topicFlow(input: {
 	/** This topic's notes, for Meet the terms. */
 	notes: readonly MeetNote[];
 }): Traced<LearnStep[]> {
-	const { topicId, hasSummary, sections, cards, notes } = input;
+	const { topicId, hasSummary, sections, notes } = input;
+	const figures = input.cards.filter((card) => card.figure === true).map((card) => card.id);
+	const cards = input.cards.filter((card) => card.figure !== true);
 	const order = learnOrder(sections);
 	const mine = sections.filter((section) => section.topicId === topicId);
 	const normal = mine.filter((section) => !section.added);
@@ -193,6 +200,7 @@ export function topicFlow(input: {
 		steps.push(...part.steps);
 		rests.push(part.rest);
 	}
+	if (figures.length > 0) steps.push({ step: 'figures', topicId, cardIds: figures });
 	const loose = cards.filter((card) => card.chunkId === null).map((card) => card.id);
 	const quiz = [...interleave(rests), ...loose];
 	if (quiz.length > 0) steps.push({ step: 'mixedQuiz', topicId, cardIds: quiz });
@@ -204,6 +212,7 @@ export function topicFlow(input: {
 			topicId,
 			sections: normal.length,
 			added: added.length,
+			figures: figures.length,
 			quiz: quiz.length
 		}
 	];

@@ -152,6 +152,8 @@ export interface SelfRateSpec extends SpecBase {
 	shape: 'selfRate';
 	answer: string;
 	checklist: ChecklistItem[];
+	/** A Practice flashcard of a figure card shows its picture or diagram (`PracticeService.deck`). */
+	figure?: Figure;
 }
 
 /** Study a worked example once; never graded. */

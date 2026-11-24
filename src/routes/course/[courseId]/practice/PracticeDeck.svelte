@@ -9,10 +9,21 @@
 	import FlashcardDeck from '#lib/ui/components/FlashcardDeck.svelte';
 	import StickyNote from '#lib/ui/components/StickyNote.svelte';
 	import { playSound } from '#lib/ui/delight/sound.ts';
+	import FigureView from '#lib/ui/figures/FigureView.svelte';
+	import type { MediaLoader } from '#lib/ui/figures/media-url.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { countOf } from '#lib/util/plural.ts';
 
-	let { cards, menu }: { cards: DeckCard[]; menu: string } = $props();
+	let { cards, menu, media }: { cards: DeckCard[]; menu: string; media: MediaLoader } = $props();
+
+	/** A figure card's picture or diagram, shown above its flashcard. */
+	const figures = $derived(
+		new Map(
+			cards.flatMap(({ cardId, exercise }) =>
+				exercise.shape === 'selfRate' && exercise.figure ? [[cardId, exercise.figure] as const] : []
+			)
+		)
+	);
 
 	const views = $derived(
 		cards.map(({ cardId, exercise }) => ({
@@ -35,6 +46,12 @@
 
 {#key round}
 	<FlashcardDeck cards={pass} onrate={() => playSound('pawTap', 'practice', prefs.sounds)}>
+		{#snippet above(key)}
+			{@const figure = figures.get(key as DeckCard['cardId'])}
+			{#if figure}
+				<div data-deck-figure><FigureView {figure} {media} /></div>
+			{/if}
+		{/snippet}
 		{#snippet done({ learning, known })}
 			<StickyNote title="Deck done">
 				<span data-deck-done

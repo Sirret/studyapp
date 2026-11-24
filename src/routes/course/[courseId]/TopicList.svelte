@@ -9,6 +9,7 @@
 	import { resolve } from '$app/paths';
 	import type { CourseId, TopicId } from '#lib/db/schemas/common.ts';
 	import type { LearnTopicView } from '#lib/services/learn-types.ts';
+	import { countOf } from '#lib/util/plural.ts';
 	import ChecklistRow from '#lib/ui/components/ChecklistRow.svelte';
 	import type { RingState } from '#lib/ui/components/PawRing.svelte';
 	import SectionHeading from '#lib/ui/components/SectionHeading.svelte';
@@ -51,7 +52,9 @@
 				<ChecklistRow
 					title={topic.name}
 					state={topicState(topic)}
-					meta="{topic.read}/{topic.sections}"
+					meta={topic.sections === 0 && (topic.figures ?? 0) > 0
+						? countOf(topic.figures ?? 0, 'figure')
+						: `${topic.read}/${topic.sections}`}
 					sections={sectionsOf(topic)}
 					onclick={() => open(topic.id)}
 				/>

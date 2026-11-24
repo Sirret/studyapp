@@ -15,6 +15,10 @@ export interface LearnTopicView {
 	sections: number;
 	/** In-scope studyable cards. */
 	cards: number;
+	/** Of those, diagram and picture cards (Learn's `figures` step); optional for older callers. */
+	figures?: number;
+	/** Figure cards never answered yet. */
+	figuresNew?: number;
 	/** Normal sections already read in Learn (any card answered in an acquisition review). */
 	read: number;
 	/** The normal sections in order, each with its read flag (the course page's topic list). */
@@ -64,6 +68,7 @@ export type LearnScreen =
 	  }
 	| { step: 'questions'; chunkId: ChunkId; cards: number; session: true }
 	| { step: 'lookBack'; chunkId: ChunkId; session: true }
+	| { step: 'figures'; cards: number; session: true }
 	| { step: 'mixedQuiz'; cards: number; session: true }
 	| { step: 'added'; sections: AddedSectionView[]; session: false };
 

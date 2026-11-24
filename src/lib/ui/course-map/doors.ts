@@ -35,16 +35,23 @@ export function courseDoors(today: CourseToday, topics: readonly LearnTopicView[
 	];
 }
 
+/** Learn counts sections to read and, after them, the topics' diagrams and pictures. */
 function learnDoor(topics: readonly LearnTopicView[]): DoorView {
 	const sections = topics.reduce((sum, topic) => sum + topic.sections, 0);
 	const unread = topics.reduce((sum, topic) => sum + topic.sections - topic.read, 0);
-	const hint =
+	const figures = topics.reduce((sum, topic) => sum + (topic.figures ?? 0), 0);
+	const figuresNew = topics.reduce((sum, topic) => sum + (topic.figuresNew ?? 0), 0);
+	const reading =
 		sections === 0
-			? 'Nothing to read'
+			? null
 			: unread === 0
 				? 'All read · read again'
 				: `${countOf(unread, 'section')} to read`;
-	return { mode: 'learn', hint, hasWork: unread > 0, disabled: false, action: { kind: 'learn' } };
+	const pictures =
+		figures === 0 ? null : countOf(figures, 'diagram or picture', 'diagrams and pictures');
+	const hint = [reading, pictures].filter((part) => part !== null).join(' · ') || 'Nothing to read';
+	const hasWork = unread > 0 || figuresNew > 0;
+	return { mode: 'learn', hint, hasWork, disabled: false, action: { kind: 'learn' } };
 }
 
 function practiceDoor(topics: readonly LearnTopicView[]): DoorView {

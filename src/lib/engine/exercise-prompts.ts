@@ -144,8 +144,20 @@ function rowLines(note: NoteOf<'compare'>, variant: string): string | null {
 	return note.payload.items.map((item, c) => `${item}: ${valueOf(note, row, c)}`).join('\n');
 }
 
+/** A whole diagram card's parts: a stack's layers top to bottom, or a flow's arrows "A → B". */
+function diagramLines(note: NoteOf<'diagram'>, variant: string): string | null {
+	const { nodes, edges } = note.payload;
+	if (variant === 'layers') return nodes.map((node) => node.label).join('\n');
+	if (variant !== 'rebuild') return null;
+	const label = new Map(nodes.map((node) => [node.id, node.label]));
+	return edges
+		.map((edge) => `${label.get(edge.from) ?? ''} → ${label.get(edge.to) ?? ''}`)
+		.join('\n');
+}
+
 /**
- * What a flip card reveals: the text answer, or for order and row cards one line per part.
+ * What a flip card reveals: the text answer, or for order, row and whole-diagram cards one line
+ * per part.
  *
  * @see BUILD_PLAN §5.1 (`flip`)
  */
@@ -154,5 +166,6 @@ export function flipAnswer(note: AnswerNote, variant: string): string | null {
 	if (text !== undefined) return text;
 	if (note.type === 'sequence') return note.payload.steps.join('\n');
 	if (note.type === 'example') return note.payload.steps.map((step) => step.step).join('\n');
+	if (note.type === 'diagram') return diagramLines(note, variant);
 	return note.type === 'compare' ? rowLines(note, variant) : null;
 }

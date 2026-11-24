@@ -110,7 +110,11 @@
 	{:else if summary !== null}
 		<QuizResult {summary} {prompts} {busy} course={coursePage} onagain={quiz} />
 	{:else if data.deck}
-		<PracticeDeck cards={deck} {menu} />
+		<PracticeDeck
+			cards={deck}
+			{menu}
+			media={async (id) => (await wiring()).studyService.media(id)}
+		/>
 	{:else}
 		<Stack gap="md">
 			<Hero

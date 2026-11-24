@@ -85,4 +85,25 @@ describe('courseDoors', () => {
 		);
 		expect(dots).toEqual([false, true, true]);
 	});
+
+	it('Learn and Practice count a topic made only of diagrams and pictures', () => {
+		const pics: LearnTopicView = {
+			...topic(0, 0),
+			cards: 4,
+			figures: 4,
+			figuresNew: 4
+		};
+		const [learn, practice] = courseDoors(today(), [pics]);
+		expect(learn).toMatchObject({ hint: '4 diagrams and pictures', hasWork: true });
+		expect(practice?.hint).toBe('4 cards · flashcards, quiz');
+	});
+
+	it('Learn adds the figures after the sections to read', () => {
+		const mixed: LearnTopicView = { ...topic(2, 1), figures: 1, figuresNew: 0 };
+		expect(courseDoors(today(), [mixed])[0]?.hint).toBe('1 section to read · 1 diagram or picture');
+	});
+
+	it('Learn says Nothing to read only with no sections and no figures', () => {
+		expect(courseDoors(today(), [topic(0, 0)])[0]?.hint).toBe('Nothing to read');
+	});
 });
