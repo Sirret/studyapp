@@ -1,6 +1,6 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { mergeDiagram, type DiagramStructure } from '#lib/engine/diagram-edit.ts';
+import { mergeDiagram, nodeKey, type DiagramStructure } from '#lib/engine/diagram-edit.ts';
 import { formatDiagram, parseDiagramText } from '#lib/import/diagram-parser.ts';
 
 const NUM_RUNS = 100;
@@ -251,9 +251,11 @@ describe('formatDiagram and parseDiagramText round-trip', () => {
 		);
 	});
 
+	// Distinct by `nodeKey`: "Cache" and "cache" are one layer (Decisions "Phase 6 step 13 review").
 	it('holds for any stack of distinct simple names (property)', () => {
+		const distinct = { minLength: 2, maxLength: 8, selector: nodeKey };
 		fc.assert(
-			fc.property(fc.uniqueArray(word, { minLength: 2, maxLength: 8 }), (labels) => {
+			fc.property(fc.uniqueArray(word, distinct), (labels) => {
 				const diagram: DiagramStructure = {
 					kind: 'stack',
 					name: 'x',

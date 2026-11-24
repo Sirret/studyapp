@@ -4,6 +4,7 @@
 
 | Date | Phase | Step | Model | What was done | Files | Next | Commit |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-11-24 | Pre-review | 1–4 | Opus 5.5 | docs/memory, 1-worker verify + e2e-verify.json, occlusion revive, /dev/seed | 27 | verify, prune UNVERIFIED rows, checkpoint | 25a7ade |
 
 ## Task (user brief, 2026-11-24)
 
@@ -26,6 +27,7 @@ Then print start commands + URL and CHECKPOINT.
 - [x] 3 occlusion revive + tests (card-regen.test.ts tombstones block; figure-services.test.ts relabel test)
 - Decisions rows written (3 "Pre-review step" rows at the end of BUILD_PLAN); HANDOFF 6-review line updated
 - [x] 4 /dev/seed + e2e: `services/dev-seed-plan.ts` (pure, `tests/unit/services/dev-seed-plan.test.ts`), `services/dev-seed.ts`, `routes/dev/seed/`, `tests/e2e/seed.spec.ts` (2 passed, 45 s, 1 worker); deploy build checked: no seed module or golden text in `build/`. Decisions row + HANDOFF line written.
-- [ ] full `npm run verify` (1 worker) running; its results = the 1-worker rerun of UNVERIFIED rows
+- verify run 1 (after 25a7ade) stopped at unit: diagram-text stack property drew ["a","A"] → generator distinct by nodeKey (Decisions row); scope-service timeout → UNVERIFIED row
+- [ ] full `npm run verify` run 2 (1 worker) (log: scratchpad verify.log; if lost, just rerun `npm run verify`); its results = the 1-worker rerun of UNVERIFIED rows
 - [ ] rerun UNVERIFIED rows at 1 worker, prune
 - [ ] commit, checkpoint
