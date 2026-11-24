@@ -135,6 +135,27 @@ describe('OcclusionService', () => {
 		expect(removed?.deleted).toBe(true);
 	});
 
+	it('clearing a box label and naming it again keeps the same card and its history', async () => {
+		const note = await noteOf('occlusion');
+		const a = box('Buffer pool');
+		const save = (label: string) =>
+			occlusion.save(note.id, { boxes: [{ ...a, label }], unplaced: [], hide: 'one', title: '' });
+		await save('Buffer pool');
+		const [card] = await liveCards(note.id);
+		if (!card) throw new Error('no card');
+		await env.answer(card.id);
+		await save('');
+		expect(await liveCards(note.id)).toEqual([]);
+		env.replay.rebuildCards.mockClear();
+		expect(await save('Buffer cache')).toEqual({ ok: true, value: { cards: 1 } });
+		const back = await liveCards(note.id);
+		expect(back.map((c) => [c.id, c.variant])).toEqual([[card.id, `box:${a.id}`]]);
+		expect(back[0]?.deleted).toBeUndefined();
+		expect((await env.events.listByCard(card.id)).length).toBe(1);
+		expect(env.replay.rebuildCards).toHaveBeenCalledWith([card.id]);
+		expect(await env.db.cards.where('noteId').equals(note.id).count()).toBe(1);
+	});
+
 	it('creates an image note with no boxes, stores the image once and asks for persistence once', async () => {
 		const topicId = (await env.topicIds())[0] as TopicId;
 		const blob = new Blob(['new picture'], { type: 'image/png' });

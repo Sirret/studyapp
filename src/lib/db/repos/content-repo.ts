@@ -51,6 +51,13 @@ export class ContentRepo<T extends Meta & { id: string }, F> {
 		});
 	}
 
+	/** Builds a tombstoned record brought back (no `deleted`), without storing it, for `putBatch`. */
+	draftRestore(existing: T, patch: Partial<F>, deviceId: DeviceId): T {
+		const restored: T = { ...existing };
+		delete restored.deleted;
+		return this.draftChange(restored, patch, deviceId);
+	}
+
 	/** Builds the tombstone of a record without storing it, for `ContentStore.putBatch`. */
 	draftDelete(existing: T, deviceId: DeviceId): T {
 		return { ...existing, deleted: true, updatedAt: this.context.clock(), deviceId };

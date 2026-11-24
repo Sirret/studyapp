@@ -38,7 +38,8 @@ const summary = buildSummary({
 	],
 	bundle: readReport(path.join(RESULTS_DIR, 'bundle.json')),
 	sim: readSimVerdicts(),
-	e2e: readReport(path.join(RESULTS_DIR, 'e2e.json'))
+	e2e: readReport(path.join(RESULTS_DIR, 'e2e-verify.json')),
+	e2ePartial: readReport(path.join(RESULTS_DIR, 'e2e.json'))
 });
 
 mkdirSync(RESULTS_DIR, { recursive: true });

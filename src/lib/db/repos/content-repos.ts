@@ -80,6 +80,11 @@ export class CardRepo extends ContentRepo<Card, CardContent> {
 		return cards.filter((card) => !card.deleted);
 	}
 
+	/** Returns a note's cards, tombstones included (card regeneration revives some of them). */
+	async listByNoteWithDeleted(noteId: NoteId): Promise<Card[]> {
+		return this.table.where('noteId').equals(noteId).toArray();
+	}
+
 	/** Returns a course's live cards. */
 	async listByCourse(courseId: CourseId): Promise<Card[]> {
 		const cards = await this.table.where('courseId').equals(courseId).toArray();

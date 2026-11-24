@@ -19,9 +19,13 @@ const STEPS = [
 	'test:e2e:built'
 ];
 
+/** Playwright reads E2E_VERIFY: one worker and its own report, `test-results/e2e-verify.json`. */
+const STEP_ENV: Record<string, Record<string, string>> = { 'test:e2e:built': { E2E_VERIFY: '1' } };
+
 function runScript(name: string): boolean {
 	console.log(`\n=== ${name} ===`);
-	return spawnSync(`npm run ${name}`, { stdio: 'inherit', shell: true }).status === 0;
+	const env = { ...process.env, ...STEP_ENV[name] };
+	return spawnSync(`npm run ${name}`, { stdio: 'inherit', shell: true, env }).status === 0;
 }
 
 // Reports from an earlier run must not pass for this one.

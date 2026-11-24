@@ -9,7 +9,8 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # e2e runs on one worker in verify (playwright.config.ts), so allow more time.
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v7
 

@@ -73,9 +73,9 @@ export class NoteRegenWriter {
 		content: NoteContent,
 		options: RegenOptions
 	): Promise<Result<{ cards: number }, string>> {
-		const existing = await this.store.cards.listByNote(note.id);
+		const existing = await this.store.cards.listByNoteWithDeleted(note.id);
 		const { result: plan, trace } = planCardRegen(content, existing);
-		const cards = plan.keep.length + plan.add.length;
+		const cards = plan.keep.length + plan.revive.length + plan.add.length;
 		if (cards === 0 && !options.allowNoCards) {
 			return { ok: false, error: 'This note would make no cards.' };
 		}
@@ -104,13 +104,20 @@ export class NoteRegenWriter {
 			});
 			return { ok: false, error: saveErrorMessage(error, 'Could not save this note.') };
 		}
-		const replayIds = plan.keep.filter((k) => k.pathChanged).map((k) => k.cardId);
+		// A revived card's caches may predate its tombstone; replay rebuilds them from its events.
+		const replayIds = [
+			...plan.keep.filter((k) => k.pathChanged).map((k) => k.cardId),
+			...plan.revive.map((k) => k.cardId)
+		];
 		if (replayIds.length > 0) await this.replay.rebuildCards(replayIds);
 		this.logger.info(options.area, 'note edited', { noteId: note.id, trace });
 		return { ok: true, value: { cards } };
 	}
 
-	/** Kept cards that change (new path or un-paused), new cards, and tombstones of lost ones. */
+	/**
+	 * Kept cards that change (new path or un-paused), revived tombstones, new cards, and tombstones
+	 * of lost ones.
+	 */
 	private draftCards(
 		note: Note,
 		existing: readonly Card[],
@@ -126,6 +133,12 @@ export class NoteRegenWriter {
 			const suspended = unpause ? false : card.suspended;
 			return [this.store.cards.draftChange(card, { path: k.path, suspended }, deviceId)];
 		});
+		const revived = plan.revive.flatMap((k) => {
+			const card = byId.get(k.cardId);
+			if (!card) return [];
+			const patch = { path: k.path, suspended: unpause ? false : card.suspended };
+			return [this.store.cards.draftRestore(card, patch, deviceId)];
+		});
 		const added = plan.add.map((spec) =>
 			this.store.cards.draft(
 				{ noteId: note.id, courseId: note.courseId, ...spec, suspended: false },
@@ -136,6 +149,6 @@ export class NoteRegenWriter {
 			const card = byId.get(id);
 			return card ? [this.store.cards.draftDelete(card, deviceId)] : [];
 		});
-		return [...kept, ...added, ...removed];
+		return [...kept, ...revived, ...added, ...removed];
 	}
 }

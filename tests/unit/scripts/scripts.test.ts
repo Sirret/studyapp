@@ -221,6 +221,27 @@ describe('buildSummary', () => {
 		expect(summary).toContain('1 passed · 1 failed');
 		expect(summary).toContain('pwa.spec.ts:9 opens offline: timed out');
 	});
+
+	it("keeps verify's e2e counts and lists a later partial run apart", () => {
+		const report = (expected: number) => ({
+			stats: { expected, unexpected: 0, flaky: 0, skipped: 0 },
+			suites: []
+		});
+		const summary = buildSummary({ ...base, e2e: report(92), e2ePartial: report(3) });
+		const e2e = summary.slice(summary.indexOf('## E2E'));
+		expect(e2e.indexOf('Verify run:')).toBeLessThan(e2e.indexOf('92 passed'));
+		expect(e2e.indexOf('92 passed')).toBeLessThan(e2e.indexOf('Latest partial run'));
+		expect(e2e.indexOf('Latest partial run')).toBeLessThan(e2e.indexOf('3 passed'));
+	});
+
+	it('says verify did not run e2e when only a partial run exists', () => {
+		const summary = buildSummary({
+			...base,
+			e2ePartial: { stats: { expected: 3, unexpected: 0, flaky: 0, skipped: 0 }, suites: [] }
+		});
+		expect(summary).toContain('Verify run: _not run_');
+		expect(summary).toContain('3 passed');
+	});
 });
 
 describe('findShellRoots', () => {

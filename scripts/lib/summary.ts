@@ -37,7 +37,7 @@ export interface CoverageThreshold {
 	min: number;
 }
 
-/** The fields read from Playwright's JSON reporter (`test-results/e2e.json`). */
+/** The fields read from Playwright's JSON reporter (`test-results/e2e.json`, or `e2e-verify.json` for verify's run). */
 export interface PlaywrightSuite {
 	file?: string;
 	specs?: {
@@ -78,7 +78,10 @@ export interface SummaryInput {
 	thresholds: CoverageThreshold[];
 	bundle?: BundleReport;
 	sim: SimVerdict[];
+	/** The e2e run of `npm run verify` (`test-results/e2e-verify.json`). */
 	e2e?: PlaywrightReport;
+	/** The latest ad-hoc Playwright run (`test-results/e2e.json`, or `e2e-verify.json` for verify's run), listed apart from verify's. */
+	e2ePartial?: PlaywrightReport;
 }
 
 const NOT_RUN = '_not run_';
@@ -183,13 +186,23 @@ function failedSpecs(suite: PlaywrightSuite, rootDir: string): string[] {
 	return [...own, ...(suite.suites ?? []).flatMap((child) => failedSpecs(child, rootDir))];
 }
 
-function e2eSection(e2e: PlaywrightReport | undefined, rootDir: string): string[] {
-	if (!e2e) return [NOT_RUN];
+function e2eCounts(e2e: PlaywrightReport, rootDir: string): string[] {
 	const { expected, unexpected, flaky, skipped } = e2e.stats;
 	return [
 		`${expected} passed · ${unexpected} failed · ${flaky} flaky · ${skipped} skipped`,
 		...e2e.suites.flatMap((suite) => failedSpecs(suite, rootDir))
 	];
+}
+
+/** Verify's run, then any later partial run listed apart, so it never replaces verify's counts. */
+function e2eSection(
+	e2e: PlaywrightReport | undefined,
+	partial: PlaywrightReport | undefined,
+	rootDir: string
+): string[] {
+	const lines = e2e ? ['Verify run:', '', ...e2eCounts(e2e, rootDir)] : [`Verify run: ${NOT_RUN}`];
+	if (!partial) return lines;
+	return [...lines, '', 'Latest partial run (`e2e.json`):', '', ...e2eCounts(partial, rootDir)];
 }
 
 /**
@@ -206,7 +219,7 @@ export function buildSummary(input: SummaryInput): string {
 		['Coverage', coverageSection(input.coverage, input.thresholds, rootDir)],
 		['Bundle', bundleSection(input.bundle)],
 		['Sim scenarios', simSection(input.sim)],
-		['E2E', e2eSection(input.e2e, rootDir)]
+		['E2E', e2eSection(input.e2e, input.e2ePartial, rootDir)]
 	];
 	const body = sections.map(([title, lines]) => `## ${title}\n\n${lines.join('\n')}`);
 	return [`# Test summary`, `Generated ${input.generatedAt}`, ...body].join('\n\n') + '\n';

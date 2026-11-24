@@ -1,11 +1,11 @@
 # Snowpack: running notes (everything decided since the tech check)
 
 Single place to collect decisions, fixes and open questions. This becomes the Phase 8.6 spec for Claude Code.
-Status key: **DECIDED** · **FIX** (prompt or app change to make) · **OPEN** (needs thought or a stress test) · **NOT APPLIED** (agreed but not yet in code; now only A11)
+Status key: **DECIDED** · **FIX** (prompt or app change to make) · **OPEN** (needs thought or a stress test) · **NOT APPLIED** (agreed but not yet in code; none left)
 
 ---
 
-## A. Tech-check fixes: 10 of 11 applied (Fix pass, 2026-11-13); A11 open
+## A. Tech-check fixes: all 11 applied (1–10 in the Fix pass, 2026-11-13; 11 in Phase 8.6)
 1. planOneNight returns an empty plan after sleep start → give one minimum block plus the sleep reminder. ✅
 2. SAFETY_MARGIN is applied twice → apply it once. Estimator: first attempt at p0, later attempts at about 0.8, relearning at R(t). ✅
 3. "Minutes used today" counts only responseMs → use session wall time with idle gaps capped. ✅
@@ -16,11 +16,11 @@ Status key: **DECIDED** · **FIX** (prompt or app change to make) · **OPEN** (n
 8. Multiple choice with fewer than 3 options → skip to the next path step. ✅
 9. Same card twice in a row when fewer than 3 remain → test. ✅
 10. Replay: order events from the same device by seq; store tzOffsetMin per event. ✅
-11. ⏳ Add Settings and Courses screens; add "installed on Android and used offline" to Phase 10's done-when. Still pending; see 8.6.
+11. Add Settings and Courses screens; add "installed on Android and used offline" to Phase 10's done-when. ✅ Shipped in 8.6 (`/settings`, Shelf `/courses`); the done-when row is in BUILD_PLAN §10 row 10.
 
-## B. Bugs found by using the live app (Nov 13): 8 applied in the Fix pass; typed paraphrase (→ D3) and Meet the terms (→ D2) open for Phase 8.6; the @coverage bullet is superseded by @missing.
-- **FIX:** typed term→definition answers need a word-for-word match, so correct paraphrases are marked wrong (see D3). ⏳ 8.6 (open, see D3)
-- **FIX:** "Meet the key terms" quizzes before teaching (see D2). ⏳ 8.6 (open, see D2)
+## B. Bugs found by using the live app (Nov 13): 8 applied in the Fix pass; typed paraphrase (→ D3) and Meet the terms (→ D2) shipped in Phase 8.6; the @coverage bullet is superseded by @missing.
+- **FIX:** typed term→definition answers need a word-for-word match, so correct paraphrases are marked wrong (see D3). ✅ Shipped in 8.6 (D3)
+- **FIX:** "Meet the key terms" quizzes before teaching (see D2). ✅ Shipped in 8.6 (D2)
 - **FIX:** a definition was offered as a term option ("record activity"). ✅
 - **FIX:** too much ceremony: 2 key terms took about 6 answers and 3 summary screens. No round or session summaries inside Learn. ✅
 - **FIX:** @tag titles are ignored ("part 1, 2…"); the reader heading just says "Read". ✅

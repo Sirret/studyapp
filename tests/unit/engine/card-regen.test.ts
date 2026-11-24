@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { CardId } from '#lib/db/schemas/common.ts';
+import type { CardId, MediaId } from '#lib/db/schemas/common.ts';
 import type { NoteContent } from '#lib/engine/cardgen.ts';
 import { planCardRegen, type ExistingCard } from '#lib/engine/card-regen.ts';
 
@@ -136,6 +136,55 @@ describe('planCardRegen', () => {
 	it('is deterministic: same inputs give the same plan and trace', () => {
 		const existing = [stored(1, 'fwd', ['cloze']), stored(2, 'x', ['cloze'])];
 		expect(planCardRegen(fact, existing)).toEqual(planCardRegen(fact, existing));
+	});
+
+	describe('tombstones', () => {
+		const OCC: ExistingCard['path'] = ['occlusionBank', 'occlusionDrag', 'occlusionType'];
+		const occ = (label: string): NoteContent => ({
+			type: 'occlusion',
+			payload: {
+				mediaId: '00000000-0000-4000-8000-0000000000aa' as MediaId,
+				boxes: [{ id: 'b1', x: 0.1, y: 0.1, w: 0.2, h: 0.1, label }]
+			}
+		});
+		const buried = (n: number, variant: string, path: ExistingCard['path']): ExistingCard => ({
+			...stored(n, variant, path),
+			deleted: true
+		});
+
+		it('revives the tombstoned card of an occlusion box named again, keeping its ID', () => {
+			const { result } = planCardRegen(occ('Pool'), [buried(1, 'box:b1', OCC)]);
+			expect(result.revive).toEqual([
+				{ cardId: id(1), variant: 'box:b1', path: OCC, pathChanged: false }
+			]);
+			expect(result.add).toEqual([]);
+			expect(result.keep).toEqual([]);
+			expect(result.remove).toEqual([]);
+		});
+
+		it('never tombstones a card twice: a cleared box with a buried card plans nothing', () => {
+			const { result } = planCardRegen(occ(''), [buried(1, 'box:b1', OCC)]);
+			expect(result).toEqual({ keep: [], revive: [], add: [], remove: [] });
+		});
+
+		it('prefers a live card over a tombstone of the same variant', () => {
+			const { result } = planCardRegen(occ('Pool'), [
+				buried(1, 'box:b1', OCC),
+				stored(2, 'box:b1', OCC)
+			]);
+			expect(result.keep.map((k) => k.cardId)).toEqual([id(2)]);
+			expect(result.revive).toEqual([]);
+		});
+
+		it('does not revive positional variants (a cloze c2 back is a new card)', () => {
+			const { result } = planCardRegen(cloze('{{a}} and {{b}}'), [
+				stored(1, 'c1', ['cloze']),
+				buried(2, 'c2', ['cloze'])
+			]);
+			expect(result.revive).toEqual([]);
+			expect(result.add.map((c) => c.variant)).toEqual(['c2']);
+			expect(result.remove).toEqual([]);
+		});
 	});
 
 	it('does not mutate the existing cards', () => {
