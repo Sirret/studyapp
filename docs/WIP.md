@@ -32,5 +32,5 @@ Then: test tiers, `npm run build:test`, e2e for touched screens, PROGRESS entry,
 - [x] 3 delete: DeleteCourse.svelte on course page (Sheet), shelf × removed; e2e course-delete.spec.ts (not yet run)
 - [x] 4 import picker: New course default, ?course= from course pages, recentFirst; unit (course-order, repos) + e2e import.spec (not yet run)
 - [x] 5 reader: sectionTerms (prefix strip, keyWords, cloze answers); Learn Screen wide on read; Reader 2 columns from 700px container; reader-terms.test.ts
-- [ ] 6 small a11y/layout fixes
+- [x] 6 small: "Your exam" heading; Yuki zz as paths + aria-hidden wrapper; door aria-labels; Play stamp wrap (specificity); layout.spec checks
 - [ ] tests, build:test, e2e touched specs, PROGRESS, checkpoint

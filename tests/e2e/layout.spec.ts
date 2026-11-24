@@ -120,6 +120,12 @@ test.describe('layout', { tag: '@both' }, () => {
 		test.setTimeout(90_000);
 		await openLearnCourse(page);
 		await expectWithinWidth(page, page.getByRole('button', { name: /Play/ }));
+		// The "Coming soon" stamp stays inside the Play door (UX fix).
+		const play = await page.locator('[data-door-disabled]').boundingBox();
+		const stamp = await page.locator('[data-door-disabled] .stamp').first().boundingBox();
+		expect(play && stamp).toBeTruthy();
+		expect(stamp!.x).toBeGreaterThanOrEqual(play!.x - 1);
+		expect(stamp!.x + stamp!.width).toBeLessThanOrEqual(play!.x + play!.width + 1);
 		await expectNoSidewaysScroll(page);
 		await page.locator('[data-scope-change]').click();
 		await expectWithinWidth(page, page.locator('[data-scope-save]'));
@@ -135,6 +141,14 @@ test.describe('layout', { tag: '@both' }, () => {
 		await expect(page.locator('[data-learn-screen="read"]')).toBeVisible();
 		await expectWithinWidth(page, page.locator('[data-learn-next]'));
 		await expectNoSidewaysScroll(page);
+		// From 1024 px the reader puts the key terms beside the text (UX fix: reader key terms).
+		const width = page.viewportSize()?.width ?? 0;
+		const side = page.getByRole('complementary', { name: 'Key terms and tip' });
+		if (width >= 1024 && (await side.count()) > 0) {
+			const text = await page.locator('[data-reader] article').boundingBox();
+			const aside = await side.boundingBox();
+			expect(aside!.x).toBeGreaterThan(text!.x + text!.width - 1);
+		}
 	});
 
 	test('Manual mode: the new-course form and the add form fit', async ({ page }) => {

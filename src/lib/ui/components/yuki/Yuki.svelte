@@ -21,7 +21,13 @@
 	const STAMP_SHARE = 0.3;
 </script>
 
-<span class="yuki s-{state}" class:still style:--yuki-size="{size}px" data-yuki-state={state}>
+<span
+	class="yuki s-{state}"
+	class:still
+	aria-hidden="true"
+	style:--yuki-size="{size}px"
+	data-yuki-state={state}
+>
 	<svg viewBox="0 0 200 200" width={size} height={size} aria-hidden="true" focusable="false">
 		<g id="body">
 			<g id="tail">
@@ -82,9 +88,10 @@
 				/>
 			</g>
 		</g>
+		<!-- Drawn, not <text>: some screen readers voice SVG text even when hidden (UX fix). -->
 		<g id="zz">
-			<text x="150" y="40" class="z" font-size="18">z</text>
-			<text x="162" y="26" class="z" font-size="13">z</text>
+			<path class="z" d="M150,28 h11 l-11,12 h11" />
+			<path class="z" d="M163,17 h8 l-8,9 h8" />
 		</g>
 	</svg>
 	{#if state === 'celebrate'}
@@ -161,9 +168,11 @@
 	}
 
 	.z {
-		fill: var(--text-soft);
-		font-family: var(--font-body);
-		font-style: italic;
+		fill: none;
+		stroke: var(--text-soft);
+		stroke-width: 2;
+		stroke-linecap: round;
+		stroke-linejoin: round;
 	}
 
 	.stamp {

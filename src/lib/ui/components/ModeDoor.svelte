@@ -1,7 +1,8 @@
 <!--
 	Mode door (DESIGN §7): an arch-topped door in the mode's colour with a 2 px outline and a brass
 	inset rim, holding an icon, a Courier label (LEARN / PRACTICE / EXAM PREP / PLAY) and a short
-	hint. A small brass dot marks "has work"; the words "has work" are read out with it (§11). The
+	hint. A small brass dot marks "has work"; the door's accessible name says it ("Learn: 3 sections
+	to read (work waiting)", §11). The
 	label colour follows the fill through `--door-label`: wool on dark fills (pine, night,
 	oxblood), ink on the light brass fill (lamp-light: its text-strong / bg). With `href` it is a
 	link, otherwise a button. `disabled` (Play until Phase 11) is a disabled button with a dashed
@@ -42,6 +43,12 @@
 		play: { label: 'Play', icon: Gamepad2 }
 	} as const;
 	const door = $derived(DOORS[mode]);
+	/** The door's name for screen readers: the mode, its hint, and whether work waits (UX fix). */
+	const name = $derived(
+		disabled
+			? `${door.label}: ${stamp}`
+			: `${door.label}: ${hint}${hasWork ? ' (work waiting)' : ''}`
+	);
 </script>
 
 {#snippet inside()}
@@ -51,19 +58,19 @@
 	{#if disabled}
 		<span class="stamp"><Stamp text={stamp} dashed /></span>
 	{:else if hasWork}
-		<span class="dot" aria-hidden="true"></span><span class="sr-only">, has work</span>
+		<span class="dot" aria-hidden="true"></span>
 	{/if}
 {/snippet}
 
 {#if disabled}
-	<button type="button" class="door {mode} disabled" disabled data-door-disabled>
+	<button type="button" class="door {mode} disabled" disabled aria-label={name} data-door-disabled>
 		{@render inside()}
 	</button>
 {:else if href}
 	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- callers pass resolve()d hrefs -->
-	<a class="door {mode}" {href}>{@render inside()}</a>
+	<a class="door {mode}" {href} aria-label={name}>{@render inside()}</a>
 {:else}
-	<button type="button" class="door {mode}" {onclick}>{@render inside()}</button>
+	<button type="button" class="door {mode}" {onclick} aria-label={name}>{@render inside()}</button>
 {/if}
 
 <style>
@@ -113,9 +120,16 @@
 		margin-top: var(--gap-xs);
 	}
 
-	/* A narrow door: the stamp wraps instead of spilling out of the arch. */
-	.stamp > :global(.stamp) {
+	/*
+	 * A narrow door: the stamp wraps instead of spilling out of the arch. `.door` raises the
+	 * specificity above Stamp's own `white-space: nowrap`, which otherwise wins by load order
+	 * (UX fix: Play stamp overflow).
+	 */
+	.door .stamp > :global(.stamp) {
+		max-width: 100%;
 		white-space: normal;
+		text-align: center;
+		overflow-wrap: anywhere;
 	}
 
 	.practice {

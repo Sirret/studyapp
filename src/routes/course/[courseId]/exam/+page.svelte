@@ -171,7 +171,7 @@
 			onreview={() => start('review')}
 			onblocktwo={() => start('block2')}
 		/>
-		<SectionHeading title="Exam date" id="exam" />
+		<SectionHeading title="Your exam" id="exam" />
 		<Stack gap="md">
 			{#key `${today.course.examDate}-${today.course.examTime}-${today.course.examFormat}`}
 				<ExamForm
