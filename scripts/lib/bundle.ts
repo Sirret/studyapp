@@ -35,7 +35,8 @@ const BYTES_PER_KB = 1024;
 const HEAVY_LIBRARIES = [
 	{ library: 'tesseract.js', markers: ['tesseract'] },
 	{ library: 'elkjs', markers: ['elkjs', 'elk.bundled', 'org.eclipse.elk'] },
-	{ library: 'Svelte Flow', markers: ['@xyflow', 'svelte-flow'] }
+	{ library: 'Svelte Flow', markers: ['@xyflow', 'svelte-flow'] },
+	{ library: 'pdfjs-dist', markers: ['pdfjs-dist', 'pdf.worker'] }
 ];
 
 /**

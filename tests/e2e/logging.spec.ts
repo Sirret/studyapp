@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { DB_NAME } from '../../src/lib/config/defaults.ts';
+import { APP_SHORT_NAME, DB_NAME } from '../../src/lib/config/defaults.ts';
 
 interface StoredLog {
 	level: string;
@@ -61,7 +61,7 @@ test.describe('app log', () => {
 
 	test('captures an uncaught error with its stack', async ({ page }) => {
 		await page.goto('/');
-		await page.getByRole('heading').waitFor();
+		await page.getByRole('heading', { name: APP_SHORT_NAME }).waitFor();
 		await page.evaluate(() => {
 			setTimeout(() => {
 				throw new Error('e2e uncaught boom');
@@ -72,7 +72,7 @@ test.describe('app log', () => {
 
 	test('captures an unhandled rejection with its stack', async ({ page }) => {
 		await page.goto('/');
-		await page.getByRole('heading').waitFor();
+		await page.getByRole('heading', { name: APP_SHORT_NAME }).waitFor();
 		await page.evaluate(() => {
 			void Promise.reject(new Error('e2e rejected boom'));
 		});

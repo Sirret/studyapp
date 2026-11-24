@@ -47,7 +47,8 @@ describe('evaluateBundle', () => {
 	it.each([
 		['tesseract.js', 'createWorker from "tesseract.js"'],
 		['elkjs', 'new ELK("elk.bundled.js")'],
-		['Svelte Flow', 'import "@xyflow/svelte"']
+		['Svelte Flow', 'import "@xyflow/svelte"'],
+		['pdfjs-dist', 'import "pdfjs-dist/build/pdf.mjs"']
 	])('fails a shell containing %s', (library, content) => {
 		const report = evaluateBundle([{ file: 'a.js', content }], SHELL_JS_BUDGET_KB);
 		expect(report.passed).toBe(false);
