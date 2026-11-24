@@ -5,6 +5,7 @@
 | Date | Phase | Step | Model | What was done | Files | Next | Commit |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 2026-11-24 | Pre-review | 1–4 | Opus 5.5 | docs/memory, 1-worker verify + e2e-verify.json, occlusion revive, /dev/seed | 27 | verify, prune UNVERIFIED rows, checkpoint | 25a7ade |
+| 2026-11-24 | Pre-review | verify + prune | Opus 5.5 | 1-worker verify (unit 2593/0, e2e 91/94), diagram property aligned, UNVERIFIED pruned 37→8, PROGRESS | 6 | user's UX review; push after OK | 8e07701 |
 
 ## Task (user brief, 2026-11-24)
 
